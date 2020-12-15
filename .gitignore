@@ -1,0 +1,5 @@
+tic-tac-toe
+tic-tac-toe.sublime-*
+tic-tac-toe.code-*
+.vscode/
+*.spv
