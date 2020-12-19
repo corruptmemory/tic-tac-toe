@@ -10,10 +10,10 @@ build: tic-tac-toe
 # 	glslc shaders/shader.frag -o shaders/frag.spv
 
 tic-tac-toe: tic-tac-toe.odin
-	odin build tic-tac-toe.odin -vet -collection:shared=./external
+	odin build tic-tac-toe.odin -debug -vet -collection:shared=./external
 
 run:
-	odin run tic-tac-toe.odin -vet -collection:shared=./external
+	odin run tic-tac-toe.odin -debug -vet -collection:shared=./external
 
 clean:
 	rm -f shaders/*.spv
