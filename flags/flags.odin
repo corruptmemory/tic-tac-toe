@@ -1,6 +1,5 @@
 package flags
 
-import "core:os"
 import "core:reflect"
 import "core:mem"
 import "core:fmt"
@@ -8,6 +7,7 @@ import "core:strings"
 import "core:strconv"
 import "core:unicode/utf8"
 import "core:math/bits"
+import "core:log"
 
 None :: distinct bool;
 
@@ -49,7 +49,6 @@ Parser :: struct {
   args: []ArgEntry,
   shorts: map[rune]int,
   longs: map[string]int,
-  commands: map[string]^Parser,
 };
 
 process_struct :: proc(T: typeid) -> (^Parser, bool) {
@@ -57,7 +56,6 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
   parser.type = T;
   parser.shorts = make(map[rune]int);
   parser.longs = make(map[string]int);
-  parser.commands = make(map[string]^Parser);
 
   names := reflect.struct_field_names(T);
   types := reflect.struct_field_types(T);
@@ -70,7 +68,6 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
     type := types[i];
     tag  := tags[i];
     offset := offsets[i];
-    fmt.printf("processing field %s\n", name);
     if tag != "" {
       default:string;
       entry := ArgEntry{
@@ -91,6 +88,7 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
         if r, iok := strconv.parse_bool(string(required)); iok {
           entry.required = r;
         } else {
+          log.errorf("error: 'required' field tag for '%s' has invalid value: %s", name, required);
           return nil, false;
         }
       }
@@ -110,6 +108,7 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
             if v, ok := strconv.parse_bool(default); ok {
               entry.default = v;
             } else {
+              log.errorf("error: 'default' field tag for '%s' cannot be parsed as bool: %s", name, default);
               return nil, false;
             }
           }
@@ -119,6 +118,7 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
             if v, ok := strconv.parse_int(default); ok {
               entry.default = v;
             } else {
+              log.errorf("error: 'default' field tag for '%s' cannot be parsed as int: %s", name, default);
               return nil, false;
             }
           }
@@ -128,6 +128,7 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
             if v, ok := strconv.parse_uint(default); ok {
               entry.default = v;
             } else {
+              log.errorf("error: 'default' field tag for '%s' cannot be parsed as uint: %s", name, default);
               return nil, false;
             }
           }
@@ -136,10 +137,12 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
           if default != "" {
             if v, ok := strconv.parse_i64(default); ok {
               if v < bits.I32_MIN || v > bits.I32_MAX {
+                log.errorf("error: 'default' field tag for '%s' outside i32 range: %s", name, default);
                 return nil, false;
               }
               entry.default = i32(v);
             } else {
+              log.errorf("error: 'default' field tag for '%s' cannot be parsed as i32: %s", name, default);
               return nil, false;
             }
           }
@@ -148,10 +151,12 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
           if default != "" {
             if v, ok := strconv.parse_u64(default); ok {
               if v > bits.U32_MAX {
+                log.errorf("error: 'default' field tag for '%s' outside u32 range: %s", name, default);
                 return nil, false;
               }
               entry.default = u32(v);
             } else {
+              log.errorf("error: 'default' field tag for '%s' cannot be parsed as u32: %s", name, default);
               return nil, false;
             }
           }
@@ -161,6 +166,7 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
             if v, ok := strconv.parse_i64(default); ok {
               entry.default = v;
             } else {
+              log.errorf("error: 'default' field tag for '%s' cannot be parsed as i64: %s", name, default);
               return nil, false;
             }
           }
@@ -170,6 +176,7 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
             if v, ok := strconv.parse_u64(default); ok {
               entry.default = v;
             } else {
+              log.errorf("error: 'default' field tag for '%s' cannot be parsed as u64: %s", name, default);
               return nil, false;
             }
           }
@@ -184,6 +191,7 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
             if v, ok := strconv.parse_f32(default); ok {
               entry.default = v;
             } else {
+              log.errorf("error: 'default' field tag for '%s' cannot be parsed as f32: %s", name, default);
               return nil, false;
             }
           }
@@ -193,22 +201,13 @@ process_struct :: proc(T: typeid) -> (^Parser, bool) {
             if v, ok := strconv.parse_f64(default); ok {
               entry.default = v;
             } else {
+              log.errorf("error: 'default' field tag for '%s' cannot be parsed as f64: %s", name, default);
               return nil, false;
             }
           }
         case:
-          if _, ook := type.variant.(reflect.Type_Info_Struct); ook {
-            fmt.println("We gotta struct");
-            if command, ok := reflect.struct_tag_lookup(tag,"command"); ok {
-              subParser, iok := process_struct(type.id);
-              if !iok {
-                return nil, false;
-              }
-              parser.commands[string(command)] = subParser;
-              continue;
-            }
-
-          }
+          log.errorf("error: type of '%s': %v -- not supported", name, type.id);
+          return nil, false;
       }
       idx := len(args);
       append(&args, entry);
