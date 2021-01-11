@@ -1,3 +1,4 @@
+ODIN:=../Odin/odin
 
 .PHONY: build clean
 
@@ -10,10 +11,10 @@ build: tic-tac-toe
 # 	glslc shaders/shader.frag -o shaders/frag.spv
 
 tic-tac-toe: tic-tac-toe.odin
-	odin build tic-tac-toe.odin -debug -vet -collection:shared=./external
+	$(ODIN) build tic-tac-toe.odin -vet -collection:shared=./external
 
 run:
-	odin run tic-tac-toe.odin -debug -vet -collection:shared=./external
+	$(ODIN) run tic-tac-toe.odin -vet -collection:shared=./external
 
 clean:
 	rm -f shaders/*.spv

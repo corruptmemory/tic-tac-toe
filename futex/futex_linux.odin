@@ -11,7 +11,6 @@ foreign import libc "system:c"
 @(default_calling_convention = "c")
 foreign libc {
   @(link_name="perror")           perror              :: proc(str: cstring) ---;
-  @(link_name="syscall")          tsyscall            :: proc(number: os.Syscall, uaddr: ^u32, futex_op: int, val: u32, timeout: ^Timespec, uaddr2: ^u32, val3: u32, end: ^any) -> int ---;
 }
 
 FUTEX_WAIT :: 0;
@@ -95,11 +94,6 @@ FUTEX_OP_CMP_GE :: 5;  /* if (oldval >= CMPARG) wake */
    if (oldval CMP CMPARG)
      wake UADDR2;  */
 
-Timespec :: struct {
-  tv_sec: i64,    /* seconds */
-  tv_nsec: i64,   /* nanoseconds */
-};
-
 
 make_futex_op :: proc(op: int, oparg: int, cmp: int, cmparg: int) -> int {
   return (((op & 0xf) << 28) | ((cmp & 0xf) << 24) | ((oparg & 0xfff) << 12) | (cmparg & 0xfff));
@@ -107,22 +101,25 @@ make_futex_op :: proc(op: int, oparg: int, cmp: int, cmparg: int) -> int {
 
 SYS_FUTEX : os.Syscall : 202;
 
+
 futex :: proc(uaddr: ^u32,
-              futex_op: int,
-              val: u32,
-              timeout: ^Timespec,
-              uaddr2: ^u32,
-              val3: u32) -> int {
-  return tsyscall(SYS_FUTEX, uaddr, futex_op, val, timeout, uaddr2, val3, nil);
+             futex_op: int,
+             val: u32,
+             timeout: ^time.TimeSpec,
+             uaddr2: ^u32,
+             val3: u32) -> int {
+  return os.syscall(SYS_FUTEX, uaddr, futex_op, val, timeout, uaddr2, val3);
 }
 
-wait :: proc(futexp: ^u32, timeout: time.Duration) {
-  ts: Timespec;
-  tsp: ^Timespec = nil;
+wait :: proc(futexp: ^u32, timeout: time.Duration) -> int {
+  ts: time.TimeSpec;
+  tsp: ^time.TimeSpec = nil;
 
   if timeout != time.MAX_DURATION {
-    ts.tv_sec = i64(timeout / time.Second);
-    ts.tv_nsec = i64(timeout) - ts.tv_sec;
+    sec := i64(timeout / time.Second);
+    nsec := i64(timeout % time.Second);
+    ts.tv_sec = sec;
+    ts.tv_nsec = nsec;
     tsp = &ts;
   }
 
@@ -133,48 +130,35 @@ wait :: proc(futexp: ^u32, timeout: time.Duration) {
               *ptr = newval;
 
       It returns true if the test yielded true and *ptr was updated. */
-   for {
-       /* Is the futex available? */
-       if _, ok := intrinsics.atomic_cxchg(futexp, 1, 0); ok {
-           break;      /* Yes */
-       }
-
-       /* Futex is not available; wait */
-
-       s := futex(futexp, FUTEX_WAIT_PRIVATE, 0, tsp, nil, 0);
-       errno := os.Errno(os.get_last_error());
-       if s == -1 && errno != os.EAGAIN {
-         perror("futex-FUTEX_WAIT");
-         panic(fmt.tprintf("futex-FUTEX_WAIT - %v - %v",s,errno));
-       }
+   /* Is the futex available? */
+   l := intrinsics.atomic_load(futexp);
+   if l == 1 {
+       return 0;
    }
+
+   /* Futex is not available; wait */
+
+   s := futex(futexp, FUTEX_WAIT_PRIVATE, 0, tsp, nil, 0);
+   errno := os.Errno(os.get_last_error());
+   if s == -1 && errno != os.EAGAIN {
+     perror("futex-FUTEX_WAIT");
+     panic(fmt.tprintf("futex-FUTEX_WAIT - %v - %v",s,errno));
+   }
+   return s;
 }
 
-/* Release the futex pointed to by 'futexp': if the futex currently
-  has the value 0, set its value to 1 and the wake any futex waiters,
-  so that if the peer is blocked in fwait(), it can proceed. */
-wake_one :: proc(futexp: ^u32) {
-   /* atomic_compare_exchange_strong() was described
-      in comments above */
+wake_n :: proc(futexp: ^u32, to_wake: u32 = 1) -> int {
    if _, ok := intrinsics.atomic_cxchg(futexp, 0, 1); ok {
-       s := futex(futexp, FUTEX_WAKE_PRIVATE, 1, nil, nil, 0);
+       s := futex(futexp, FUTEX_WAKE_PRIVATE, to_wake, nil, nil, 0);
        if s == -1 {
          panic(fmt.tprintf("futex-FUTEX_WAKE_ONE: %v", s));
        }
+       return s;
    }
+   return 0;
 }
 
 
-/* Release the futex pointed to by 'futexp': if the futex currently
-  has the value 0, set its value to 1 and the wake any futex waiters,
-  so that if the peer is blocked in fwait(), it can proceed. */
-wake_all :: proc(futexp: ^u32) {
-   /* atomic_compare_exchange_strong() was described
-      in comments above */
-   if _, ok := intrinsics.atomic_cxchg(futexp, 0, 1); ok {
-       s := futex(futexp, FUTEX_WAKE_PRIVATE, bits.U32_MAX, nil, nil, 0);
-       if s == -1 {
-         panic(fmt.tprintf("futex-FUTEX_WAKE_ALL - %v", s));
-       }
-   }
+wake_all :: proc(futexp: ^u32) -> int {
+  return wake_n(futexp, bits.I32_MAX);
 }

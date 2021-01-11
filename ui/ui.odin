@@ -336,8 +336,6 @@ get_input_state :: proc(ctx: ^Context, uiState: ^input.UIState) -> bool {
 shutdown :: proc(ctx: ^Context, window: Window) {
   log.info(".... shutting down ...");
   cleanup :: proc(ctx: ^Context) {
-    tsync.wait_group_destroy(&ctx.xcbWaitGroup);
-    tsync.wait_group_destroy(&ctx.uiWaitGroup);
     tsync.channel_destroy(&ctx.xcbChannel);
     tsync.channel_destroy(&ctx.getInputChannel);
   }

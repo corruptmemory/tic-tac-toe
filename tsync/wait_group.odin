@@ -1,24 +1,15 @@
 package tsync
 
 import "intrinsics"
-import csync "core:sync"
 
 Wait_Group :: struct {
   counter: int,
-  mutex:   csync.Blocking_Mutex,
-  cond:    csync.Condition,
+  wait_value: uintptr,
 }
 
-wait_group_init :: proc(wg: ^Wait_Group) {
-  wg.counter = 0;
-  csync.blocking_mutex_init(&wg.mutex);
-  csync.condition_init(&wg.cond, &wg.mutex);
-}
-
-
-wait_group_destroy :: proc(wg: ^Wait_Group) {
-  csync.condition_destroy(&wg.cond);
-  csync.blocking_mutex_destroy(&wg.mutex);
+wait_group_init :: proc(wg: ^Wait_Group, counter: int = 0) {
+  wg.counter = counter;
+  wg.wait_value = 0;
 }
 
 atomic_add :: proc(dst: ^$T, val: T) -> T {
@@ -32,16 +23,18 @@ wait_group_add :: proc(wg: ^Wait_Group, delta: int) {
   }
 
   ctr := atomic_add(&wg.counter, delta);
+  if wg.wait_value != 0 {
+    panic("tsync.Wait_Group misuse: tsync.wait_group_add called concurrently with tsync.wait_group_wait");
+  }
 
   if ctr < 0 {
-    panic("sync.Wait_Group negative counter");
+    panic("tsync.Wait_Group negative counter");
   }
   if ctr == 0 {
-    csync.condition_broadcast(&wg.cond);
-    ctr = intrinsics.atomic_load(&wg.counter);
-    if ctr != 0 {
-      panic("sync.Wait_Group misuse: sync.wait_group_add called concurrently with sync.wait_group_wait");
+    if wg.wait_value != 0 {
+      panic("tsync.Wait_Group misuse: tsync.wait_group_add called concurrently with tsync.wait_group_wait");
     }
+    wait_group_wake_all(wg);
   }
 }
 
@@ -50,16 +43,11 @@ wait_group_done :: proc(wg: ^Wait_Group) {
 }
 
 wait_group_wait :: proc(wg: ^Wait_Group) {
-  ctr := intrinsics.atomic_load(&wg.counter);
-
-  if ctr > 0 {
-    csync.blocking_mutex_lock(&wg.mutex);
-    csync.condition_wait_for(&wg.cond);
-    csync.blocking_mutex_unlock(&wg.mutex);
-    ctr = intrinsics.atomic_load(&wg.counter);
-    if ctr != 0 {
-      panic("sync.Wait_Group misuse: sync.wait_group_add called concurrently with sync.wait_group_wait");
-    }
+  if _, ok := intrinsics.atomic_cxchg(&wg.counter, 0, 0); ok {
+    intrinsics.atomic_store(&wg.wait_value,1);
+    return;
   }
+
+  wait_group_wait_on(wg);
 }
 

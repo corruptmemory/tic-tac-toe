@@ -1,890 +1,337 @@
 package tsync
 
+import "core:sync"
 import "core:mem"
 import "core:time"
-import "intrinsics"
-import "core:math/rand"
-import "core:sync"
+import "core:intrinsics"
+import "core:runtime"
+import futex "../futex"
 
-_, _ :: time, rand;
+Wait_Slot :: u32;
 
-Channel_Direction :: enum i8 {
-	Both =  0,
-	Send = +1,
-	Recv = -1,
-}
-
-Channel :: struct(T: typeid, Direction := Channel_Direction.Both) {
-	using _internal: ^Raw_Channel,
-}
-
-channel_init :: proc(ch: ^$C/Channel($T, $D), cap := 0, allocator := context.allocator) {
-	context.allocator = allocator;
-	ch._internal = raw_channel_create(size_of(T), align_of(T), cap);
-	return;
-}
-
-channel_make :: proc($T: typeid, cap := 0, allocator := context.allocator) -> (ch: Channel(T, .Both)) {
-	context.allocator = allocator;
-	ch._internal = raw_channel_create(size_of(T), align_of(T), cap);
-	return;
-}
-
-channel_make_send :: proc($T: typeid, cap := 0, allocator := context.allocator) -> (ch: Channel(T, .Send)) {
-	context.allocator = allocator;
-	ch._internal = raw_channel_create(size_of(T), align_of(T), cap);
-	return;
-}
-channel_make_recv :: proc($T: typeid, cap := 0, allocator := context.allocator) -> (ch: Channel(T, .Recv)) {
-	context.allocator = allocator;
-	ch._internal = raw_channel_create(size_of(T), align_of(T), cap);
-	return;
-}
-
-channel_destroy :: proc(ch: ^$C/Channel($T, $D)) {
-	raw_channel_destroy(ch._internal);
-}
-
-channel_as_send :: proc(ch: ^$C/Channel($T, .Both)) -> (res: Channel(T, .Send)) {
-	res._internal = ch._internal;
-	return;
-}
-
-channel_as_recv :: proc(ch: ^$C/Channel($T, .Both)) -> (res: Channel(T, .Recv)) {
-	res._internal = ch._internal;
-	return;
+channel_logic :: enum u32 {
+  zero_zero,
+  nonzero_zero,
+  zero_nonzero,
+  nonzero_nonzero,
 }
 
 
-channel_len :: proc(ch: ^$C/Channel($T, $D)) -> int {
-	return ch._internal.len if ch._internal != nil else 0;
-}
-channel_cap :: proc(ch: ^$C/Channel($T, $D)) -> int {
-	return ch._internal.cap if ch._internal != nil else 0;
-}
-
-
-channel_send :: proc(ch: ^$C/Channel($T, $D), msg: T, loc := #caller_location) where D >= .Both {
-	msg := msg;
-	_ = raw_channel_send_impl(ch._internal, &msg, /*block*/true, loc);
-}
-channel_try_send :: proc(ch: ^$C/Channel($T, $D), msg: T, loc := #caller_location) -> bool where D >= .Both {
-	msg := msg;
-	return raw_channel_send_impl(ch._internal, &msg, /*block*/false, loc);
-}
-
-channel_recv :: proc(ch: ^$C/Channel($T, $D), loc := #caller_location) -> (msg: T) where D <= .Both {
-	c := ch._internal;
-	if c == nil {
-		panic(message="cannot recv message; channel is nil", loc=loc);
-	}
-	sync.mutex_lock(&c.mutex);
-	raw_channel_recv_impl(c, &msg, loc);
-	sync.mutex_unlock(&c.mutex);
-	return;
-}
-channel_try_recv :: proc(ch: ^$C/Channel($T, $D), loc := #caller_location) -> (msg: T, ok: bool) where D <= .Both {
-	c := ch._internal;
-	if c != nil && sync.mutex_try_lock(&c.mutex) {
-		if c.len > 0 {
-			raw_channel_recv_impl(c, &msg, loc);
-			ok = true;
-		}
-		sync.mutex_unlock(&c.mutex);
-	}
-	return;
-}
-channel_try_recv_ptr :: proc(ch: ^$C/Channel($T, $D), msg: ^T, loc := #caller_location) -> (ok: bool) where D <= .Both {
-	res: T;
-	res, ok = channel_try_recv(ch, loc);
-	if ok && msg != nil {
-		msg^ = res;
-	}
-	return;
-}
-
-
-channel_is_nil :: proc(ch: ^$C/Channel($T, $D)) -> bool {
-	return ch._internal == nil;
-}
-channel_is_open :: proc(ch: ^$C/Channel($T, $D)) -> bool {
-	c := ch._internal;
-	return c != nil && !c.closed;
-}
-
-
-channel_eq :: proc(a, b: ^$C/Channel($T, $D)) -> bool {
-	return a._internal == b._internal;
-}
-channel_ne :: proc(a, b: ^$C/Channel($T, $D)) -> bool {
-	return a._internal != b._internal;
-}
-
-
-channel_can_send :: proc(ch: ^$C/Channel($T, $D)) -> (ok: bool) where D >= .Both {
-	return raw_channel_can_send(ch._internal);
-}
-channel_can_recv :: proc(ch: ^$C/Channel($T, $D)) -> (ok: bool) where D <= .Both {
-	return raw_channel_can_recv(ch._internal);
-}
-
-
-channel_peek :: proc(ch: ^$C/Channel($T, $D)) -> int {
-	c := ch._internal;
-	if c == nil {
-		return -1;
-	}
-	if intrinsics.atomic_load(&c.closed) {
-		return -1;
-	}
-	return intrinsics.atomic_load(&c.len);
-}
-
-
-channel_close :: proc(ch: ^$C/Channel($T, $D), loc := #caller_location) {
-	raw_channel_close(ch._internal, loc);
-}
-
-
-channel_iterator :: proc(ch: ^$C/Channel($T, $D)) -> (msg: T, ok: bool) where D <= .Both {
-	c := ch._internal;
-	if c == nil {
-		return;
-	}
-
-	if !c.closed || c.len > 0 {
-		msg, ok = channel_recv(ch), true;
-	}
-	return;
-}
-channel_drain :: proc(ch: $C/Channel($T, $D)) where D >= .Both {
-	raw_channel_drain(ch._internal);
-}
-
-
-channel_move :: proc(dst:^ $C1/Channel($T, $D1) src: $C2/Channel(T, $D2)) where D1 <= .Both, D2 >= .Both {
-	for msg in channel_iterator(src) {
-		channel_send(dst, msg);
-	}
-}
-
-
-Raw_Channel_Wait_Queue :: struct {
-	next: ^Raw_Channel_Wait_Queue,
-	state: ^uintptr,
-}
-
-
-Raw_Channel :: struct {
-	closed:      bool,
-	ready:       bool, // ready to recv
-	data_offset: u16,  // data is stored at the end of this data structure
-	elem_size:   u32,
-	len, cap:    int,
-	read, write: int,
-	mutex:       sync.Mutex,
-	cond:        sync.Condition,
-	allocator:   mem.Allocator,
-
-	sendq: ^Raw_Channel_Wait_Queue,
-	recvq: ^Raw_Channel_Wait_Queue,
-}
-
-raw_channel_wait_queue_insert :: proc(head: ^^Raw_Channel_Wait_Queue, val: ^Raw_Channel_Wait_Queue) {
-	val.next = head^;
-	head^ = val;
-}
-raw_channel_wait_queue_remove :: proc(head: ^^Raw_Channel_Wait_Queue, val: ^Raw_Channel_Wait_Queue) {
-	p := head;
-	for p^ != nil && p^ != val {
-		p = &p^.next;
-	}
-	if p != nil {
-		p^ = p^.next;
-	}
-}
-
-
-raw_channel_create :: proc(elem_size, elem_align: int, cap := 0) -> ^Raw_Channel {
-	assert(int(u32(elem_size)) == elem_size);
-
-	s := size_of(Raw_Channel);
-	s = mem.align_forward_int(s, elem_align);
-	data_offset := uintptr(s);
-	s += elem_size * max(cap, 1);
-
-	a := max(elem_align, align_of(Raw_Channel));
-
-	c := (^Raw_Channel)(mem.alloc(s, a));
-	if c == nil {
-		return nil;
-	}
-
-	c.data_offset = u16(data_offset);
-	c.elem_size = u32(elem_size);
-	c.len, c.cap = 0, max(cap, 0);
-	c.read, c.write = 0, 0;
-	sync.mutex_init(&c.mutex);
-	sync.condition_init(&c.cond, &c.mutex);
-	c.allocator = context.allocator;
-	c.closed = false;
-
-	return c;
-}
-
-
-raw_channel_destroy :: proc(c: ^Raw_Channel) {
-	if c == nil {
-		return;
-	}
-	context.allocator = c.allocator;
-	intrinsics.atomic_store(&c.closed, true);
-
-	sync.condition_destroy(&c.cond);
-	sync.mutex_destroy(&c.mutex);
-	free(c);
-}
-
-raw_channel_close :: proc(c: ^Raw_Channel, loc := #caller_location) {
-	if c == nil {
-		panic(message="cannot close nil channel", loc=loc);
-	}
-	sync.mutex_lock(&c.mutex);
-	defer sync.mutex_unlock(&c.mutex);
-	intrinsics.atomic_store(&c.closed, true);
-
-	// Release readers and writers
-	raw_channel_wait_queue_broadcast(c.recvq);
-	raw_channel_wait_queue_broadcast(c.sendq);
-	sync.condition_broadcast(&c.cond);
+Channel :: struct(T: typeid) {
+  count:            u32,
+  logic:            channel_logic,
+  cap:              u32,           // total data in the queue
+  data_offset:      u16,           // points to an array of dataqsiz bytes
+  slot_size:        u32,
+  elem_size:        u32,
+  closed:           bool,
+  sendx:            u32,           // send index
+  recvx:            u32,           // receive index
+  lock:             sync.Mutex,
+  send_wait_slot:   Wait_Slot,
+  read_wait_slot:   Wait_Slot,
+  allocator:        mem.Allocator,
 }
 
 
 
-raw_channel_send_impl :: proc(c: ^Raw_Channel, msg: rawptr, block: bool, loc := #caller_location) -> bool {
-	send :: proc(c: ^Raw_Channel, src: rawptr) {
-		data := uintptr(c) + uintptr(c.data_offset);
-		dst := data + uintptr(c.write * int(c.elem_size));
-		mem.copy(rawptr(dst), src, int(c.elem_size));
-		c.len += 1;
-		c.write = (c.write + 1) % max(c.cap, 1);
-	}
+channel_make :: proc($T: typeid, cap : uint = 0, allocator : mem.Allocator = context.allocator) -> ^Channel(T) {
+  C :: Channel(T);
+  elt_size := size_of(T);
+  logic: channel_logic;
+  logic_set: bool = false;
+  logical_cap: uint = 0;
+  c : ^C;
 
-	switch {
-	case c == nil:
-		panic(message="cannot send message; channel is nil", loc=loc);
-	case c.closed:
-		panic(message="cannot send message; channel is closed", loc=loc);
-	}
+  switch {
+    case cap == 0 && elt_size == 0:
+      logic = .zero_zero;
+      logic_set = true;
+      fallthrough;
+    case cap > 0 && elt_size == 0:
+      if !logic_set {
+        logic = .nonzero_zero;
+      }
+      c = (^C)(mem.alloc(size_of(C), align_of(C), allocator));
+      if c == nil {
+        return nil;
+      }
 
-	sync.mutex_lock(&c.mutex);
-	defer sync.mutex_unlock(&c.mutex);
+      c.data_offset = 0;
+      c.slot_size = 0;
+      c.elem_size = u32(elt_size);
+      c.logic = logic;
+    case cap == 0 && elt_size > 0:
+      logic = .zero_nonzero;
+      logical_cap = 1;
+      logic_set = true;
+      fallthrough;
+    case cap > 0 && elt_size > 0:
+      if !logic_set {
+        logic = .nonzero_nonzero;
+        logical_cap = cap;
+      }
+      elem_align := align_of(T);
+      slot_size := mem.align_forward_int(size_of(T), elem_align);
+      assert(int(u32(slot_size)) == slot_size);
 
-	if c.cap > 0 {
-		if !block && c.len >= c.cap {
-			return false;
-		}
+      s := size_of(C);
+      s = mem.align_forward_int(s, elem_align);
+      data_offset := u16(s);
+      s += slot_size * int(logical_cap);
 
-		for c.len >= c.cap {
-			sync.condition_wait_for(&c.cond);
-		}
-	} else if c.len > 0 { // TODO(bill): determine correct behaviour
-		if !block {
-			return false;
-		}
-		sync.condition_wait_for(&c.cond);
-	} else if c.len == 0 && !block {
-		return false;
-	}
+      a := max(elem_align, align_of(C));
+      c = (^C)(mem.alloc(s, a, allocator));
+      if c == nil {
+        return nil;
+      }
 
-	send(c, msg);
-	sync.condition_signal(&c.cond);
-	raw_channel_wait_queue_signal(c.recvq);
+      c.data_offset = data_offset;
+      c.slot_size = u32(slot_size);
+      c.elem_size = u32(elt_size);
+      c.logic = logic;
+  }
 
-	return true;
+  c.cap = u32(cap);
+  c.count = 0;
+  c.send_wait_slot = 1;
+  c.read_wait_slot = 1;
+  c.sendx = 0;
+  c.recvx = 0;
+  sync.mutex_init(&c.lock);
+  c.allocator = context.allocator;
+  c.closed = false;
+
+  return c;
 }
 
-raw_channel_recv_impl :: proc(c: ^Raw_Channel, res: rawptr, loc := #caller_location) {
-	recv :: proc(c: ^Raw_Channel, dst: rawptr, loc := #caller_location) {
-		if c.len < 1 {
-			panic(message="cannot recv message; channel is empty", loc=loc);
-		}
-		c.len -= 1;
-
-		data := uintptr(c) + uintptr(c.data_offset);
-		src := data + uintptr(c.read * int(c.elem_size));
-		mem.copy(dst, rawptr(src), int(c.elem_size));
-		c.read = (c.read + 1) % max(c.cap, 1);
-	}
-
-	if c == nil {
-		panic(message="cannot recv message; channel is nil", loc=loc);
-	}
-	intrinsics.atomic_store(&c.ready, true);
-	for c.len < 1 {
-		raw_channel_wait_queue_signal(c.sendq);
-		sync.condition_wait_for(&c.cond);
-	}
-	intrinsics.atomic_store(&c.ready, false);
-	recv(c, res, loc);
-	if c.cap > 0 {
-		if c.len == c.cap - 1 {
-			// NOTE(bill): Only signal on the last one
-			sync.condition_signal(&c.cond);
-		}
-	} else {
-		sync.condition_signal(&c.cond);
-	}
+channel_destroy :: proc (ch: ^Channel($T)) {
+  sync.mutex_destroy(&ch.lock);
+  mem.free(ch, ch.allocator);
 }
 
-
-raw_channel_can_send :: proc(c: ^Raw_Channel) -> (ok: bool) {
-	if c == nil {
-		return false;
-	}
-	sync.mutex_lock(&c.mutex);
-	switch {
-	case c.closed:
-		ok = false;
-	case c.cap > 0:
-		ok = c.ready && c.len < c.cap;
-	case:
-		ok = c.ready && c.len == 0;
-	}
-	sync.mutex_unlock(&c.mutex);
-	return;
-}
-raw_channel_can_recv :: proc(c: ^Raw_Channel) -> (ok: bool) {
-	if c == nil {
-		return false;
-	}
-	sync.mutex_lock(&c.mutex);
-	ok = c.len > 0;
-	sync.mutex_unlock(&c.mutex);
-	return;
+channel_close :: proc (ch: ^Channel($T), loc := #caller_location) {
+  sync.mutex_lock(&ch.lock);
+  defer sync.mutex_unlock(&ch.lock);
+  if ch.closed {
+    panic("error: attempted to close a closed channel", loc);
+  }
+  ch.closed = true;
+  futex.wake_all(&ch.read_wait_slot);
 }
 
-
-raw_channel_drain :: proc(c: ^Raw_Channel) {
-	if c == nil {
-		return;
-	}
-	sync.mutex_lock(&c.mutex);
-	c.len   = 0;
-	c.read  = 0;
-	c.write = 0;
-	sync.mutex_unlock(&c.mutex);
+channel_send :: proc (ch: ^Channel($T), data: T, loc := #caller_location) {
+  if !channel_try_send(ch, data, true) {
+    panic("error: attempted to send on a closed channel", loc);
+  }
 }
 
-
-
-MAX_SELECT_CHANNELS :: 64;
-SELECT_MAX_TIMEOUT :: time.MAX_DURATION;
-
-Select_Command :: enum {
-	Recv,
-	Send,
+channel_try_send :: proc (ch: ^Channel($T), data: T, block : bool = true) -> bool {
+  data := data;
+  switch ch.logic {
+    case .zero_zero:
+      for {
+        sync.mutex_lock(&ch.lock);
+        if ch.closed {
+          sync.mutex_unlock(&ch.lock);
+          return false;
+        }
+        if futex.wake_all(&ch.read_wait_slot) == 0 {
+          if !block || ch.closed {
+            sync.mutex_unlock(&ch.lock);
+            return false;
+          }
+          ch.send_wait_slot = 0;
+          sync.mutex_unlock(&ch.lock);
+          futex.wait(&ch.send_wait_slot,time.MAX_DURATION);
+        } else {
+            sync.mutex_unlock(&ch.lock);
+            return true;
+        }
+      }
+    case .nonzero_zero:
+      for {
+        sync.mutex_lock(&ch.lock);
+        if ch.closed {
+          sync.mutex_unlock(&ch.lock);
+          return false;
+        }
+        if ch.count < ch.cap {
+          ch.count += 1;
+          if futex.wake_all(&ch.read_wait_slot) == 0 {
+            if !block || ch.closed {
+              sync.mutex_unlock(&ch.lock);
+              return false;
+            }
+            ch.send_wait_slot = 0;
+            sync.mutex_unlock(&ch.lock);
+            futex.wait(&ch.send_wait_slot,time.MAX_DURATION);
+          } else {
+            sync.mutex_unlock(&ch.lock);
+            return true;
+          }
+        } else {
+          if !block || ch.closed {
+            sync.mutex_unlock(&ch.lock);
+            return false;
+          }
+          ch.send_wait_slot = 0;
+          sync.mutex_unlock(&ch.lock);
+          futex.wait(&ch.send_wait_slot,time.MAX_DURATION);
+        }
+      }
+    case .zero_nonzero:
+      for {
+        sync.mutex_lock(&ch.lock);
+        if ch.closed {
+          sync.mutex_unlock(&ch.lock);
+          return false;
+        }
+        if ch.count < 1 {
+          target := rawptr(uintptr(ch) + uintptr(ch.data_offset));
+          runtime.mem_copy_non_overlapping(target,&data,int(ch.elem_size));
+          ch.count += 1;
+          for {
+            if futex.wake_all(&ch.read_wait_slot) > 0 {
+              sync.mutex_unlock(&ch.lock);
+              return true;
+            } else {
+              if !block || ch.closed {
+                sync.mutex_unlock(&ch.lock);
+                return false;
+              }
+              ch.send_wait_slot = 0;
+              sync.mutex_unlock(&ch.lock);
+              futex.wait(&ch.send_wait_slot,time.MAX_DURATION);
+              sync.mutex_lock(&ch.lock);
+            }
+          }
+        } else {
+          ch.send_wait_slot = 0;
+          sync.mutex_unlock(&ch.lock);
+          futex.wait(&ch.send_wait_slot,time.MAX_DURATION);
+        }
+      }
+    case .nonzero_nonzero:
+      for {
+        sync.mutex_lock(&ch.lock);
+        if ch.closed {
+          sync.mutex_unlock(&ch.lock);
+          return false;
+        }
+        if ch.count < ch.cap {
+          target := rawptr(uintptr(ch) + uintptr(ch.data_offset) + uintptr(ch.slot_size * ch.sendx));
+          runtime.mem_copy_non_overlapping(target,&data,int(ch.elem_size));
+          ch.count += 1;
+          ch.sendx = (ch.sendx + 1) % ch.cap;
+          futex.wake_all(&ch.read_wait_slot);
+          sync.mutex_unlock(&ch.lock);
+          return true;
+        } else {
+          if !block || ch.closed {
+            sync.mutex_unlock(&ch.lock);
+            return false;
+          }
+          ch.send_wait_slot = 0;
+          sync.mutex_unlock(&ch.lock);
+          futex.wait(&ch.send_wait_slot,time.MAX_DURATION);
+        }
+      }
+  }
+  unreachable();
 }
 
-Select_Channel :: struct {
-	channel: ^Raw_Channel,
-	command: Select_Command,
+channel_receive :: proc (ch: ^Channel($T), loc := #caller_location) -> T {
+  r, ok := channel_try_receive(ch, true);
+  if !ok {
+    return {};
+  }
+  return r;
 }
 
-
-
-select :: proc(channels: ..Select_Channel) -> (index: int) {
-	return select_timeout(SELECT_MAX_TIMEOUT, ..channels);
+channel_try_receive :: proc (ch: ^Channel($T), block : bool = true) -> (T, bool) {
+  switch ch.logic {
+    case .zero_zero:
+      for {
+        sync.mutex_lock(&ch.lock);
+        if futex.wake_all(&ch.send_wait_slot) == 0 {
+          if !block || ch.closed {
+            sync.mutex_unlock(&ch.lock);
+            return {}, false;
+          }
+          ch.read_wait_slot = 0;
+          sync.mutex_unlock(&ch.lock);
+          futex.wait(&ch.read_wait_slot,time.MAX_DURATION);
+        } else {
+          sync.mutex_unlock(&ch.lock);
+          return {}, true;
+        }
+      }
+    case .nonzero_zero:
+      for {
+        sync.mutex_lock(&ch.lock);
+        if ch.count > 0 {
+          if ch.count == ch.cap {
+            futex.wake_all(&ch.send_wait_slot);
+          }
+          ch.count -= 1;
+          sync.mutex_unlock(&ch.lock);
+          return {}, true;
+        } else {
+          if !block || ch.closed {
+            sync.mutex_unlock(&ch.lock);
+            return {}, false;
+          }
+          ch.read_wait_slot = 0;
+          sync.mutex_unlock(&ch.lock);
+          futex.wait(&ch.read_wait_slot,time.MAX_DURATION);
+        }
+      }
+    case .zero_nonzero:
+      for {
+        sync.mutex_lock(&ch.lock);
+        if ch.count == 1 {
+          source := rawptr(uintptr(ch) + uintptr(ch.data_offset));
+          data: T;
+          runtime.mem_copy_non_overlapping(&data,source,int(ch.elem_size));
+          ch.count -= 1;
+          futex.wake_all(&ch.send_wait_slot);
+          sync.mutex_unlock(&ch.lock);
+          return data, true;
+        } else {
+          if !block || ch.closed {
+            sync.mutex_unlock(&ch.lock);
+            return {}, false;
+          }
+          ch.read_wait_slot = 0;
+          sync.mutex_unlock(&ch.lock);
+          futex.wait(&ch.read_wait_slot,time.MAX_DURATION);
+        }
+      }
+    case .nonzero_nonzero:
+      for {
+        sync.mutex_lock(&ch.lock);
+        if ch.count > 0 {
+          if ch.count == ch.cap {
+            futex.wake_all(&ch.send_wait_slot);
+          }
+          source := rawptr(uintptr(ch) + uintptr(ch.data_offset) + uintptr(ch.slot_size * ch.recvx));
+          data: T;
+          runtime.mem_copy_non_overlapping(&data,source,int(ch.elem_size));
+          ch.count -= 1;
+          ch.recvx = (ch.recvx + 1) % ch.cap;
+          sync.mutex_unlock(&ch.lock);
+          return data, true;
+        } else {
+          if !block || ch.closed {
+            sync.mutex_unlock(&ch.lock);
+            return {}, false;
+          }
+          ch.read_wait_slot = 0;
+          sync.mutex_unlock(&ch.lock);
+          futex.wait(&ch.read_wait_slot,time.MAX_DURATION);
+        }
+      }
+  }
+  unreachable();
 }
-select_timeout :: proc(timeout: time.Duration, channels: ..Select_Channel) -> (index: int) {
-	switch len(channels) {
-	case 0:
-		panic("sync: select with no channels");
-	}
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-
-	backing: [MAX_SELECT_CHANNELS]int;
-	queues:  [MAX_SELECT_CHANNELS]Raw_Channel_Wait_Queue;
-	candidates := backing[:];
-	cap := len(channels);
-	candidates = candidates[:cap];
-
-	count := u32(0);
-	for c, i in channels {
-		if c.channel == nil {
-			continue;
-		}
-		switch c.command {
-		case .Recv:
-			if raw_channel_can_recv(c.channel) {
-				candidates[count] = i;
-				count += 1;
-			}
-		case .Send:
-			if raw_channel_can_send(c.channel) {
-				candidates[count] = i;
-				count += 1;
-			}
-		}
-	}
-
-	if count == 0 {
-		wait_state: uintptr = 0;
-		for _, i in channels {
-			q := &queues[i];
-			q.state = &wait_state;
-		}
-
-		for c, i in channels {
-			if c.channel == nil {
-				continue;
-			}
-			q := &queues[i];
-			switch c.command {
-			case .Recv: raw_channel_wait_queue_insert(&c.channel.recvq, q);
-			case .Send: raw_channel_wait_queue_insert(&c.channel.sendq, q);
-			}
-		}
-		raw_channel_wait_queue_wait_on(&wait_state, timeout);
-		for c, i in channels {
-			if c.channel == nil {
-				continue;
-			}
-			q := &queues[i];
-			switch c.command {
-			case .Recv: raw_channel_wait_queue_remove(&c.channel.recvq, q);
-			case .Send: raw_channel_wait_queue_remove(&c.channel.sendq, q);
-			}
-		}
-
-		for c, i in channels {
-			switch c.command {
-			case .Recv:
-				if raw_channel_can_recv(c.channel) {
-					candidates[count] = i;
-					count += 1;
-				}
-			case .Send:
-				if raw_channel_can_send(c.channel) {
-					candidates[count] = i;
-					count += 1;
-				}
-			}
-		}
-		if count == 0 && timeout == SELECT_MAX_TIMEOUT {
-			index = -1;
-			return;
-		}
-
-		assert(count != 0);
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-	return;
-}
-
-select_recv :: proc(channels: ..^Raw_Channel) -> (index: int) {
-	switch len(channels) {
-	case 0:
-		panic("sync: select with no channels");
-	}
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-
-	backing: [MAX_SELECT_CHANNELS]int;
-	queues:  [MAX_SELECT_CHANNELS]Raw_Channel_Wait_Queue;
-	candidates := backing[:];
-	cap := len(channels);
-	candidates = candidates[:cap];
-
-	count := u32(0);
-	for c, i in channels {
-		if raw_channel_can_recv(c) {
-			candidates[count] = i;
-			count += 1;
-		}
-	}
-
-	if count == 0 {
-		state: uintptr;
-		for c, i in channels {
-			q := &queues[i];
-			q.state = &state;
-			raw_channel_wait_queue_insert(&c.recvq, q);
-		}
-		raw_channel_wait_queue_wait_on(&state, SELECT_MAX_TIMEOUT);
-		for c, i in channels {
-			q := &queues[i];
-			raw_channel_wait_queue_remove(&c.recvq, q);
-		}
-
-		for c, i in channels {
-			if raw_channel_can_recv(c) {
-				candidates[count] = i;
-				count += 1;
-			}
-		}
-		assert(count != 0);
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-	return;
-}
-
-select_recv_msg :: proc(channels: ..$C/Channel($T, $D)) -> (msg: T, index: int) {
-	switch len(channels) {
-	case 0:
-		panic("sync: select with no channels");
-	}
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-
-	queues:  [MAX_SELECT_CHANNELS]Raw_Channel_Wait_Queue;
-	candidates: [MAX_SELECT_CHANNELS]int;
-
-	count := u32(0);
-	for c, i in channels {
-		if raw_channel_can_recv(c) {
-			candidates[count] = i;
-			count += 1;
-		}
-	}
-
-	if count == 0 {
-		state: uintptr;
-		for c, i in channels {
-			q := &queues[i];
-			q.state = &state;
-			raw_channel_wait_queue_insert(&c.recvq, q);
-		}
-		raw_channel_wait_queue_wait_on(&state, SELECT_MAX_TIMEOUT);
-		for c, i in channels {
-			q := &queues[i];
-			raw_channel_wait_queue_remove(&c.recvq, q);
-		}
-
-		for c, i in channels {
-			if raw_channel_can_recv(c) {
-				candidates[count] = i;
-				count += 1;
-			}
-		}
-		assert(count != 0);
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-	msg = channel_recv(channels[index]);
-
-	return;
-}
-
-select_send_msg :: proc(msg: $T, channels: ..$C/Channel(T, $D)) -> (index: int) {
-	switch len(channels) {
-	case 0:
-		panic("sync: select with no channels");
-	}
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-
-	backing: [MAX_SELECT_CHANNELS]int;
-	queues:  [MAX_SELECT_CHANNELS]Raw_Channel_Wait_Queue;
-	candidates := backing[:];
-	cap := len(channels);
-	candidates = candidates[:cap];
-
-	count := u32(0);
-	for c, i in channels {
-		if raw_channel_can_recv(c) {
-			candidates[count] = i;
-			count += 1;
-		}
-	}
-
-	if count == 0 {
-		state: uintptr;
-		for c, i in channels {
-			q := &queues[i];
-			q.state = &state;
-			raw_channel_wait_queue_insert(&c.recvq, q);
-		}
-		raw_channel_wait_queue_wait_on(&state, SELECT_MAX_TIMEOUT);
-		for c, i in channels {
-			q := &queues[i];
-			raw_channel_wait_queue_remove(&c.recvq, q);
-		}
-
-		for c, i in channels {
-			if raw_channel_can_recv(c) {
-				candidates[count] = i;
-				count += 1;
-			}
-		}
-		assert(count != 0);
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-
-	if msg != nil {
-		channel_send(channels[index], msg);
-	}
-
-	return;
-}
-
-select_send :: proc(channels: ..^Raw_Channel) -> (index: int) {
-	switch len(channels) {
-	case 0:
-		panic("sync: select with no channels");
-	}
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-	candidates: [MAX_SELECT_CHANNELS]int;
-	queues: [MAX_SELECT_CHANNELS]Raw_Channel_Wait_Queue;
-
-	count := u32(0);
-	for c, i in channels {
-		if raw_channel_can_send(c) {
-			candidates[count] = i;
-			count += 1;
-		}
-	}
-
-	if count == 0 {
-		state: uintptr;
-		for c, i in channels {
-			q := &queues[i];
-			q.state = &state;
-			raw_channel_wait_queue_insert(&c.sendq, q);
-		}
-		raw_channel_wait_queue_wait_on(&state, SELECT_MAX_TIMEOUT);
-		for c, i in channels {
-			q := &queues[i];
-			raw_channel_wait_queue_remove(&c.sendq, q);
-		}
-
-		for c, i in channels {
-			if raw_channel_can_send(c) {
-				candidates[count] = i;
-				count += 1;
-			}
-		}
-		assert(count != 0);
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-	return;
-}
-
-select_try :: proc(channels: ..Select_Channel) -> (index: int) {
-	switch len(channels) {
-	case 0:
-		panic("sync: select with no channels");
-	}
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-
-	backing: [MAX_SELECT_CHANNELS]int;
-	candidates := backing[:];
-	cap := len(channels);
-	candidates = candidates[:cap];
-
-	count := u32(0);
-	for c, i in channels {
-		switch c.command {
-		case .Recv:
-			if raw_channel_can_recv(c.channel) {
-				candidates[count] = i;
-				count += 1;
-			}
-		case .Send:
-			if raw_channel_can_send(c.channel) {
-				candidates[count] = i;
-				count += 1;
-			}
-		}
-	}
-
-	if count == 0 {
-		index = -1;
-		return;
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-	return;
-}
-
-
-select_try_recv :: proc(channels: ..^Raw_Channel) -> (index: int) {
-	switch len(channels) {
-	case 0:
-		index = -1;
-		return;
-	case 1:
-		index = -1;
-		if raw_channel_can_recv(channels[0]) {
-			index = 0;
-		}
-		return;
-	}
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-	candidates: [MAX_SELECT_CHANNELS]int;
-
-	count := u32(0);
-	for c, i in channels {
-		if raw_channel_can_recv(c) {
-			candidates[count] = i;
-			count += 1;
-		}
-	}
-
-	if count == 0 {
-		index = -1;
-		return;
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-	return;
-}
-
-
-select_try_send :: proc(channels: ..^Raw_Channel) -> (index: int) #no_bounds_check {
-	switch len(channels) {
-	case 0:
-		return -1;
-	case 1:
-		if raw_channel_can_send(channels[0]) {
-			return 0;
-		}
-		return -1;
-	}
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-	candidates: [MAX_SELECT_CHANNELS]int;
-
-	count := u32(0);
-	for c, i in channels {
-		if raw_channel_can_send(c) {
-			candidates[count] = i;
-			count += 1;
-		}
-	}
-
-	if count == 0 {
-		index = -1;
-		return;
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-	return;
-}
-
-select_try_recv_msg :: proc(channels: ..$C/Channel($T, $D)) -> (msg: T, index: int) {
-	switch len(channels) {
-	case 0:
-		index = -1;
-		return;
-	case 1:
-		ok: bool;
-		if msg, ok = channel_try_recv(channels[0]); ok {
-			index = 0;
-		}
-		return;
-	}
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-	candidates: [MAX_SELECT_CHANNELS]int;
-
-	count := u32(0);
-	for c, i in channels {
-		if channel_can_recv(c) {
-			candidates[count] = i;
-			count += 1;
-		}
-	}
-
-	if count == 0 {
-		index = -1;
-		return;
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-	msg = channel_recv(channels[index]);
-	return;
-}
-
-select_try_send_msg :: proc(msg: $T, channels: ..$C/Channel(T, $D)) -> (index: int) {
-	index = -1;
-	switch len(channels) {
-	case 0:
-		return;
-	case 1:
-		if channel_try_send(channels[0], msg) {
-			index = 0;
-		}
-		return;
-	}
-
-
-	assert(len(channels) <= MAX_SELECT_CHANNELS);
-	candidates: [MAX_SELECT_CHANNELS]int;
-
-	count := u32(0);
-	for c, i in channels {
-		if raw_channel_can_send(c) {
-			candidates[count] = i;
-			count += 1;
-		}
-	}
-
-	if count == 0 {
-		index = -1;
-		return;
-	}
-
-	t := time.now();
-	r := rand.create(transmute(u64)t);
-	i := rand.uint32(&r);
-
-	index = candidates[i % count];
-	channel_send(channels[index], msg);
-	return;
-}
-
