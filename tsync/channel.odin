@@ -335,3 +335,21 @@ channel_try_receive :: proc (ch: ^Channel($T), block : bool = true) -> (T, bool)
   }
   unreachable();
 }
+
+ChannelOps :: enum u8 {
+  read,
+  send,
+}
+
+ChannelOp :: struct(T: typeid) {
+  data: T,
+  closed: bool,
+  op: ChannelOps,
+}
+
+Select :: struct {
+  channel_ops: [dynamic]ChannelOp(any),
+}
+
+
+// select :: proc(channels: ..$C/Channel(any)) ->
