@@ -19,6 +19,8 @@ sdl_pixeltype_packed32 :: 6;
 sdl_packedorder_rgba :: 4;
 sdl_packedlayout_8888 :: 6;
 
+max_sdl_events :: 10;
+
 sdl_define_pixelformat :: proc(type, order , layout, bits, bytes: u32) -> u32 {
     return ((1 << 28) | ((type) << 24) | ((order) << 20) | ((layout) << 16) | ((bits) << 8) | ((bytes) << 0));
 }
@@ -78,6 +80,7 @@ UIContext :: struct {
   textureSampler: vk.Sampler,
   width: u32,
   height: u32,
+  sdl_events: [max_sdl_events]sdl.Event,
 }
 
 Vertex :: struct {
@@ -1255,18 +1258,21 @@ ui_choose_swap_present_mode :: proc(availablePresentModes: []vk.PresentModeKHR) 
   return vk.PresentModeKHR.Fifo;
 }
 
-ui_choose_swap_extent :: proc(capabilities: ^vk.SurfaceCapabilitiesKHR,
-                              window:^sdl.Window,
-                              width, height: u32) -> vk.Extent2D {
-  actualExtent := vk.Extent2D{width, height};
-  return actualExtent;
+ui_choose_swap_extent :: proc(ctx: ^UIContext, capabilities: ^vk.SurfaceCapabilitiesKHR) -> vk.Result {
+
+return vk.get_physical_device_surface_capabilities_khr(ctx.physicalDevice, ctx.surface, capabilities);
 }
 
 ui_create_swap_chain :: proc(ctx: ^UIContext) -> bool {
   surfaceFormat := ui_choose_swap_surface_format(ctx.formats);
   presentMode := ui_choose_swap_present_mode(ctx.presentModes);
-  extent := ui_choose_swap_extent(&ctx.capabilities,ctx.window, ctx.width, ctx.height);
+  if ui_choose_swap_extent(ctx, &ctx.capabilities) != vk.Result.Success {
+    log.error("Error: could not choose a swap extent");
+    return false;
+  }
 
+
+  extent := ctx.capabilities.currentExtent;
   log.debugf("extent: %v",extent);
 
   imageCount := ctx.capabilities.minImageCount + 1;
@@ -1466,6 +1472,7 @@ ui_create_descriptor_layout :: proc(ctx: ^UIContext) -> bool {
 
 
 ui_destroy :: proc(ctx: ^UIContext) {
+  vk.device_wait_idle(ctx.device);
   if ctx.textureSampler != nil do vk.destroy_sampler(ctx.device, ctx.textureSampler, nil);
   if ctx.textureImageView != nil do vk.destroy_image_view(ctx.device, ctx.textureImageView, nil);
   if ctx.textureImage != nil do vk.destroy_image(ctx.device, ctx.textureImage, nil);
@@ -1681,6 +1688,20 @@ ui_loop :: proc(ctx: ^UIContext) -> bool {
     }
   }
   return true;
+}
+
+ui_get_error :: proc(ctx: ^UIContext) -> string {
+  err := sdl.get_error();
+  return rt.cstring_to_string(err);
+}
+
+ui_get_inputs :: proc(ctx: ^UIContext) -> i32 {
+  sdl.pump_events();
+  return sdl.peep_events(mem.raw_array_data(&ctx.sdl_events),
+                         max_sdl_events,
+                         sdl.Event_Action.Get_Event,
+                         u32(sdl.Event_Type.First_Event),
+                         u32(sdl.Event_Type.Last_Event));
 }
 
 is_device_suitable :: proc(physicalDevice: vk.PhysicalDevice) -> bool {
