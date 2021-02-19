@@ -25,22 +25,17 @@ main :: proc() {
     for events > 0 {
       for i in 0..<events {
         event := ctx.sdl_events[i];
-        log.debugf("Got event: %v", event);
         #partial switch event.type {
         case sdl.Event_Type.Quit:
           break stop;
         case sdl.Event_Type.Window_Event:
           #partial switch event.window.event {
           case sdl.Window_Event_ID.Resized:
-            log.debug("RESIZED!!");
             ctx.framebufferResized = true;
-            log.debugf("new size: %d %d\n",event.window.data1,event.window.data2);
             ctx.width = u32(event.window.data1);
             ctx.height = u32(event.window.data2);
           case sdl.Window_Event_ID.Exposed:
-            log.debug("EXPOSED!!");
           case sdl.Window_Event_ID.Shown:
-            log.debug("SHOWN!!");
           }
         case:
         }

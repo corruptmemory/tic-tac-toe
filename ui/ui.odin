@@ -101,6 +101,7 @@ indices :: []u16 {0,1,2,2,3,0};
 ui_init :: proc(ctx: ^UIContext,
                 enable_validation_layers: bool = true,
                 application_name: string = "tic-tac-toe") -> bool {
+  ctx.startTime = time.now();
   ctx.enableValidationLayers = enable_validation_layers;
   if sdl.init(sdl.Init_Flags.Everything) < 0 {
     log.errorf("failed to initialize sdl", sdl.get_error());
@@ -197,15 +198,15 @@ ui_draw_frame :: proc(ctx: ^UIContext, window: ^sdl.Window) -> bool {
 
   imageIndex: u32;
   #partial switch vk.acquire_next_image_khr(ctx.device, ctx.swapChain, bits.U64_MAX, ctx.imageAvailableSemaphores[ctx.currentFrame], nil, &imageIndex) {
-    case vk.Result.ErrorOutOfDateKhr:
+    case vk.Result.ErrorOutOfDateKhr, vk.Result.SuboptimalKhr:
       return recreate_swap_chain(ctx);
-    case vk.Result.Success, vk.Result.SuboptimalKhr:
+    case vk.Result.Success:
     // nothing
     case:
+      log.error("Error: what am I doing here?");
       return false;
   }
 
-  log.debug("about to call update_uniform_buffer");
   update_uniform_buffer(ctx, imageIndex);
 
   if ctx.imagesInFlight[imageIndex] != nil {
@@ -340,7 +341,6 @@ recreate_swap_chain :: proc(ctx: ^UIContext) -> bool {
 update_uniform_buffer :: proc(ctx: ^UIContext, currentImage: u32) {
   now := time.now();
   diff := time.duration_seconds(time.diff(ctx.startTime,now));
-
   ubo := UniformBufferObject {
     model = lin.matrix4_rotate(lin.Float(diff)*lin.radians(f32(90)),lin.VECTOR3_Z_AXIS),
     view = lin.matrix4_look_at(lin.Vector3{2,2,2},lin.Vector3{0,0,0},lin.VECTOR3_Z_AXIS),
@@ -351,7 +351,6 @@ update_uniform_buffer :: proc(ctx: ^UIContext, currentImage: u32) {
 
   data: rawptr;
   vk.map_memory(ctx.device,ctx.uniformBuffersMemory[currentImage],0,size_of(ubo),0,&data);
-  log.debugf("size_of(ubo) = %v", size_of(ubo));
   rt.mem_copy_non_overlapping(data,&ubo,size_of(ubo));
   vk.unmap_memory(ctx.device,ctx.uniformBuffersMemory[currentImage]);
 }
@@ -1271,9 +1270,7 @@ ui_create_swap_chain :: proc(ctx: ^UIContext) -> bool {
     return false;
   }
 
-
   extent := ctx.capabilities.currentExtent;
-  log.debugf("extent: %v",extent);
 
   imageCount := ctx.capabilities.minImageCount + 1;
   if ctx.capabilities.maxImageCount > 0 && imageCount > ctx.capabilities.maxImageCount {
