@@ -6,10 +6,10 @@ import fp "core:path/filepath"
 import "core:mem"
 import "core:os"
 import "core:strings"
+import bts "core:bytes"
 import "core:fmt"
 
 Generic_Object :: struct {
-  allocator: mem.Allocator,
   vertices: []lin.Vector4,
   texture_coords : []lin.Vector3,
   vertex_normals : []lin.Vector3,
@@ -18,54 +18,207 @@ Generic_Object :: struct {
   face_normals: []u32,
   lines: []u32,
   mtllib: string,
+  usemtl: string,
+  smooth_shading: bool,
+  object: string,
 }
 
+@private VALID_STARTS :: "flosuv";
+@private BEVEL_KEYWORD :: "bevel";
+@private BMAT_KEYWORD :: "bmat";
+@private C_INTERP_KEYWORD :: "c_interp";
+@private CALL_KEYWORD :: "call";
+@private CON_KEYWORD :: "con";
+@private CSH_KEYWORD :: "csh";
+@private CSTYPE_KEYWORD :: "cstype";
+@private CTECH_KEYWORD :: "ctech";
+@private CURV_KEYWORD :: "curv";
+@private CURV2_KEYWORD :: "curv2";
+@private D_INTERP_KEYWORD :: "d_interp";
+@private DEG_KEYWORD :: "deg";
+@private END_KEYWORD :: "end";
+@private F_KEYWORD :: "f";
+@private G_KEYWORD :: "g";
+@private HOLE_KEYWORD :: "hole";
+@private L_KEYWORD :: "l";
+@private LOD_KEYWORD :: "lod";
+@private MG_KEYWORD :: "mg";
+@private MTLLIB_KEYWORD :: "mtllib";
+@private O_KEYWORD :: "o";
+@private P_KEYWORD :: "p";
+@private PARM_KEYWORD :: "parm";
+@private S_KEYWORD :: "s";
+@private SCRV_KEYWORD :: "scrv";
+@private SHADOW_OBJ_KEYWORD :: "shadow_obj";
+@private SP_KEYWORD :: "sp";
+@private STECH_KEYWORD :: "stech";
+@private STEP_KEYWORD :: "step";
+@private SURF_KEYWORD :: "surf";
+@private TRACE_OBJ_KEYWORD :: "trace_obj";
+@private TRIM_KEYWORD :: "trim";
+@private USEMTL_KEYWORD :: "usemtl";
+@private V_KEYWORD :: "v";
+@private VN_KEYWORD :: "vn";
+@private VP_KEYWORD :: "vp";
+@private VT_KEYWORD :: "vt";
 
-Scanner :: struct {
-  str: string,
-  line: u32,
-  pos: u32,
-}
-
-init_scanner :: proc(scanner: ^Scanner, init: string) {
-  scanner.str = init;
-}
-
-scan_to_eol :: proc(scanner: ^Scanner) -> bool {
-  if scanner.pos == u32(len(scanner.str)) do return true;
-  idx := strings.index_rune(scanner.str[scanner.pos:], '\n');
-  if idx == -1 do return true;
-  scanner.line += 1;
-  scanner.pos += u32(idx + 1);
-  return false;
-}
-
-scan_past_token :: proc(scanner: ^Scanner, token: string) -> bool {
-  if scanner.pos == u32(len(scanner.str)) do return true;
-  idx := strings.index(scanner.str[scanner.pos:], token);
-  if idx == -1 {
-    scanner.pos = u32(len(scanner.str));
-    return true;
+@private
+past_eol :: proc(bytes: []byte) -> u32 {
+  eos := u32(len(bytes));
+  for pos : u32 = 0; pos < eos; pos += 1 {
+    v := bytes[pos];
+    switch v {
+      case '\r':
+        pos += 1;
+        fallthrough;
+      case '\n':
+        pos += 1;
+        return pos;
+      case: // nothing
+    }
   }
-  scanner.pos += u32(idx + len(token));
-  return false;
+  return eos;
 }
 
-@private WORD_CHARS :: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#0123456789";
-
-scan_word :: proc(scanner: ^Scanner, chars: string) -> (string, bool) {
-  if scanner.pos == u32(len(scanner.str)) do return "", true;
-  start := scanner.pos;
-  cur: u32;
-  for cur = scanner.pos; (cur < u32(len(scanner.str))) && strings.index_byte(chars, scanner.str[cur]) > -1; cur += 1 {}
-  scanner.pos = cur;
-  if cur == u32(len(scanner.str)) do return scanner.str[start:cur], true;
-  return scanner.str[start:cur], false;
+@private
+consume_to_eol :: proc(bytes: []byte) -> ([]byte, u32) {
+  eos := u32(len(bytes));
+  end : u32 = 0;
+  for pos : u32 = 0; pos < eos; pos += 1 {
+    v := bytes[pos];
+    switch v {
+      case '\r':
+        end = pos;
+        pos += 1;
+        fallthrough;
+      case '\n':
+        // This is here because of the fallthrough case.  This is triggered
+        // only for Unix-style line endings.  Otherwise we have Windows-style line
+        // endings.
+        if v == '\n' {
+          end = pos;
+        }
+        pos += 1;
+        return bytes[0:end], pos;
+      case '#':
+        if pos == 0 {
+          for ; pos < eos; pos += 1 {
+            v := bytes[pos];
+            switch v {
+              case '\r':
+                pos += 1;
+                fallthrough;
+              case '\n':
+                pos += 1;
+                return bytes[0:0], pos;
+            }
+          }
+          return bytes[0:0], eos;
+        } else {
+          // Since we have started a comment, we will need to record as the "end"
+          // the last word character.  We will then do our best to move to the end of line
+          for i : u32 = pos; i > 0; i -= 1 {
+            v := bytes[pos];
+            if v != ' ' && v != '\t' {
+              end = i;
+              break;
+            }
+          }
+          for ; pos < eos; pos += 1 {
+            v := bytes[pos];
+            switch v {
+              case '\r':
+                pos += 1;
+                fallthrough;
+              case '\n':
+                pos += 1;
+                return bytes[0:end], pos;
+            }
+          }
+          return bytes[0:end], eos;
+        }
+      case:
+        continue;
+    }
+  }
+  return bytes[0:eos], eos;
 }
 
 
-init_object :: proc(object: ^Generic_Object, allocator : mem.Allocator = context.allocator) {
-  object.allocator = allocator;
+@private
+past_whitespace :: proc(bytes: []byte) -> u32 {
+  eos := u32(len(bytes));
+  for pos : u32 = 0; pos < eos; pos += 1 {
+    v := bytes[pos];
+    switch v {
+      case ' ':
+      case '\t':
+      case:
+        return pos;
+    }
+  }
+  return eos;
+}
+
+
+obj_parser :: proc(object: ^Generic_Object, bytes: []byte, allocator := context.allocator) -> bool {
+
+  defer free_all(context.temp_allocator);
+
+  vertices: []u32;
+  texture_coords: []u32;
+  vertex_normals: []u32;
+  faces: []u32;
+  face_textures: []u32;
+  face_normals: []u32;
+  lines: []u32;
+
+
+  line := 0;
+  eos := u32(len(bytes));
+  // We start out at the beginning of a line.  the value we find there determines what we do next
+  for pos : u32 = 0; pos < eos; pos += 1 {
+    v := bytes[pos];
+    switch {
+    case strings.index_byte(VALID_STARTS, v) > -1 :
+      switch v {
+      case 'o':
+        pos += past_whitespace(bytes[pos:]);
+        if pos < eos {
+          o, p := consume_to_eol(bytes[pos:]);
+          if len(o) > 0 {
+            object.object = string(bts.clone(o, allocator));
+          }
+          pos += p;
+        }
+      case 'm':
+        if pos < eos {
+
+        }
+      case 'u':
+      case 's':
+
+      }
+    case:
+      switch v {
+        case '\r':
+          pos += 1;
+          fallthrough;
+        case '\n':
+          pos += 1;
+          line += 1;
+        case:
+          pos += past_eol(bytes[pos:]);
+          line += 1;
+      }
+    }
+  }
+
+  return true;
+}
+
+
+init_object :: proc(object: ^Generic_Object) {
 }
 
 obj_loader :: proc(file: string, object: ^Generic_Object) -> bool {
@@ -74,43 +227,24 @@ obj_loader :: proc(file: string, object: ^Generic_Object) -> bool {
     log.errorf("Error reading the file: %s", file);
     return false;
   }
-  defer delete(bytes, context.temp_allocator);
+  defer free_all(context.temp_allocator);
 
   return false;
 }
 
-destroy_object :: proc(object: ^Generic_Object) {
-  context.allocator = object.allocator;
-  if object.vertices != nil do delete(object.vertices);
-  if object.texture_coords != nil do delete(object.texture_coords);
-  if object.vertex_normals != nil do delete(object.vertex_normals);
-  if object.faces != nil do delete(object.faces);
-  if object.face_textures != nil do delete(object.face_textures);
-  if object.face_normals != nil do delete(object.face_normals);
-  if object.lines != nil do delete(object.lines);
-  if object.mtllib != "" do delete(object.mtllib);
+destroy_object :: proc(object: ^Generic_Object, allocator := context.allocator) {
+  if object.vertices != nil do delete(object.vertices, allocator);
+  if object.texture_coords != nil do delete(object.texture_coords, allocator);
+  if object.vertex_normals != nil do delete(object.vertex_normals, allocator);
+  if object.faces != nil do delete(object.faces, allocator);
+  if object.face_textures != nil do delete(object.face_textures, allocator);
+  if object.face_normals != nil do delete(object.face_normals, allocator);
+  if object.lines != nil do delete(object.lines, allocator);
+  if object.mtllib != "" do delete(object.mtllib, allocator);
 }
 
 main :: proc() {
-  // 138846618033284628480.000
-  f : f64 = 1e+37;
-  x := `hello, world!
-As you can see there is more`;
-  scn: Scanner;
-  init_scanner(&scn, x);
-  wrd, eof := scan_word(&scn, WORD_CHARS);
-  fmt.printf("wrd: %s -- eof: %v - pos: %d\n", wrd, eof, scn.pos);
-  eof = scan_past_token(&scn, ", ");
-  fmt.printf("eof: %v - pos: %d\n", eof, scn.pos);
-  wrd, eof = scan_word(&scn, WORD_CHARS);
-  fmt.printf("wrd: %s -- eof: %v - pos: %d\n", wrd, eof, scn.pos);
-  eof = scan_to_eol(&scn);
-  fmt.printf("eof: %v - pos: %d\n", eof, scn.pos);
-  for wrd, eof = scan_word(&scn, WORD_CHARS); !eof; wrd, eof = scan_word(&scn, WORD_CHARS) {
-    fmt.printf("wrd: %s -- eof: %v - pos: %d\n", wrd, eof, scn.pos);
-    eof = scan_past_token(&scn, " ");
-    fmt.printf("eof: %v - pos: %d\n", eof, scn.pos);
-  }
-  fmt.printf("wrd: %s -- eof: %v - pos: %d\n", wrd, eof, scn.pos);
-  fmt.printf("big: %e\n", f);
+  x := []byte{};
+  p := past_whitespace(x);
+  fmt.printf("p: %d\n",p);
 }
