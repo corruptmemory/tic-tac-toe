@@ -74,12 +74,54 @@ Waveform_Object_Scanner :: struct {
   bytes: []byte,
   pos: u32,
   line: u32,
+  vertex_base: u32,
+  texture_coords_base: u32,
+  vertex_normals_base: u32,
+}
+
+@private
+wos_advance_pos :: inline proc(scanner: ^Waveform_Object_Scanner, amount: u32 = 1) -> bool {
+  if !wos_finished(scanner) {
+    scanner.pos += amount;
+    eos_fixup(scanner);
+    return !wos_finished(scanner);
+  }
+  return false;
+}
+
+@private
+wos_advance_line :: inline proc(scanner: ^Waveform_Object_Scanner, amount: u32 = 1) {
+  scanner.line += amount;
+}
+
+
+@private
+wos_set_vertex_base_index :: inline proc(scanner: ^Waveform_Object_Scanner, point: u32) {
+  scanner.vertex_base = point;
+}
+
+@private
+wos_set_texture_coords_base_index :: inline proc(scanner: ^Waveform_Object_Scanner, point: u32) {
+  scanner.texture_coords_base = point;
+}
+
+@private
+wos_set_vertex_normals_base_index :: inline proc(scanner: ^Waveform_Object_Scanner, point: u32) {
+  scanner.vertex_normals_base = point;
+}
+
+@private
+wos_byte_at_pos :: inline proc(scanner: ^Waveform_Object_Scanner) -> byte {
+  return scanner.bytes[scanner.pos];
 }
 
 @private
 wos_init :: proc(scanner: ^Waveform_Object_Scanner, bytes: []byte) {
   scanner.bytes = bytes;
   scanner.eos = u32(len(bytes));
+  scanner.vertex_base=1;
+  scanner.texture_coords_base=1;
+  scanner.vertex_normals_base=1;
 }
 
 @private
@@ -94,26 +136,23 @@ eos_fixup :: inline proc(scanner: ^Waveform_Object_Scanner) {
 
 
 @private
-past_eol :: proc(scanner: ^Waveform_Object_Scanner) {
-  eos := scanner.eos;
-  for pos := scanner.pos; pos < eos; pos += 1 {
-    v := scanner.bytes[pos];
+past_eol :: proc(scanner: ^Waveform_Object_Scanner) -> bool {
+  for !wos_finished(scanner) {
+    v := wos_byte_at_pos(scanner);
     switch v {
       case '\r':
-        pos += 1;
+        if !wos_advance_pos(scanner) do return false;
         fallthrough;
       case '\n':
-        pos += 1;
-        scanner.line += 1;
-        scanner.pos = pos;
-        eos_fixup(scanner);
-        return;
+        if !wos_advance_pos(scanner) do return false;
+        wos_advance_line(scanner);
+        return true;
       case: // nothing
+        if !wos_advance_pos(scanner) do return false;
         continue;
     }
   }
-  scanner.pos = eos;
-  return;
+  return false;
 }
 
 
@@ -122,78 +161,71 @@ past_eol :: proc(scanner: ^Waveform_Object_Scanner) {
  */
 @private
 consume_to_eol :: proc(scanner: ^Waveform_Object_Scanner) -> []byte {
-  eos := scanner.eos;
   start, end: u32 = scanner.pos, scanner.pos;
-  for pos := scanner.pos; pos < eos; pos += 1 {
-    v := scanner.bytes[pos];
+  for !wos_finished(scanner) {
+    v := wos_byte_at_pos(scanner);
     switch v {
       case '\r':
-        end = pos;
-        pos += 1;
+        end = scanner.pos;
+        if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
         fallthrough;
       case '\n':
         // This is here because of the fallthrough case.  This is triggered
         // only for Unix-style line endings.  Otherwise we have Windows-style line
         // endings.
         if v == '\n' {
-          end = pos;
+          end = scanner.pos;
         }
-        pos += 1;
-        scanner.line += 1;
-        scanner.pos = pos;
-        eos_fixup(scanner);
+        if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
+        wos_advance_line(scanner);
         return scanner.bytes[start:end];
       case '#':
-        if pos == start {
-          for ; pos < eos; pos += 1 {
-            v := scanner.bytes[pos];
+        if scanner.pos == start {
+          for !wos_finished(scanner) {
+            v := wos_byte_at_pos(scanner);
             switch v {
               case '\r':
-                pos += 1;
+                if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
                 fallthrough;
               case '\n':
-                pos += 1;
-                scanner.line += 1;
-                scanner.pos = pos;
-                eos_fixup(scanner);
-                return scanner.bytes[pos:pos];
+                if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
+                wos_advance_line(scanner);
+                return scanner.bytes[start:end];
             }
+            if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
           }
-          scanner.pos = eos;
-          return scanner.bytes[eos-1:eos-1];
+          return scanner.bytes[scanner.eos-1:scanner.eos];
         } else {
           // Since we have started a comment, we will need to record as the "end"
           // the last word character.  We will then do our best to move to the end of line
-          for i : u32 = pos; i > 0; i -= 1 {
-            v := scanner.bytes[pos];
+          for i : u32 = scanner.pos; i > 0; i -= 1 {
+            v := scanner.bytes[i];
             if v != ' ' && v != '\t' {
               end = i;
               break;
             }
           }
-          for ; pos < eos; pos += 1 {
-            v := scanner.bytes[pos];
+          for !wos_finished(scanner) {
+            v := wos_byte_at_pos(scanner);
             switch v {
               case '\r':
-                pos += 1;
+                if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
                 fallthrough;
               case '\n':
-                pos += 1;
-                scanner.line += 1;
-                scanner.pos = pos;
-                eos_fixup(scanner);
+                if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
+                wos_advance_line(scanner);
                 return scanner.bytes[start:end];
             }
+            if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
           }
-          scanner.pos = eos;
-          return scanner.bytes[start:pos-1];
+          return scanner.bytes[start:scanner.eos];
         }
       case:
+        if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
         continue;
     }
   }
-  scanner.pos = eos;
-  return scanner.bytes[start:eos-1];
+  return scanner.bytes[start:scanner.eos];
 }
 
 @private
@@ -201,14 +233,14 @@ consume_number :: proc(scanner: ^Waveform_Object_Scanner) -> []byte {
   eos := scanner.eos;
   start, end: u32 = scanner.pos, scanner.pos;
   stop:
-  for pos := scanner.pos; pos < eos; pos += 1 {
-    switch scanner.bytes[pos] {
+  for !wos_finished(scanner) {
+    switch wos_byte_at_pos(scanner) {
     case '0'..'9', '+', '-', '.', 'E', 'e':
+      end = scanner.pos;
+      if !wos_advance_pos(scanner) do return scanner.bytes[start:end];
       continue;
     case:
-      end = pos;
-      scanner.pos = pos;
-      eos_fixup(scanner);
+      end = scanner.pos;
       break stop;
     }
   }
@@ -237,18 +269,15 @@ consume_u32 :: proc(scanner: ^Waveform_Object_Scanner) -> (u32, bool) {
 
 @private
 past_whitespace :: proc(scanner: ^Waveform_Object_Scanner) {
-  eos := scanner.eos;
-  for pos := scanner.pos; pos < eos; pos += 1 {
-    v := scanner.bytes[pos];
-    switch v {
+  for !wos_finished(scanner) {
+    switch wos_byte_at_pos(scanner) {
       case ' ', '\t':
+        if !wos_advance_pos(scanner) do return;
         continue;
       case:
-        scanner.pos = pos;
         return;
     }
   }
-  scanner.pos = eos;
   return;
 }
 
@@ -284,8 +313,9 @@ obj_parser :: proc(object: ^Wavefront_Object, bytes: []byte, allocator := contex
   lines := make([dynamic]u32, context.temp_allocator);
 
   // We start out at the beginning of a line.  the value we find there determines what we do next
-  for scanner.pos < scanner.eos {
-    v := scanner.bytes[scanner.pos];
+  for !wos_finished(&scanner) {
+    v := wos_byte_at_pos(&scanner);
+    log.debugf("v: %v", rune(v));
     switch {
     case strings.index_byte(VALID_STARTS, v) > -1:
       switch v {
