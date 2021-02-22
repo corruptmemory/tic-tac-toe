@@ -3,3 +3,4 @@ tic-tac-toe.sublime-*
 tic-tac-toe.code-*
 .vscode/
 *.spv
+test_obj_loader
