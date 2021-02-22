@@ -494,6 +494,6 @@ main :: proc() {
   context.logger = log.create_console_logger(lowest = log.Level.Debug);
   go: Generic_Object;
   init_object(&go);
-  ok := obj_loader("/home/jim/projects/tic-tac-toe/blender/donut.obj", &go);
+  ok := obj_loader("/home/jim/projects/tic-tac-toe/blender/cube1.obj", &go);
   fmt.printf("go: %v\n", go);
 }
