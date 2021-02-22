@@ -10,7 +10,12 @@ import bts "core:bytes"
 import "core:fmt"
 import "core:strconv"
 
-Generic_Object :: struct {
+Wavefront_Object_File :: struct {
+  file: string,
+  objects: []^Wavefront_Object,
+}
+
+Wavefront_Object :: struct {
   vertices: [dynamic]lin.Vector4,
   texture_coords: [dynamic]lin.Vector3,
   vertex_normals: [dynamic]lin.Vector3,
@@ -268,7 +273,7 @@ keyword_check :: inline proc(scanner: ^Waveform_Object_Scanner, keyword: string)
 }
 
 
-obj_parser :: proc(object: ^Generic_Object, bytes: []byte, allocator := context.allocator) -> bool {
+obj_parser :: proc(object: ^Wavefront_Object, bytes: []byte, allocator := context.allocator) -> bool {
   scanner: Waveform_Object_Scanner;
   wos_init(&scanner, bytes);
 
@@ -466,10 +471,10 @@ obj_parser :: proc(object: ^Generic_Object, bytes: []byte, allocator := context.
 }
 
 
-init_object :: proc(object: ^Generic_Object) {
+init_object :: proc(object: ^Wavefront_Object) {
 }
 
-obj_loader :: proc(file: string, object: ^Generic_Object, allocator := context.allocator) -> bool {
+obj_loader :: proc(file: string, object: ^Wavefront_Object, allocator := context.allocator) -> bool {
   bytes, ok := os.read_entire_file(name = file, allocator = context.temp_allocator);
   if !ok {
     log.errorf("Error reading the file: %s", file);
@@ -479,7 +484,7 @@ obj_loader :: proc(file: string, object: ^Generic_Object, allocator := context.a
   return obj_parser(object, bytes, allocator);
 }
 
-destroy_object :: proc(object: ^Generic_Object) {
+destroy_object :: proc(object: ^Wavefront_Object) {
   if object.vertices != nil do delete(object.vertices);
   if object.texture_coords != nil do delete(object.texture_coords);
   if object.vertex_normals != nil do delete(object.vertex_normals);
@@ -492,8 +497,8 @@ destroy_object :: proc(object: ^Generic_Object) {
 
 main :: proc() {
   context.logger = log.create_console_logger(lowest = log.Level.Debug);
-  go: Generic_Object;
+  go: Wavefront_Object;
   init_object(&go);
-  ok := obj_loader("/home/jim/projects/tic-tac-toe/blender/cube1.obj", &go);
+  ok := obj_loader("/home/jim/projects/tic-tac-toe/blender/box.obj", &go);
   fmt.printf("go: %v\n", go);
 }
