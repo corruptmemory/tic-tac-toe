@@ -1272,8 +1272,7 @@ ui_choose_swap_present_mode :: proc(availablePresentModes: []vk.PresentModeKHR) 
 }
 
 ui_choose_swap_extent :: proc(ctx: ^UIContext, capabilities: ^vk.SurfaceCapabilitiesKHR) -> vk.Result {
-
-return vk.get_physical_device_surface_capabilities_khr(ctx.physicalDevice, ctx.surface, capabilities);
+  return vk.get_physical_device_surface_capabilities_khr(ctx.physicalDevice, ctx.surface, capabilities);
 }
 
 ui_create_swap_chain :: proc(ctx: ^UIContext) -> bool {
@@ -1376,7 +1375,6 @@ ui_create_image_views :: proc(ctx: ^UIContext) -> bool {
 
 
 ui_query_swap_chain_support :: proc(ctx: ^UIContext) -> bool {
-  log.debugf("ctx.physicalDevice: %v", ctx.physicalDevice);
   if vk.get_physical_device_surface_capabilities_khr(ctx.physicalDevice, ctx.surface, &ctx.capabilities) != vk.Result.Success {
     log.error("Error: unable to get device surface capabilities");
     return false;
@@ -1442,6 +1440,8 @@ ui_create_logical_device :: proc(ctx: ^UIContext) -> bool {
     log.error("Error: could not create logical device");
     return false;
   }
+
+  log.debugf("ctx.device: %v", ctx.device);
 
   vk.get_device_queue(ctx.device, ctx.graphicsFamily, 0, &ctx.graphicsQueue);
   vk.get_device_queue(ctx.device, ctx.presentFamily, 0, &ctx.presentQueue);

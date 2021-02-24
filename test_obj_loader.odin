@@ -80,7 +80,7 @@ Waveform_Object_Scanner :: struct {
 }
 
 @private
-wos_advance_pos :: inline proc(scanner: ^Waveform_Object_Scanner, amount: u32 = 1) -> bool {
+wos_advance_pos :: #force_inline proc(scanner: ^Waveform_Object_Scanner, amount: u32 = 1) -> bool {
   if !wos_finished(scanner) {
     scanner.pos += amount;
     eos_fixup(scanner);
@@ -90,28 +90,28 @@ wos_advance_pos :: inline proc(scanner: ^Waveform_Object_Scanner, amount: u32 = 
 }
 
 @private
-wos_advance_line :: inline proc(scanner: ^Waveform_Object_Scanner, amount: u32 = 1) {
+wos_advance_line :: #force_inline proc(scanner: ^Waveform_Object_Scanner, amount: u32 = 1) {
   scanner.line += amount;
 }
 
 
 @private
-wos_set_vertex_base_index :: inline proc(scanner: ^Waveform_Object_Scanner, point: u32) {
+wos_set_vertex_base_index :: #force_inline proc(scanner: ^Waveform_Object_Scanner, point: u32) {
   scanner.vertex_base = point;
 }
 
 @private
-wos_set_texture_coords_base_index :: inline proc(scanner: ^Waveform_Object_Scanner, point: u32) {
+wos_set_texture_coords_base_index :: #force_inline proc(scanner: ^Waveform_Object_Scanner, point: u32) {
   scanner.texture_coords_base = point;
 }
 
 @private
-wos_set_vertex_normals_base_index :: inline proc(scanner: ^Waveform_Object_Scanner, point: u32) {
+wos_set_vertex_normals_base_index :: #force_inline proc(scanner: ^Waveform_Object_Scanner, point: u32) {
   scanner.vertex_normals_base = point;
 }
 
 @private
-wos_byte_at_pos :: inline proc(scanner: ^Waveform_Object_Scanner) -> byte {
+wos_byte_at_pos :: #force_inline proc(scanner: ^Waveform_Object_Scanner) -> byte {
   return scanner.bytes[scanner.pos];
 }
 
@@ -125,12 +125,12 @@ wos_init :: proc(scanner: ^Waveform_Object_Scanner, bytes: []byte) {
 }
 
 @private
-wos_finished :: inline proc(scanner: ^Waveform_Object_Scanner) -> bool {
+wos_finished :: #force_inline proc(scanner: ^Waveform_Object_Scanner) -> bool {
   return scanner.pos == scanner.eos;
 }
 
 @private
-eos_fixup :: inline proc(scanner: ^Waveform_Object_Scanner) {
+eos_fixup :: #force_inline proc(scanner: ^Waveform_Object_Scanner) {
   if scanner.pos > scanner.eos do scanner.pos = scanner.eos;
 }
 
@@ -282,7 +282,7 @@ past_whitespace :: proc(scanner: ^Waveform_Object_Scanner) {
 }
 
 @private
-keyword_check :: inline proc(scanner: ^Waveform_Object_Scanner, keyword: string) -> bool {
+keyword_check :: #force_inline proc(scanner: ^Waveform_Object_Scanner, keyword: string) -> bool {
   here := string(scanner.bytes[scanner.pos:]);
   if strings.has_prefix(here, keyword) {
     kl := u32(len(keyword));
