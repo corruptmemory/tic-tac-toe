@@ -1,6 +1,6 @@
 package ui
 
-// import "core:fmt"
+import "core:fmt"
 import "core:mem"
 import rt "core:runtime"
 import "core:math/bits"
@@ -12,6 +12,8 @@ import lin "core:math/linalg"
 import time "core:time"
 import "core:log"
 import "core:strings"
+import w "../wavefront"
+import "core:math/rand"
 
 max_frames_in_flight :: 2;
 
@@ -32,6 +34,12 @@ UniformBufferObject :: struct {
     view: lin.Matrix4f32,
     proj: lin.Matrix4f32,
 }
+
+Vertex :: struct {
+    pos: lin.Vector3f32,
+    color: lin.Vector3f32,
+    texCoord: lin.Vector2f32,
+};
 
 UIContext :: struct {
   instance : vk.Instance,
@@ -81,13 +89,9 @@ UIContext :: struct {
   width: u32,
   height: u32,
   sdl_events: [max_sdl_events]sdl.Event,
+  vertices: []Vertex,
+  indices: []u16,
 }
-
-Vertex :: struct {
-    pos: lin.Vector3f32,
-    color: lin.Vector3f32,
-    texCoord: lin.Vector2f32,
-};
 
 // vertices :: []Vertex {
 //     {{-0.5, -0.5, 0.0}, {1.0, 0.0, 0.0}, {1.0, 0.0}},
@@ -97,20 +101,20 @@ Vertex :: struct {
 // };
 
 
-vertices :: []Vertex {
-    {{1.000000, 1.000000, -1.000000}, {1.0, 0.0, 0.0}, {1.0, 0.0}},
-    {{1.000000, -1.000000, -1.000000}, {0.0, 1.0, 0.0}, {0.0, 0.0}},
-    {{1.000000, 1.000000, 1.000000}, {0.0, 0.0, 1.0}, {0.0, 1.0}},
-    {{1.000000, -1.000000, 1.000000}, {1.0, 1.0, 0.0}, {1.0, 1.0}},
-    {{-1.000000, 1.000000, -1.000000}, {1.0, 0.0, 1.0}, {1.0, 0.0}},
-    {{-1.000000, -1.000000, -1.000000}, {0.0, 1.0, 1.0}, {0.0, 0.0}},
-    {{-1.000000, 1.000000, 1.000000}, {0.0, 0.0, 1.0}, {0.0, 1.0}},
-    {{-1.000000, -1.000000, 1.000000}, {0.0, 0.0, 0.0}, {1.0, 1.0}},
-};
+// vertices :: []Vertex {
+//     {{1.000000, 1.000000, -1.000000}, {1.0, 0.0, 0.0}, {1.0, 0.0}},
+//     {{1.000000, -1.000000, -1.000000}, {0.0, 1.0, 0.0}, {0.0, 0.0}},
+//     {{1.000000, 1.000000, 1.000000}, {0.0, 0.0, 1.0}, {0.0, 1.0}},
+//     {{1.000000, -1.000000, 1.000000}, {1.0, 1.0, 0.0}, {1.0, 1.0}},
+//     {{-1.000000, 1.000000, -1.000000}, {1.0, 0.0, 1.0}, {1.0, 0.0}},
+//     {{-1.000000, -1.000000, -1.000000}, {0.0, 1.0, 1.0}, {0.0, 0.0}},
+//     {{-1.000000, 1.000000, 1.000000}, {0.0, 0.0, 1.0}, {0.0, 1.0}},
+//     {{-1.000000, -1.000000, 1.000000}, {0.0, 0.0, 0.0}, {1.0, 1.0}},
+// };
 
 // indices :: []u16 {0,1,2,2,3,0};
 
-indices :: []u16 {0, 4, 6, 6, 2, 0, 3, 2, 6, 6, 7, 3, 7, 6, 4, 4, 5, 7, 5, 1, 3, 3, 7, 5, 1, 0, 2, 2, 3, 1, 5, 4, 0, 0, 1, 5};
+// indices :: []u16 {0, 4, 6, 6, 2, 0, 3, 2, 6, 6, 7, 3, 7, 6, 4, 4, 5, 7, 5, 1, 3, 3, 7, 5, 1, 0, 2, 2, 3, 1, 5, 4, 0, 0, 1, 5};
 
 ui_init :: proc(ctx: ^UIContext,
                 enable_validation_layers: bool = true,
@@ -164,6 +168,39 @@ ui_check_device_extension_support :: proc(ctx: ^UIContext) -> bool {
 }
 
 
+ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
+  go: w.Wavefront_Object_File;
+  w.init_wavefront_object_file(&go);
+  // defer w.destroy_wavefront_object_file(&go);
+  ok := w.wavefront_object_file_load_file(&go, "/home/jim/projects/tic-tac-toe/blender/donut.obj", context.temp_allocator);
+  if !ok {
+    log.error("Error: failed to load geometry");
+    return false;
+  }
+  defer free_all(context.temp_allocator);
+  rng := rand.create(u64(time.now()._nsec));
+
+  obj := go.objects[0];
+  ctx.vertices = make([]Vertex, len(obj.vertices), context.allocator);
+  ctx.indices = make([]u16, len(obj.faces) * 3, context.allocator);
+  for v, idx in obj.vertices {
+    ctx.vertices[idx] = Vertex{
+      pos = { v[0], v[1], v[2] },
+      color = {rand.float32_range(0.0,1.0,&rng), rand.float32_range(0.0,1.0,&rng), rand.float32_range(0.0,1.0,&rng) },
+      texCoord = {obj.texture_coords[idx][0], obj.texture_coords[idx][1]},
+    };
+  }
+
+  for f, fidx in obj.faces {
+    for i, iidx in f {
+      ctx.indices[iidx + (fidx * 3)] = u16(i);
+    }
+  }
+
+  return true;
+}
+
+
 ui_create_window :: proc(ctx: ^UIContext,
                          name: string = "tic-tac-toe",
                          x: i32 = cast(i32)sdl.Window_Pos.Undefined,
@@ -182,6 +219,7 @@ ui_create_window :: proc(ctx: ^UIContext,
   ctx.width = width;
   ctx.height = height;
 
+  if !ui_load_geometry(ctx) do return false;
   if !ui_create_surface(ctx) do return false;
   if !ui_find_queue_families(ctx) do return false;
   if !ui_create_logical_device(ctx) do return false;
@@ -356,9 +394,9 @@ update_uniform_buffer :: proc(ctx: ^UIContext, currentImage: u32) {
   now := time.now();
   diff := time.duration_seconds(time.diff(ctx.startTime,now));
   ubo := UniformBufferObject {
-    model = lin.matrix4_rotate(lin.Float(diff)*lin.radians(f32(90)),lin.VECTOR3F32_Z_AXIS),
+    model = lin.matrix4_rotate_f32(f32(diff)*lin.radians(f32(90)),lin.VECTOR3F32_Z_AXIS),
     view = lin.matrix4_look_at(lin.Vector3f32{2,2,2},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
-    proj = lin.matrix4_perspective(lin.radians(f32(45)),lin.Float(ctx.swapChainExtent.width)/lin.Float(ctx.swapChainExtent.height),0.1,10),
+    proj = lin.matrix4_perspective_f32(lin.radians(f32(45)),f32(ctx.swapChainExtent.width)/f32(ctx.swapChainExtent.height),0.1,10),
   };
 
   ubo.proj[1][1] *= -1;
@@ -442,7 +480,7 @@ ui_create_command_buffers :: proc(ctx: ^UIContext) -> bool {
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertexBuffers), mem.raw_slice_data(offsets));
     vk.cmd_bind_index_buffer(ctx.commandBuffers[i],ctx.indexBuffer,0,vk.IndexType.Uint16);
     vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipelineLayout, 0, 1, &ctx.descriptorSets[i], 0, nil);
-    vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(indices)), 1, 0, 0, 0);
+    vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.indices)), 1, 0, 0, 0);
 
     // vk.cmd_draw(cb, 3, 1, 0, 0);
 
@@ -556,7 +594,7 @@ ui_create_uniform_buffers :: proc(ctx: ^UIContext) -> bool {
 
 
 ui_create_index_buffer :: proc(ctx: ^UIContext) -> bool {
-  bufferSize : vk.DeviceSize = u64(size_of(indices[0]) * len(indices));
+  bufferSize : vk.DeviceSize = u64(size_of(ctx.indices[0]) * len(ctx.indices));
 
   stagingBuffer : vk.Buffer;
   stagingBufferMemory : vk.DeviceMemory;
@@ -564,7 +602,7 @@ ui_create_index_buffer :: proc(ctx: ^UIContext) -> bool {
 
   data : rawptr;
   vk.map_memory(ctx.device, stagingBufferMemory, 0, bufferSize, 0, &data);
-  rt.mem_copy_non_overlapping(data, mem.raw_slice_data(indices), int(bufferSize));
+  rt.mem_copy_non_overlapping(data, mem.raw_slice_data(ctx.indices), int(bufferSize));
   vk.unmap_memory(ctx.device, stagingBufferMemory);
 
   create_buffer(ctx,bufferSize, vk.BufferUsageFlagBits.TransferDst | vk.BufferUsageFlagBits.IndexBuffer, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.indexBuffer, &ctx.indexBufferMemory);
@@ -617,7 +655,7 @@ copy_buffer :: proc(ctx: ^UIContext, srcBuffer: vk.Buffer, dstBuffer: vk.Buffer,
 
 
 ui_create_vertex_buffer :: proc(ctx: ^UIContext) -> bool {
-  bufferSize : vk.DeviceSize = u64(size_of(vertices[0]) * len(vertices));
+  bufferSize : vk.DeviceSize = u64(size_of(ctx.vertices[0]) * len(ctx.vertices));
 
   stagingBuffer: vk.Buffer;
   stagingBufferMemory: vk.DeviceMemory;
@@ -627,7 +665,7 @@ ui_create_vertex_buffer :: proc(ctx: ^UIContext) -> bool {
 
   data: rawptr;
   vk.map_memory(ctx.device, stagingBufferMemory, 0, bufferSize, 0, &data);
-  rt.mem_copy_non_overlapping(data, mem.raw_slice_data(vertices), int(bufferSize));
+  rt.mem_copy_non_overlapping(data, mem.raw_slice_data(ctx.vertices), int(bufferSize));
   vk.unmap_memory(ctx.device, stagingBufferMemory);
 
   if !create_buffer(ctx,bufferSize,vk.BufferUsageFlagBits.TransferDst | vk.BufferUsageFlagBits.VertexBuffer, vk.MemoryPropertyFlagBits.DeviceLocal,&ctx.vertexBuffer,&ctx.vertexBufferMemory) {
