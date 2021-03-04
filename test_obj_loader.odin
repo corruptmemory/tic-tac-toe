@@ -2,8 +2,6 @@ package main
 
 import lin "core:math/linalg"
 import "core:log"
-import fp "core:path/filepath"
-import "core:mem"
 import "core:os"
 import "core:strings"
 import bts "core:bytes"
@@ -496,11 +494,6 @@ obj_parser :: proc(object_file: ^Wavefront_Object_File, bytes: []byte, allocator
   wos_init(&scanner, bytes);
 
   object_name: string;
-  vertices := make([dynamic]u32, context.temp_allocator);
-  texture_coords := make([dynamic]u32,  context.temp_allocator);
-  vertex_normals := make([dynamic]u32, context.temp_allocator);
-  faces := make([dynamic]u32, context.temp_allocator);
-  lines := make([dynamic]u32, context.temp_allocator);
 
   // We start out at the beginning of a line.  the value we find there determines what we do next
   for !wos_finished(&scanner) {
@@ -594,5 +587,5 @@ main :: proc() {
   init_object_file(&go);
   defer destroy_object_file(&go);
   ok := obj_loader("/home/jim/projects/tic-tac-toe/blender/donut.obj", &go);
-  fmt.printf("go: %v\n", go);
+  fmt.printf("ok: %v -- go: %v\n", ok, go);
 }
