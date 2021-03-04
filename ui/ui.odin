@@ -28,9 +28,9 @@ sdl_define_pixelformat :: proc(type, order , layout, bits, bytes: u32) -> u32 {
 sdl_pixelformat_rgba8888 := sdl_define_pixelformat(sdl_pixeltype_packed32, sdl_packedorder_rgba, sdl_packedlayout_8888, 32, 4);
 
 UniformBufferObject :: struct {
-    model: lin.Matrix4,
-    view: lin.Matrix4,
-    proj: lin.Matrix4,
+    model: lin.Matrix4f32,
+    view: lin.Matrix4f32,
+    proj: lin.Matrix4f32,
 }
 
 UIContext :: struct {
@@ -84,9 +84,9 @@ UIContext :: struct {
 }
 
 Vertex :: struct {
-    pos: lin.Vector3,
-    color: lin.Vector3,
-    texCoord: lin.Vector2,
+    pos: lin.Vector3f32,
+    color: lin.Vector3f32,
+    texCoord: lin.Vector2f32,
 };
 
 // vertices :: []Vertex {
@@ -356,8 +356,8 @@ update_uniform_buffer :: proc(ctx: ^UIContext, currentImage: u32) {
   now := time.now();
   diff := time.duration_seconds(time.diff(ctx.startTime,now));
   ubo := UniformBufferObject {
-    model = lin.matrix4_rotate(lin.Float(diff)*lin.radians(f32(90)),lin.VECTOR3_Z_AXIS),
-    view = lin.matrix4_look_at(lin.Vector3{2,2,2},lin.Vector3{0,0,0},lin.VECTOR3_Z_AXIS),
+    model = lin.matrix4_rotate(lin.Float(diff)*lin.radians(f32(90)),lin.VECTOR3F32_Z_AXIS),
+    view = lin.matrix4_look_at(lin.Vector3f32{2,2,2},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
     proj = lin.matrix4_perspective(lin.radians(f32(45)),lin.Float(ctx.swapChainExtent.width)/lin.Float(ctx.swapChainExtent.height),0.1,10),
   };
 
