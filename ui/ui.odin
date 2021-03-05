@@ -89,6 +89,9 @@ UIContext :: struct {
   width: u32,
   height: u32,
   sdl_events: [max_sdl_events]sdl.Event,
+  depthImage: vk.Image,
+  depthImageMemory: vk.DeviceMemory,
+  depthImageView: vk.ImageView,
   vertices: []Vertex,
   indices: []u16,
 }
@@ -172,7 +175,7 @@ ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
   go: w.Wavefront_Object_File;
   w.init_wavefront_object_file(&go);
   // defer w.destroy_wavefront_object_file(&go);
-  ok := w.wavefront_object_file_load_file(&go, "/home/jim/projects/tic-tac-toe/blender/cube2.obj", context.temp_allocator);
+  ok := w.wavefront_object_file_load_file(&go, "/home/jim/projects/tic-tac-toe/blender/donut.obj", context.temp_allocator);
   if !ok {
     log.error("Error: failed to load geometry");
     return false;
@@ -200,9 +203,44 @@ ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
+find_supported_format :: proc(ctx:^UIContext, candidates: []vk.Format, tiling: vk.ImageTiling, features: vk.FormatFeatureFlags) -> (vk.Format, bool) {
+  for format in candidates {
+    props: vk.FormatProperties;
+    vk.get_physical_device_format_properties(ctx.physicalDevice, format, &props);
+      if tiling == vk.ImageTiling.Linear && (props.linearTilingFeatures & features) == features {
+        return format, true;
+      } else if tiling == vk.ImageTiling.Optimal && (props.optimalTilingFeatures & features) == features {
+        return format, true;
+      }
+  }
+
+  log.error("Error: failed to find usable tiling format");
+
+  return vk.Format.Undefined, false;
+}
+
+has_stencil_component :: proc(format: vk.Format) -> bool {
+    return format == vk.Format.D32SfloatS8Uint || format == vk.Format.D24UnormS8Uint;
+}
+
+
+find_depth_format :: proc(ctx: ^UIContext) -> (vk.Format, bool) {
+  return find_supported_format(ctx,
+                               {vk.Format.D32Sfloat, vk.Format.D32SfloatS8Uint, vk.Format.D24UnormS8Uint},
+                               vk.ImageTiling.Optimal,
+                               u32(vk.FormatFeatureFlagBits.DepthStencilAttachment));
+}
 
 ui_create_depth_resources :: proc(ctx: ^UIContext) -> bool {
-
+  depth_format: vk.Format;
+  ok: bool;
+  if depth_format, ok = find_depth_format(ctx); !ok {
+    log.error("Error: could not find usable depth format");
+    return false;
+  }
+  create_image(ctx, ctx.swapChainExtent.width, ctx.swapChainExtent.height, depth_format, vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.DepthStencilAttachment, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.depthImage, &ctx.depthImageMemory);
+  ctx.depthImageView, ok = ui_create_image_view(ctx, ctx.depthImage, depth_format, vk.ImageAspectFlagBits.Depth);
+  transition_image_layout(ctx, ctx.depthImage, depth_format, vk.ImageLayout.Undefined, vk.ImageLayout.DepthStencilAttachmentOptimal);
   return true;
 }
 
@@ -234,9 +272,9 @@ ui_create_window :: proc(ctx: ^UIContext,
   if !ui_create_render_pass(ctx) do return false;
   if !ui_create_descriptor_layout(ctx) do return false;
   if !ui_create_graphics_pipeline(ctx) do return false;
-  if !ui_create_framebuffers(ctx) do return false;
   if !ui_create_command_pool(ctx) do return false;
   if !ui_create_depth_resources(ctx) do return false;
+  if !ui_create_framebuffers(ctx) do return false;
   if !ui_create_texture_image(ctx) do return false;
   if !ui_create_texture_image_view(ctx) do return false;
   if !ui_create_texture_sampler(ctx) do return false;
@@ -448,6 +486,19 @@ ui_create_command_buffers :: proc(ctx: ^UIContext) -> bool {
     commandBufferCount = u32(len(ctx.commandBuffers)),
   };
 
+  clear_color_value : vk.ClearColorValue;
+  clear_color_value.float32 = {0.0, 0.0, 0.0, 1.0};
+  clear_color : vk.ClearValue;
+  clear_color.color = clear_color_value;
+  clear_depth_stencil_value := vk.ClearDepthStencilValue{1.0, 0};
+  clear_depth_stencil: vk.ClearValue;
+  clear_depth_stencil.depthStencil = clear_depth_stencil_value;
+
+  clear_values := []vk.ClearValue{
+    clear_color,
+    clear_depth_stencil,
+  };
+
   if vk.allocate_command_buffers(ctx.device, &allocInfo, mem.raw_slice_data(ctx.commandBuffers)) != vk.Result.Success {
     log.error("Error: failed to allocate command buffers");
     return false;
@@ -471,11 +522,8 @@ ui_create_command_buffers :: proc(ctx: ^UIContext) -> bool {
       },
     };
 
-    clearColor := vk.ClearValue{};
-    clearColor.color.float32 = {0.0, 0.0, 0.0, 1.0};
-
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
+    renderPassInfo.clearValueCount = u32(len(clear_values));
+    renderPassInfo.pClearValues = mem.raw_slice_data(clear_values);
 
     vk.cmd_begin_render_pass(cb, &renderPassInfo, vk.SubpassContents.Inline);
 
@@ -723,7 +771,7 @@ ui_create_texture_sampler :: proc(ctx: ^UIContext) -> bool {
 }
 
 ui_create_texture_image_view :: proc(ctx: ^UIContext) -> bool {
-  textureImageView, result := ui_create_image_view(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb);
+  textureImageView, result := ui_create_image_view(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageAspectFlagBits.Color);
   ctx.textureImageView = textureImageView;
   return result;
 }
@@ -921,9 +969,13 @@ transition_image_layout :: proc(ctx: ^UIContext, image: vk.Image, format: vk.For
   } else if oldLayout == vk.ImageLayout.TransferDstOptimal && newLayout == vk.ImageLayout.ShaderReadOnlyOptimal {
     barrier.srcAccessMask = u32(vk.AccessFlagBits.TransferWrite);
     barrier.dstAccessMask = u32(vk.AccessFlagBits.ShaderRead);
-
     sourceStage = u32(vk.PipelineStageFlagBits.Transfer);
     destinationStage = u32(vk.PipelineStageFlagBits.FragmentShader);
+  } else if oldLayout == vk.ImageLayout.Undefined && newLayout == vk.ImageLayout.DepthStencilAttachmentOptimal {
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = u32(vk.AccessFlagBits.DepthStencilAttachmentRead | vk.AccessFlagBits.DepthStencilAttachmentWrite);
+    sourceStage = u32(vk.PipelineStageFlagBits.TopOfPipe);
+    destinationStage = u32(vk.PipelineStageFlagBits.EarlyFragmentTests);
   } else {
     log.error("Error: unsupported layout transition!");
     return false;
@@ -1030,23 +1082,61 @@ ui_create_render_pass :: proc(ctx: ^UIContext) -> bool {
     finalLayout = vk.ImageLayout.PresentSrcKhr,
   };
 
+  depth_format, ok := find_depth_format(ctx);
+  if !ok {
+    log.error("Error: Failed to find a usable depth format");
+    return false;
+  }
+
+  depthAttachment := vk.AttachmentDescription{
+    format = depth_format,
+    samples = vk.SampleCountFlagBits._1,
+    loadOp = vk.AttachmentLoadOp.Clear,
+    storeOp = vk.AttachmentStoreOp.DontCare,
+    stencilLoadOp = vk.AttachmentLoadOp.DontCare,
+    stencilStoreOp = vk.AttachmentStoreOp.DontCare,
+    initialLayout = vk.ImageLayout.Undefined,
+    finalLayout = vk.ImageLayout.DepthStencilAttachmentOptimal,
+  };
+
   colorAttachmentRef := vk.AttachmentReference{
     attachment = 0,
     layout = vk.ImageLayout.ColorAttachmentOptimal,
+  };
+
+  depth_attachment_ref := vk.AttachmentReference {
+    attachment = 1,
+    layout = vk.ImageLayout.DepthStencilAttachmentOptimal,
   };
 
   subpass := vk.SubpassDescription{
     pipelineBindPoint = vk.PipelineBindPoint.Graphics,
     colorAttachmentCount = 1,
     pColorAttachments = &colorAttachmentRef,
+    pDepthStencilAttachment = &depth_attachment_ref,
   };
+
+  se : i32 = vk.SUBPASS_EXTERNAL;
+
+  dependency := vk.SubpassDependency {
+    srcSubpass = transmute(u32)(se),
+    dstSubpass = 0,
+    srcStageMask = u32(vk.PipelineStageFlagBits.ColorAttachmentOutput | vk.PipelineStageFlagBits.EarlyFragmentTests),
+    srcAccessMask = 0,
+    dstStageMask = u32(vk.PipelineStageFlagBits.ColorAttachmentOutput | vk.PipelineStageFlagBits.EarlyFragmentTests),
+    dstAccessMask = u32(vk.AccessFlagBits.ColorAttachmentWrite | vk.AccessFlagBits.DepthStencilAttachmentWrite),
+  };
+
+  attachments := []vk.AttachmentDescription{colorAttachment, depthAttachment};
 
   renderPassInfo := vk.RenderPassCreateInfo{
     sType = vk.StructureType.RenderPassCreateInfo,
-    attachmentCount = 1,
-    pAttachments = &colorAttachment,
+    attachmentCount = u32(len(attachments)),
+    pAttachments = mem.raw_slice_data(attachments),
     subpassCount = 1,
     pSubpasses = &subpass,
+    dependencyCount = 1,
+    pDependencies = &dependency,
   };
 
   if (vk.create_render_pass(ctx.device, &renderPassInfo, nil, &ctx.renderPass) != vk.Result.Success) {
@@ -1240,6 +1330,15 @@ ui_create_graphics_pipeline :: proc(ctx: ^UIContext) -> bool {
     rasterizationSamples = vk.SampleCountFlagBits._1,
   };
 
+  depthStencil := vk.PipelineDepthStencilStateCreateInfo {
+    sType = vk.StructureType.PipelineDepthStencilStateCreateInfo,
+    depthTestEnable = vk.TRUE,
+    depthWriteEnable = vk.TRUE,
+    depthCompareOp = vk.CompareOp.Less,
+    depthBoundsTestEnable = vk.FALSE,
+    stencilTestEnable = vk.FALSE,
+  };
+
   colorBlendAttachment := vk.PipelineColorBlendAttachmentState{
     colorWriteMask = u32(vk.ColorComponentFlagBits.R | vk.ColorComponentFlagBits.G | vk.ColorComponentFlagBits.B | vk.ColorComponentFlagBits.A),
     blendEnable = vk.FALSE,
@@ -1274,6 +1373,7 @@ ui_create_graphics_pipeline :: proc(ctx: ^UIContext) -> bool {
     pViewportState = &viewportState,
     pRasterizationState = &rasterizer,
     pMultisampleState = &multisampling,
+    pDepthStencilState = &depthStencil,
     pColorBlendState = &colorBlending,
     layout = ctx.pipelineLayout,
     renderPass = ctx.renderPass,
@@ -1293,12 +1393,12 @@ ui_create_framebuffers :: proc(ctx: ^UIContext) -> bool {
   ctx.swapChainFramebuffers = make([]vk.Framebuffer, len(ctx.swapChainImageViews));
 
   for sciv, i in ctx.swapChainImageViews {
-    attachments := []vk.ImageView{sciv};
+    attachments := []vk.ImageView{sciv, ctx.depthImageView};
 
     framebufferInfo := vk.FramebufferCreateInfo{
       sType = vk.StructureType.FramebufferCreateInfo,
       renderPass = ctx.renderPass,
-      attachmentCount = 1,
+      attachmentCount = u32(len(attachments)),
       pAttachments = mem.raw_slice_data(attachments),
       width = ctx.swapChainExtent.width,
       height = ctx.swapChainExtent.height,
@@ -1390,21 +1490,20 @@ ui_create_swap_chain :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_create_image_view :: proc(ctx: ^UIContext, image: vk.Image, format: vk.Format) -> (vk.ImageView, bool) {
+ui_create_image_view :: proc(ctx: ^UIContext, image: vk.Image, format: vk.Format, aspectMask: vk.ImageAspectFlagBits) -> (vk.ImageView, bool) {
   viewInfo := vk.ImageViewCreateInfo {
     sType = vk.StructureType.ImageViewCreateInfo,
     image = image,
     viewType = vk.ImageViewType._2D,
     format = format,
     subresourceRange = {
-      aspectMask = u32(vk.ImageAspectFlagBits.Color),
+      aspectMask = u32(aspectMask),
       baseMipLevel = 0,
       levelCount = 1,
       baseArrayLayer = 0,
       layerCount = 1,
     },
   };
-
 
   imageView: vk.ImageView;
   if vk.create_image_view(ctx.device, &viewInfo, nil, &imageView) == vk.Result.Success {
@@ -1418,7 +1517,7 @@ ui_create_image_view :: proc(ctx: ^UIContext, image: vk.Image, format: vk.Format
 ui_create_image_views :: proc(ctx: ^UIContext) -> bool {
   ctx.swapChainImageViews = make([]vk.ImageView,len(ctx.swapChainImages));
   for _, i in ctx.swapChainImageViews {
-    view, result := ui_create_image_view(ctx, ctx.swapChainImages[i], ctx.swapChainImageFormat);
+    view, result := ui_create_image_view(ctx, ctx.swapChainImages[i], ctx.swapChainImageFormat, vk.ImageAspectFlagBits.Color);
     if !result {
       return false;
     }
