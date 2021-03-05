@@ -172,7 +172,7 @@ ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
   go: w.Wavefront_Object_File;
   w.init_wavefront_object_file(&go);
   // defer w.destroy_wavefront_object_file(&go);
-  ok := w.wavefront_object_file_load_file(&go, "/home/jim/projects/tic-tac-toe/blender/donut.obj", context.temp_allocator);
+  ok := w.wavefront_object_file_load_file(&go, "/home/jim/projects/tic-tac-toe/blender/cube2.obj", context.temp_allocator);
   if !ok {
     log.error("Error: failed to load geometry");
     return false;
@@ -200,6 +200,11 @@ ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
+
+ui_create_depth_resources :: proc(ctx: ^UIContext) -> bool {
+
+  return true;
+}
 
 ui_create_window :: proc(ctx: ^UIContext,
                          name: string = "tic-tac-toe",
@@ -231,6 +236,7 @@ ui_create_window :: proc(ctx: ^UIContext,
   if !ui_create_graphics_pipeline(ctx) do return false;
   if !ui_create_framebuffers(ctx) do return false;
   if !ui_create_command_pool(ctx) do return false;
+  if !ui_create_depth_resources(ctx) do return false;
   if !ui_create_texture_image(ctx) do return false;
   if !ui_create_texture_image_view(ctx) do return false;
   if !ui_create_texture_sampler(ctx) do return false;
@@ -587,7 +593,10 @@ ui_create_uniform_buffers :: proc(ctx: ^UIContext) -> bool {
     ctx.uniformBuffersMemory = make([]vk.DeviceMemory,len(ctx.swapChainImages));
 
     for _, i in ctx.swapChainImages {
-        create_buffer(ctx, bufferSize, vk.BufferUsageFlagBits.UniformBuffer, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &ctx.uniformBuffers[i], &ctx.uniformBuffersMemory[i]);
+        if !create_buffer(ctx, bufferSize, vk.BufferUsageFlagBits.UniformBuffer, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &ctx.uniformBuffers[i], &ctx.uniformBuffersMemory[i]) {
+          log.error("Error: failed to create needed buffer for the uniform buffer construction");
+          return false;
+        }
     }
     return true;
 }
@@ -660,6 +669,7 @@ ui_create_vertex_buffer :: proc(ctx: ^UIContext) -> bool {
   stagingBuffer: vk.Buffer;
   stagingBufferMemory: vk.DeviceMemory;
   if !create_buffer(ctx,bufferSize,vk.BufferUsageFlagBits.TransferSrc,vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent,&stagingBuffer,&stagingBufferMemory) {
+    log.error("Error: failed to create host staging buffer");
     return false;
   }
 
@@ -669,7 +679,7 @@ ui_create_vertex_buffer :: proc(ctx: ^UIContext) -> bool {
   vk.unmap_memory(ctx.device, stagingBufferMemory);
 
   if !create_buffer(ctx,bufferSize,vk.BufferUsageFlagBits.TransferDst | vk.BufferUsageFlagBits.VertexBuffer, vk.MemoryPropertyFlagBits.DeviceLocal,&ctx.vertexBuffer,&ctx.vertexBufferMemory) {
-    log.error("Error: failed to create buffer");
+    log.error("Error: failed to create device local buffer");
     return false;
   }
 
@@ -740,6 +750,7 @@ create_buffer :: proc(ctx: ^UIContext, size: vk.DeviceSize, usage: vk.BufferUsag
   };
 
   if (vk.create_buffer(ctx.device, &bufferInfo, nil, buffer) != vk.Result.Success) {
+    log.error("Error: failed to create buffer");
     return false;
   }
 
@@ -749,6 +760,7 @@ create_buffer :: proc(ctx: ^UIContext, size: vk.DeviceSize, usage: vk.BufferUsag
   memoryTypeIndex, ok := find_memory_type(ctx, memRequirements.memoryTypeBits, u32(properties));
 
   if !ok {
+    log.error("Error: failed to find desired memory type");
     return false;
   }
 
@@ -759,7 +771,8 @@ create_buffer :: proc(ctx: ^UIContext, size: vk.DeviceSize, usage: vk.BufferUsag
   };
 
   if vk.allocate_memory(ctx.device, &allocInfo, nil, bufferMemory) != vk.Result.Success {
-      return false;
+    log.error("Error: failed to allocate memory");
+    return false;
   }
 
   vk.bind_buffer_memory(ctx.device, buffer^, bufferMemory^, 0);
@@ -960,6 +973,7 @@ ui_create_texture_image :: proc(ctx: ^UIContext) -> bool {
   stagingBufferMemory : vk.DeviceMemory;
 
   if !create_buffer(ctx, imageSize, vk.BufferUsageFlagBits.TransferSrc, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &stagingBuffer, &stagingBufferMemory) {
+    log.error("Error: failed to create texture buffer");
     return false;
   }
   defer vk.destroy_buffer(ctx.device, stagingBuffer, nil);
@@ -978,11 +992,13 @@ ui_create_texture_image :: proc(ctx: ^UIContext) -> bool {
   }
 
   if !transition_image_layout(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.Undefined, vk.ImageLayout.TransferDstOptimal) {
-      return false;
+    log.error("Error: could not create transition image layout");
+    return false;
   }
   copy_buffer_to_image(ctx, stagingBuffer, ctx.textureImage, u32(texWidth), u32(texHeight));
   if !transition_image_layout(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.TransferDstOptimal, vk.ImageLayout.ShaderReadOnlyOptimal) {
-      return false;
+    log.error("Error: could not create tranition image layout");
+    return false;
   }
 
   return true;
@@ -1107,13 +1123,13 @@ get_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
       binding = 0,
       location = 0,
       format = vk.Format.R32G32B32Sfloat,
-      offset = u32(offset_of(Vertex,pos)),
+      offset = u32(offset_of(Vertex, pos)),
     },
     {
       binding = 0,
       location = 1,
       format = vk.Format.R32G32B32Sfloat,
-      offset = u32(offset_of(Vertex,color)),
+      offset = u32(offset_of(Vertex, color)),
     },
     {
       binding = 0,
