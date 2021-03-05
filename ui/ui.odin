@@ -360,6 +360,9 @@ ui_draw_frame :: proc(ctx: ^UIContext, window: ^sdl.Window) -> bool {
 }
 
 ui_cleanup_swap_chain :: proc(ctx: ^UIContext) -> bool {
+  vk.destroy_image_view(ctx.device, ctx.depthImageView, nil);
+  vk.destroy_image(ctx.device, ctx.depthImage, nil);
+  vk.free_memory(ctx.device, ctx.depthImageMemory, nil);
   for framebuffer, _ in ctx.swapChainFramebuffers {
     vk.destroy_framebuffer(ctx.device, framebuffer, nil);
   }
@@ -416,6 +419,7 @@ recreate_swap_chain :: proc(ctx: ^UIContext) -> bool {
   if !ui_create_graphics_pipeline(ctx) {
     return false;
   }
+  if !ui_create_depth_resources(ctx) do return false;
   if !ui_create_framebuffers(ctx) {
     return false;
   }
