@@ -240,7 +240,7 @@ ui_create_depth_resources :: proc(ctx: ^UIContext) -> bool {
   }
   create_image(ctx, ctx.swapChainExtent.width, ctx.swapChainExtent.height, depth_format, vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.DepthStencilAttachment, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.depthImage, &ctx.depthImageMemory);
   ctx.depthImageView, ok = ui_create_image_view(ctx, ctx.depthImage, depth_format, vk.ImageAspectFlagBits.Depth);
-  transition_image_layout(ctx, ctx.depthImage, depth_format, vk.ImageLayout.Undefined, vk.ImageLayout.DepthStencilAttachmentOptimal);
+  // transition_image_layout(ctx, ctx.depthImage, depth_format, vk.ImageLayout.Undefined, vk.ImageLayout.DepthStencilAttachmentOptimal);
   return true;
 }
 
@@ -1641,6 +1641,9 @@ ui_create_descriptor_layout :: proc(ctx: ^UIContext) -> bool {
 
 ui_destroy :: proc(ctx: ^UIContext) {
   vk.device_wait_idle(ctx.device);
+  if ctx.depthImageView != nil do vk.destroy_image_view(ctx.device, ctx.depthImageView, nil);
+  if ctx.depthImage != nil do vk.destroy_image(ctx.device, ctx.depthImage, nil);
+  if ctx.depthImageMemory != nil do vk.free_memory(ctx.device, ctx.depthImageMemory, nil);
   if ctx.textureSampler != nil do vk.destroy_sampler(ctx.device, ctx.textureSampler, nil);
   if ctx.textureImageView != nil do vk.destroy_image_view(ctx.device, ctx.textureImageView, nil);
   if ctx.textureImage != nil do vk.destroy_image(ctx.device, ctx.textureImage, nil);
