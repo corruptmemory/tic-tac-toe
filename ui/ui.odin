@@ -93,7 +93,7 @@ UIContext :: struct {
   depthImageMemory: vk.DeviceMemory,
   depthImageView: vk.ImageView,
   vertices: []Vertex,
-  indices: []u16,
+  indices: []u32,
 }
 
 // vertices :: []Vertex {
@@ -175,7 +175,7 @@ ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
   go: w.Wavefront_Object_File;
   w.init_wavefront_object_file(&go);
   // defer w.destroy_wavefront_object_file(&go);
-  ok := w.wavefront_object_file_load_file(&go, "/home/jim/projects/tic-tac-toe/blender/donut.obj", context.temp_allocator);
+  ok := w.wavefront_object_file_load_file(&go, "/home/jim/projects/tic-tac-toe/blender/viking_room.obj", context.temp_allocator);
   if !ok {
     log.error("Error: failed to load geometry");
     return false;
@@ -185,7 +185,7 @@ ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
 
   obj := go.objects[0];
   ctx.vertices = make([]Vertex, len(obj.vertices), context.allocator);
-  ctx.indices = make([]u16, len(obj.faces) * 3, context.allocator);
+  ctx.indices = make([]u32, len(obj.faces) * 3, context.allocator);
   for v, idx in obj.vertices {
     ctx.vertices[idx] = Vertex{
       pos = { v[0], v[1], v[2] },
@@ -196,7 +196,7 @@ ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
 
   for f, fidx in obj.faces {
     for i, iidx in f {
-      ctx.indices[iidx + (fidx * 3)] = u16(i);
+      ctx.indices[iidx + (fidx * 3)] = i;
     }
   }
 
@@ -536,7 +536,7 @@ ui_create_command_buffers :: proc(ctx: ^UIContext) -> bool {
     vertexBuffers := []vk.Buffer{ctx.vertexBuffer};
     offsets := []vk.DeviceSize{0};
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertexBuffers), mem.raw_slice_data(offsets));
-    vk.cmd_bind_index_buffer(ctx.commandBuffers[i],ctx.indexBuffer,0,vk.IndexType.Uint16);
+    vk.cmd_bind_index_buffer(ctx.commandBuffers[i],ctx.indexBuffer,0,vk.IndexType.Uint32);
     vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipelineLayout, 0, 1, &ctx.descriptorSets[i], 0, nil);
     vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.indices)), 1, 0, 0, 0);
 
