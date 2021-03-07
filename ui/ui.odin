@@ -174,31 +174,41 @@ ui_check_device_extension_support :: proc(ctx: ^UIContext) -> bool {
 ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
   go: w.Wavefront_Object_File;
   w.init_wavefront_object_file(&go);
-  // defer w.destroy_wavefront_object_file(&go);
   ok := w.wavefront_object_file_load_file(&go, "/home/jim/projects/tic-tac-toe/blender/viking_room.obj", context.temp_allocator);
   if !ok {
     log.error("Error: failed to load geometry");
     return false;
   }
+  fmt.printf("object: %v\n", go);
   defer free_all(context.temp_allocator);
   rng := rand.create(u64(time.now()._nsec));
 
   obj := go.objects[0];
-  ctx.vertices = make([]Vertex, len(obj.vertices), context.allocator);
-  ctx.indices = make([]u32, len(obj.faces) * 3, context.allocator);
-  for v, idx in obj.vertices {
-    ctx.vertices[idx] = Vertex{
-      pos = { v[0], v[1], v[2] },
-      color = {rand.float32_range(0.0,1.0,&rng), rand.float32_range(0.0,1.0,&rng), rand.float32_range(0.0,1.0,&rng) },
-      texCoord = {obj.texture_coords[idx][0], obj.texture_coords[idx][1]},
-    };
-  }
+  vertices := make([dynamic]Vertex, 0, len(obj.faces) * 3, context.allocator);
+  indices := make([dynamic]u32, 0, len(obj.faces) * 3, context.allocator);
+  unique_vertices := make(map[Vertex]u32);
+  defer delete(unique_vertices);
 
   for f, fidx in obj.faces {
     for i, iidx in f {
-      ctx.indices[iidx + (fidx * 3)] = i;
+      v := obj.vertices[i];
+      tv := obj.texture_coords[obj.face_textures[fidx][iidx]];
+      vertex := Vertex{
+        pos = { v[0], v[1], v[2] },
+        color = { 1.0, 1.0, 1.0 },
+        texCoord = {tv[0], 1.0 - tv[1]},
+      };
+
+      if _, ok := unique_vertices[vertex]; !ok {
+        unique_vertices[vertex] = u32(len(vertices));
+        append(&vertices, vertex);
+      }
+      append(&indices, unique_vertices[vertex]);
     }
   }
+
+  ctx.vertices = vertices[:];
+  ctx.indices = indices[:];
 
   return true;
 }
@@ -439,8 +449,9 @@ recreate_swap_chain :: proc(ctx: ^UIContext) -> bool {
 }
 
 update_uniform_buffer :: proc(ctx: ^UIContext, currentImage: u32) {
-  now := time.now();
-  diff := time.duration_seconds(time.diff(ctx.startTime,now));
+  // now := time.now();
+  // diff := time.duration_seconds(time.diff(ctx.startTime,now));
+  diff := 0;
   ubo := UniformBufferObject {
     model = lin.matrix4_rotate_f32(f32(diff)*lin.radians(f32(90)),lin.VECTOR3F32_Z_AXIS),
     view = lin.matrix4_look_at(lin.Vector3f32{2,2,2},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
@@ -1000,9 +1011,37 @@ transition_image_layout :: proc(ctx: ^UIContext, image: vk.Image, format: vk.For
 }
 
 
+render_image :: proc(surface: ^sdl.Surface) {
+    window := sdl.create_window("SDL2 Displaying Image",
+        i32(sdl.Window_Pos.Undefined), i32(sdl.Window_Pos.Undefined), surface.w, surface.h, sdl.Window_Flags(0));
+    defer sdl.destroy_window(window);
+    renderer := sdl.create_renderer(window, -1, sdl.Renderer_Flags(0));
+    defer sdl.destroy_renderer(renderer);
+    texture := sdl.create_texture_from_surface(renderer, surface);
+    defer sdl.destroy_texture(texture);
+    sdl.render_copy(renderer, texture, nil, nil);
+    sdl.render_present(renderer);
+    event: sdl.Event;
+    stop:
+    for {
+        for sdl.wait_event(&event) != 0 {
+            #partial switch event.type {
+            case sdl.Event_Type.Quit:
+                break stop;
+            case sdl.Event_Type.Window_Event:
+                #partial switch event.window.event {
+                    case sdl.Window_Event_ID.Close:
+                        break stop;
+                    case:
+                }
+            }
+        }
+    }
+}
+
 
 ui_create_texture_image :: proc(ctx: ^UIContext) -> bool {
-  origImageSurface := img.load("textures/texture.jpg");
+  origImageSurface := img.load("blender/viking_room.png");
   if origImageSurface == nil {
     log.error("Error loading texture image");
     return false;
