@@ -18,7 +18,7 @@ import "core:math/rand"
 max_frames_in_flight :: 2;
 
 sdl_pixeltype_packed32 :: 6;
-sdl_packedorder_rgba :: 4;
+sdl_packedorder_rgba :: 5;
 sdl_packedlayout_8888 :: 6;
 
 max_sdl_events :: 10;
@@ -96,29 +96,6 @@ UIContext :: struct {
   indices: []u32,
 }
 
-// vertices :: []Vertex {
-//     {{-0.5, -0.5, 0.0}, {1.0, 0.0, 0.0}, {1.0, 0.0}},
-//     {{0.5, -0.5, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0}},
-//     {{0.5, 0.5, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0}},
-//     {{-0.5, 0.5, 0.0}, {1.0, 1.0, 1.0}, {1.0, 1.0}},
-// };
-
-
-// vertices :: []Vertex {
-//     {{1.000000, 1.000000, -1.000000}, {1.0, 0.0, 0.0}, {1.0, 0.0}},
-//     {{1.000000, -1.000000, -1.000000}, {0.0, 1.0, 0.0}, {0.0, 0.0}},
-//     {{1.000000, 1.000000, 1.000000}, {0.0, 0.0, 1.0}, {0.0, 1.0}},
-//     {{1.000000, -1.000000, 1.000000}, {1.0, 1.0, 0.0}, {1.0, 1.0}},
-//     {{-1.000000, 1.000000, -1.000000}, {1.0, 0.0, 1.0}, {1.0, 0.0}},
-//     {{-1.000000, -1.000000, -1.000000}, {0.0, 1.0, 1.0}, {0.0, 0.0}},
-//     {{-1.000000, 1.000000, 1.000000}, {0.0, 0.0, 1.0}, {0.0, 1.0}},
-//     {{-1.000000, -1.000000, 1.000000}, {0.0, 0.0, 0.0}, {1.0, 1.0}},
-// };
-
-// indices :: []u16 {0,1,2,2,3,0};
-
-// indices :: []u16 {0, 4, 6, 6, 2, 0, 3, 2, 6, 6, 7, 3, 7, 6, 4, 4, 5, 7, 5, 1, 3, 3, 7, 5, 1, 0, 2, 2, 3, 1, 5, 4, 0, 0, 1, 5};
-
 ui_init :: proc(ctx: ^UIContext,
                 enable_validation_layers: bool = true,
                 application_name: string = "tic-tac-toe") -> bool {
@@ -179,7 +156,6 @@ ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
     log.error("Error: failed to load geometry");
     return false;
   }
-  fmt.printf("object: %v\n", go);
   defer free_all(context.temp_allocator);
   rng := rand.create(u64(time.now()._nsec));
 
@@ -449,9 +425,9 @@ recreate_swap_chain :: proc(ctx: ^UIContext) -> bool {
 }
 
 update_uniform_buffer :: proc(ctx: ^UIContext, currentImage: u32) {
-  // now := time.now();
-  // diff := time.duration_seconds(time.diff(ctx.startTime,now));
-  diff := 0;
+  now := time.now();
+  diff := time.duration_seconds(time.diff(ctx.startTime,now));
+  // diff := 0;
   ubo := UniformBufferObject {
     model = lin.matrix4_rotate_f32(f32(diff)*lin.radians(f32(90)),lin.VECTOR3F32_Z_AXIS),
     view = lin.matrix4_look_at(lin.Vector3f32{2,2,2},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
