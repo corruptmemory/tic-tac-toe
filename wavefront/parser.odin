@@ -44,8 +44,8 @@ import bts "core:bytes"
 @private VP_KEYWORD :: "vp";
 @private VT_KEYWORD :: "vt";
 
-wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator := context.allocator) -> (^Wavefront_Object, bool) {
-  object: ^Wavefront_Object = new(Wavefront_Object, allocator);
+wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator := context.allocator) -> (Wavefront_Object, bool) {
+  object := Wavefront_Object{};
   vertices := make([dynamic]u32, context.temp_allocator);
   texture_coords := make([dynamic]u32,  context.temp_allocator);
   vertex_normals := make([dynamic]u32, context.temp_allocator);

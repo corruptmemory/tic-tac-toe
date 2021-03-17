@@ -5,7 +5,7 @@ import lin "core:math/linalg"
 Wavefront_Object_File :: struct {
   file: string,
   mtllibs: [dynamic]string,
-  objects: [dynamic]^Wavefront_Object,
+  objects: [dynamic]Wavefront_Object,
 }
 
 Wavefront_Object :: struct {

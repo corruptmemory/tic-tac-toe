@@ -1,17 +1,5 @@
 package assets
 
-import lin "core:math/linalg"
-
-ThreeD_Model :: struct {
-  vertices: [dynamic]lin.Vector4f32,
-  texture_coords: [dynamic]lin.Vector3f32,
-  vertex_normals: [dynamic]lin.Vector3f32,
-  faces: [dynamic][dynamic]u32,
-  face_textures: [dynamic][dynamic]u32,
-  face_normals: [dynamic]u32,
-  indices: []u32,
-}
-
-Asset_Catalog :: struct {
-  models: map[string]ThreeD_Model,
+init_assets :: proc(asset_catalog: ^Asset_Catalog, allocator := context.allocator) {
+  asset_catalog.models = make(map[string]ThreeD_Model, 16, allocator);
 }

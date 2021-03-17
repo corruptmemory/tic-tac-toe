@@ -1,2 +1,0 @@
-package asset_loader
-

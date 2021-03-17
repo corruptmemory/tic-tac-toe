@@ -1,6 +1,5 @@
 package ui
 
-import "core:fmt"
 import "core:mem"
 import rt "core:runtime"
 import "core:math/bits"
@@ -12,8 +11,8 @@ import lin "core:math/linalg"
 import time "core:time"
 import "core:log"
 import "core:strings"
-import w "../wavefront"
-import "core:math/rand"
+// import w "../wavefront"
+import "../assets"
 
 max_frames_in_flight :: 2;
 
@@ -149,42 +148,30 @@ ui_check_device_extension_support :: proc(ctx: ^UIContext) -> bool {
 
 
 ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
-  go: w.Wavefront_Object_File;
-  w.init_wavefront_object_file(&go);
-  ok := w.wavefront_object_file_load_file(&go, "/home/jim/projects/tic-tac-toe/blender/viking_room.obj", context.temp_allocator);
+  ac: assets.Asset_Catalog;
+  assets.init_assets(&ac);
+  ok := assets.load_3d_models(&ac, "/home/jim/projects/tic-tac-toe/blender/viking_room.obj");
   if !ok {
     log.error("Error: failed to load geometry");
     return false;
   }
-  defer free_all(context.temp_allocator);
-  rng := rand.create(u64(time.now()._nsec));
+  // defer free_all(context.temp_allocator);
 
-  obj := go.objects[0];
-  vertices := make([dynamic]Vertex, 0, len(obj.faces) * 3, context.allocator);
-  indices := make([dynamic]u32, 0, len(obj.faces) * 3, context.allocator);
-  unique_vertices := make(map[Vertex]u32);
-  defer delete(unique_vertices);
+  for _, v in ac.models {
+    vertices := make([dynamic]Vertex, 0, len(v.vertices));
 
-  for f, fidx in obj.faces {
-    for i, iidx in f {
-      v := obj.vertices[i];
-      tv := obj.texture_coords[obj.face_textures[fidx][iidx]];
-      vertex := Vertex{
-        pos = { v[0], v[1], v[2] },
-        color = { 1.0, 1.0, 1.0 },
-        texCoord = {tv[0], 1.0 - tv[1]},
-      };
-
-      if _, ok := unique_vertices[vertex]; !ok {
-        unique_vertices[vertex] = u32(len(vertices));
-        append(&vertices, vertex);
-      }
-      append(&indices, unique_vertices[vertex]);
+    for v in v.vertices {
+      append(&vertices, Vertex {
+          pos = v.pos,
+          color = v.color,
+          texCoord = v.texture_coord,
+      });
     }
-  }
 
-  ctx.vertices = vertices[:];
-  ctx.indices = indices[:];
+    ctx.vertices = vertices[:];
+    ctx.indices = v.indices[:];
+    return true;
+  }
 
   return true;
 }
