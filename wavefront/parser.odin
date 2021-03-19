@@ -44,13 +44,19 @@ import bts "core:bytes"
 @private VP_KEYWORD :: "vp";
 @private VT_KEYWORD :: "vt";
 
+Face_Offset_Info :: struct {
+  offset: u32,
+  flags: Face_Flags,
+}
+
 wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator := context.allocator) -> (Wavefront_Object, bool) {
   object := Wavefront_Object{};
   vertices := make([dynamic]u32, context.temp_allocator);
   texture_coords := make([dynamic]u32,  context.temp_allocator);
   vertex_normals := make([dynamic]u32, context.temp_allocator);
-  faces := make([dynamic]u32, context.temp_allocator);
+  faces := make([dynamic]Face_Offset_Info, context.temp_allocator);
   lines := make([dynamic]u32, context.temp_allocator);
+  current_face_flags := Face_Flags{};
 
   // We start out at the beginning of a line.  the value we find there determines what we do next
   use_found:
@@ -78,8 +84,9 @@ wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator :=
           if len(s) > 0 {
             switch string(s) {
             case "on", "ON", "1", "t", "T", "true", "TRUE", "True":
-              object.smooth_shading = true;
+              incl(&current_face_flags, Face_Flag.Smooth_Shading);
             case: // We could check for an error.  Being lazy at the moment.
+              excl(&current_face_flags, Face_Flag.Smooth_Shading);
             }
           }
         } else do wavefront_object_scanner_past_eol(scanner);
@@ -99,12 +106,12 @@ wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator :=
         }
       case 'f':
         if wavefront_object_scanner_keyword_check(scanner, F_KEYWORD) {
-          append(&faces,scanner.pos);
+          append(&faces,Face_Offset_Info{scanner.pos,current_face_flags});
           wavefront_object_scanner_past_eol(scanner);
         } else do wavefront_object_scanner_past_eol(scanner);
       case 'l':
         if wavefront_object_scanner_keyword_check(scanner, L_KEYWORD) {
-          append(&faces,scanner.pos);
+          append(&lines,scanner.pos);
           wavefront_object_scanner_past_eol(scanner);
         } else do wavefront_object_scanner_past_eol(scanner);
       }
@@ -172,15 +179,12 @@ wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator :=
       append(&object.vertex_normals,vn);
     }
   }
-  object.faces = make([dynamic][dynamic]u32, 0, len(faces), allocator);
-  object.face_textures = make([dynamic][dynamic]u32, 0, len(faces), allocator);
-  object.face_normals = make([dynamic]u32, 0, len(faces), allocator);
+  object.faces = make([dynamic]Face_Indices, 0, len(faces), allocator);
   for p in faces {
-    scanner.pos = p;
-    usedNormal := false;
+    scanner.pos = p.offset;
     fis := make([dynamic]u32, allocator);
     ftis := make([dynamic]u32, allocator);
-    fni: u32 = 0;
+    fnis := make([dynamic]u32, allocator);
     for {
       fi, fiok := wavefront_object_scanner_consume_u32(scanner);
       if fiok {
@@ -194,12 +198,9 @@ wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator :=
         }
         if scanner.bytes[scanner.pos] == '/' {
           scanner.pos += 1;
-          if !usedNormal {
             tfni, fniok := wavefront_object_scanner_consume_u32(scanner);
             if fniok {
-              fni = tfni - scanner.vertex_normals_base;
-              usedNormal = true;
-            }
+              append(&fnis, tfni - scanner.vertex_normals_base);
           } else {
             _, _ = wavefront_object_scanner_consume_u32(scanner);
           }
@@ -208,9 +209,12 @@ wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator :=
       }
       break;
     }
-    if len(fis) > 0 do append(&object.faces, fis);
-    if len(ftis) > 0 do append(&object.face_textures, ftis);
-    if usedNormal do append(&object.face_normals, fni);
+    fi := Face_Indices{};
+    fi.flags = p.flags;
+    if len(fis) > 0 do fi.vertices = fis[:];
+    if len(ftis) > 0 do fi.texture_vertices = ftis[:];
+    if len(fnis) > 0 do fi.normals = fnis[:];
+    append(&object.faces,fi);
   }
   object.lines = make([dynamic][dynamic]u32, 0, len(lines), allocator);
   for p in lines {

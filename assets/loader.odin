@@ -16,16 +16,15 @@ load_3d_models :: proc(assets: ^Asset_Catalog, file: string, allocator := contex
     unique_vertices := make(map[Vertex]u32, 16, allocator);
 
     for f, fidx in obj.faces {
-      for i, iidx in f {
-        log.infof("Got this far! - fidx: %d -- iidx: %d", fidx, iidx);
+      for i, iidx in f.vertices {
         v := obj.vertices[i];
-        tv := obj.texture_coords[obj.face_textures[fidx][iidx]];
-        // vn := obj.vertex_normals[i];
+        tv := obj.texture_coords[f.texture_vertices[iidx]];
+        vn := obj.vertex_normals[f.normals[iidx]];
         vertex := Vertex{
           pos = { v[0], v[1], v[2] },
           color = { 1.0, 1.0, 1.0 },
           texture_coord = {tv[0], 1.0 - tv[1]},
-          // vertex_normal = vn,
+          vertex_normal = vn,
         };
 
         if _, ok := unique_vertices[vertex]; !ok {

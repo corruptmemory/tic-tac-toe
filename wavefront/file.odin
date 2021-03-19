@@ -24,8 +24,6 @@ destroy_wavefront_object :: proc(object: Wavefront_Object) {
   if object.texture_coords != nil do delete(object.texture_coords);
   if object.vertex_normals != nil do delete(object.vertex_normals);
   if object.faces != nil do delete(object.faces);
-  if object.face_textures != nil do delete(object.face_textures);
-  if object.face_normals != nil do delete(object.face_normals);
   if object.lines != nil do delete(object.lines);
 }
 
