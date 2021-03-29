@@ -1,32 +1,37 @@
-package ui
+package graphics
 
 import "core:mem"
-import rt "core:runtime"
-import "core:math/bits"
+// import rt "core:runtime"
+// import "core:math/bits"
 import "core:os"
-import sdl "shared:sdl2"
-import img "shared:sdl2/image"
 import vk "shared:vulkan"
 import lin "core:math/linalg"
-import time "core:time"
+// import time "core:time"
 import "core:log"
 import "core:strings"
-// import w "../wavefront"
-import "../assets"
+import bc "../build_config"
+// import stbi "shared:stb/stbi"
 
 max_frames_in_flight :: 2;
 
-sdl_pixeltype_packed32 :: 6;
-sdl_packedorder_rgba :: 5;
-sdl_packedlayout_8888 :: 6;
+SwapchainBuffer :: struct {
+  image: vk.Image,
+  view: vk.ImageView,
+};
 
-max_sdl_events :: 10;
+Texture :: struct {
+  image: ^u8,
+  sampler: vk.Sampler,
+};
 
-sdl_define_pixelformat :: proc(type, order , layout, bits, bytes: u32) -> u32 {
-    return ((1 << 28) | ((type) << 24) | ((order) << 20) | ((layout) << 16) | ((bits) << 8) | ((bytes) << 0));
-}
-
-sdl_pixelformat_rgba8888 := sdl_define_pixelformat(sdl_pixeltype_packed32, sdl_packedorder_rgba, sdl_packedlayout_8888, 32, 4);
+Vertex :: struct {
+  pos: lin.Vector3f32,
+  normal: lin.Vector3f32,
+  color: lin.Vector3f32,
+  uv: lin.Vector2f32,
+  joint0: lin.Vector4f32,
+  weight0: lin.Vector3f32,
+};
 
 UniformBufferObject :: struct {
     model: lin.Matrix4f32,
@@ -34,18 +39,14 @@ UniformBufferObject :: struct {
     proj: lin.Matrix4f32,
 }
 
-Vertex :: struct {
-    pos: lin.Vector3f32,
-    color: lin.Vector3f32,
-    texCoord: lin.Vector2f32,
-};
 
-UIContext :: struct {
+GraphicsContext :: struct {
   instance : vk.Instance,
-  enableValidationLayers : bool,
   device: vk.Device,
   physicalDevice: vk.PhysicalDevice,
   surface: vk.SurfaceKHR,
+  graphicsFamily: u32,
+  presentFamily: u32,
   graphicsQueue: vk.Queue,
   presentQueue: vk.Queue,
   swapChain: vk.SwapchainKHR,
@@ -54,8 +55,6 @@ UIContext :: struct {
   swapChainExtent: vk.Extent2D,
   swapChainImageViews: []vk.ImageView,
   swapChainFramebuffers: []vk.Framebuffer,
-  graphicsFamily: u32,
-  presentFamily: u32,
   capabilities: vk.SurfaceCapabilitiesKHR,
   formats: []vk.SurfaceFormatKHR,
   presentModes: []vk.PresentModeKHR,
@@ -78,52 +77,31 @@ UIContext :: struct {
   descriptorPool: vk.DescriptorPool,
   descriptorSets: []vk.DescriptorSet,
   currentFrame: int,
-  window: ^sdl.Window,
   framebufferResized: bool,
-  startTime: time.Time,
   textureImage: vk.Image,
   textureImageMemory: vk.DeviceMemory,
   textureImageView: vk.ImageView,
   textureSampler: vk.Sampler,
+  window: WINDOW_TYPE,
   width: u32,
   height: u32,
-  sdl_events: [max_sdl_events]sdl.Event,
   depthImage: vk.Image,
   depthImageMemory: vk.DeviceMemory,
   depthImageView: vk.ImageView,
-  vertices: []Vertex,
-  indices: []u32,
 }
 
-ui_init :: proc(ctx: ^UIContext,
-                enable_validation_layers: bool = true,
-                application_name: string = "tic-tac-toe") -> bool {
-  ctx.startTime = time.now();
-  ctx.enableValidationLayers = enable_validation_layers;
-  if sdl.init(sdl.Init_Flags.Everything) < 0 {
-    log.errorf("failed to initialize sdl", sdl.get_error());
-    return false;
-  }
 
-  if !ui_create_vulkan_instance(ctx, application_name) {
-    log.error("Could not create vulkan instance.");
-    return false;
-  }
+graphics_init :: proc(ctx: ^GraphicsContext,
+                      application_name: string = "tic-tac-toe") -> bool {
 
-  if !ui_pick_physical_device(ctx) {
-    log.error("No suitable physical devices found.");
-    return false;
-  }
-
-  if !ui_check_device_extension_support(ctx) {
-    log.error("Device does not support needed extensions");
-    return false;
-  }
-
+  if !graphics_create_vulkan_instance(ctx, application_name) do return false;
+  if !graphics_pick_physical_device(ctx) do return false;
+  if !graphics_check_device_extension_support(ctx) do return false;
   return true;
 }
 
-ui_check_device_extension_support :: proc(ctx: ^UIContext) -> bool {
+
+graphics_check_device_extension_support :: proc(ctx: ^GraphicsContext) -> bool {
   context.allocator = context.temp_allocator;
   extension_count: u32;
   vk.enumerate_device_extension_properties(ctx.physicalDevice, nil, &extension_count, nil);
@@ -143,40 +121,15 @@ ui_check_device_extension_support :: proc(ctx: ^UIContext) -> bool {
     delete_key(&expected, en);
   }
 
-  return len(expected) == 0;
-}
-
-
-ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
-  ac: assets.Asset_Catalog;
-  assets.init_assets(&ac);
-  ok := assets.load_3d_models(&ac, "/home/jim/projects/tic-tac-toe/blender/viking_room.obj");
-  if !ok {
-    log.error("Error: failed to load geometry");
+  if len(expected) == 0 {
+    log.error("Error: unable to find expected device extensions");
     return false;
   }
-  // defer free_all(context.temp_allocator);
-
-  for _, v in ac.models {
-    vertices := make([dynamic]Vertex, 0, len(v.vertices));
-
-    for v in v.vertices {
-      append(&vertices, Vertex {
-          pos = v.pos,
-          color = v.color,
-          texCoord = v.texture_coord,
-      });
-    }
-
-    ctx.vertices = vertices[:];
-    ctx.indices = v.indices[:];
-    return true;
-  }
-
   return true;
 }
 
-find_supported_format :: proc(ctx:^UIContext, candidates: []vk.Format, tiling: vk.ImageTiling, features: vk.FormatFeatureFlags) -> (vk.Format, bool) {
+
+graphics_find_supported_format :: proc(ctx:^GraphicsContext, candidates: []vk.Format, tiling: vk.ImageTiling, features: vk.FormatFeatureFlags) -> (vk.Format, bool) {
   for format in candidates {
     props: vk.FormatProperties;
     vk.get_physical_device_format_properties(ctx.physicalDevice, format, &props);
@@ -192,147 +145,60 @@ find_supported_format :: proc(ctx:^UIContext, candidates: []vk.Format, tiling: v
   return vk.Format.Undefined, false;
 }
 
-has_stencil_component :: proc(format: vk.Format) -> bool {
-    return format == vk.Format.D32SfloatS8Uint || format == vk.Format.D24UnormS8Uint;
-}
 
-
-find_depth_format :: proc(ctx: ^UIContext) -> (vk.Format, bool) {
-  return find_supported_format(ctx,
+graphics_find_depth_format :: proc(ctx: ^GraphicsContext) -> (vk.Format, bool) {
+  return graphics_find_supported_format(ctx,
                                {vk.Format.D32Sfloat, vk.Format.D32SfloatS8Uint, vk.Format.D24UnormS8Uint},
                                vk.ImageTiling.Optimal,
                                u32(vk.FormatFeatureFlagBits.DepthStencilAttachment));
 }
 
-ui_create_depth_resources :: proc(ctx: ^UIContext) -> bool {
+
+graphics_create_depth_resources :: proc(ctx: ^GraphicsContext) -> bool {
   depth_format: vk.Format;
   ok: bool;
-  if depth_format, ok = find_depth_format(ctx); !ok {
+  if depth_format, ok = graphics_find_depth_format(ctx); !ok {
     log.error("Error: could not find usable depth format");
     return false;
   }
-  create_image(ctx, ctx.swapChainExtent.width, ctx.swapChainExtent.height, depth_format, vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.DepthStencilAttachment, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.depthImage, &ctx.depthImageMemory);
-  ctx.depthImageView, ok = ui_create_image_view(ctx, ctx.depthImage, depth_format, vk.ImageAspectFlagBits.Depth);
-  // transition_image_layout(ctx, ctx.depthImage, depth_format, vk.ImageLayout.Undefined, vk.ImageLayout.DepthStencilAttachmentOptimal);
+  graphics_create_image(ctx, ctx.swapChainExtent.width, ctx.swapChainExtent.height, depth_format, vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.DepthStencilAttachment, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.depthImage, &ctx.depthImageMemory);
+  ctx.depthImageView, ok = graphics_create_image_view(ctx, ctx.depthImage, depth_format, vk.ImageAspectFlagBits.Depth);
   return true;
 }
 
-ui_create_window :: proc(ctx: ^UIContext,
-                         name: string = "tic-tac-toe",
-                         x: i32 = cast(i32)sdl.Window_Pos.Undefined,
-                         y: i32 = cast(i32)sdl.Window_Pos.Undefined,
-                         width: u32,
-                         height: u32,
-                         flags: sdl.Window_Flags = sdl.Window_Flags.Shown | sdl.Window_Flags.Vulkan | sdl.Window_Flags.Resizable) -> bool
+
+graphics_init_post_window :: proc(ctx: ^GraphicsContext,
+                                  width: u32,
+                                  height: u32) -> bool
 {
-  cname := strings.clone_to_cstring(name, context.temp_allocator);
-  window := sdl.create_window(cname, x, y, i32(width), i32(height), flags);
-  if window == nil {
-    log.errorf("could not create window: {}\n", sdl.get_error());
-    return false;
-  }
-  ctx.window = window;
   ctx.width = width;
   ctx.height = height;
 
-  if !ui_load_geometry(ctx) do return false;
-  if !ui_create_surface(ctx) do return false;
-  if !ui_find_queue_families(ctx) do return false;
-  if !ui_create_logical_device(ctx) do return false;
-  if !ui_query_swap_chain_support(ctx) do return false;
-  if !ui_create_swap_chain(ctx) do return false;
-  if !ui_create_image_views(ctx) do return false;
-  if !ui_create_render_pass(ctx) do return false;
-  if !ui_create_descriptor_layout(ctx) do return false;
-  if !ui_create_graphics_pipeline(ctx) do return false;
-  if !ui_create_command_pool(ctx) do return false;
-  if !ui_create_depth_resources(ctx) do return false;
-  if !ui_create_framebuffers(ctx) do return false;
-  if !ui_create_texture_image(ctx) do return false;
-  if !ui_create_texture_image_view(ctx) do return false;
-  if !ui_create_texture_sampler(ctx) do return false;
-  if !ui_create_vertex_buffer(ctx) do return false;
-  if !ui_create_index_buffer(ctx) do return false;
-  if !ui_create_uniform_buffers(ctx) do return false;
-  if !ui_create_descriptor_pool(ctx) do return false;
-  if !ui_create_descriptor_sets(ctx) do return false;
-  if !ui_create_command_buffers(ctx) do return false;
-  if !ui_create_sync_objects(ctx) do return false;
+  if !graphics_create_surface(ctx) do return false;
+  if !graphics_find_queue_families(ctx) do return false;
+  if !graphics_create_logical_device(ctx) do return false;
+  if !graphics_query_swap_chain_support(ctx) do return false;
+  if !graphics_create_swap_chain(ctx) do return false;
+  if !graphics_create_image_views(ctx) do return false;
+  if !graphics_create_render_pass(ctx) do return false;
+  if !graphics_create_descriptor_layout(ctx) do return false;
+  if !graphics_create_graphics_pipeline(ctx) do return false;
+  if !graphics_create_command_pool(ctx) do return false;
+  if !graphics_create_depth_resources(ctx) do return false;
+  if !graphics_create_framebuffers(ctx) do return false;
+  // if !graphics_create_texture_image(ctx) do return false;
+  if !graphics_create_texture_image_view(ctx) do return false;
+  if !graphics_create_texture_sampler(ctx) do return false;
+  if !graphics_create_uniform_buffers(ctx) do return false;
+  if !graphics_create_descriptor_pool(ctx) do return false;
+  if !graphics_create_descriptor_sets(ctx) do return false;
+  if !graphics_create_sync_objects(ctx) do return false;
 
   return true;
 }
 
-ui_draw_frame :: proc(ctx: ^UIContext, window: ^sdl.Window) -> bool {
-  vk.wait_for_fences(ctx.device, 1, &ctx.inFlightFences[ctx.currentFrame], vk.TRUE, bits.U64_MAX);
 
-  imageIndex: u32;
-  #partial switch vk.acquire_next_image_khr(ctx.device, ctx.swapChain, bits.U64_MAX, ctx.imageAvailableSemaphores[ctx.currentFrame], nil, &imageIndex) {
-    case vk.Result.ErrorOutOfDateKhr, vk.Result.SuboptimalKhr:
-      return recreate_swap_chain(ctx);
-    case vk.Result.Success:
-    // nothing
-    case:
-      log.error("Error: what am I doing here?");
-      return false;
-  }
-
-  update_uniform_buffer(ctx, imageIndex);
-
-  if ctx.imagesInFlight[imageIndex] != nil {
-    vk.wait_for_fences(ctx.device, 1, &ctx.imagesInFlight[imageIndex], vk.TRUE, bits.U64_MAX);
-  }
-  ctx.imagesInFlight[imageIndex] = ctx.inFlightFences[ctx.currentFrame];
-
-  waitSemaphores := []vk.Semaphore{ctx.imageAvailableSemaphores[ctx.currentFrame]};
-  waitStages := []vk.PipelineStageFlags{u32(vk.PipelineStageFlagBits.ColorAttachmentOutput)};
-  signalSemaphores := []vk.Semaphore{ctx.renderFinishedSemaphores[ctx.currentFrame]};
-
-
-  submitInfo := vk.SubmitInfo{
-    sType = vk.StructureType.SubmitInfo,
-    waitSemaphoreCount = 1,
-    pWaitSemaphores = mem.raw_slice_data(waitSemaphores),
-    pWaitDstStageMask = mem.raw_slice_data(waitStages),
-    commandBufferCount = 1,
-    pCommandBuffers = &ctx.commandBuffers[imageIndex],
-    signalSemaphoreCount = 1,
-    pSignalSemaphores = mem.raw_slice_data(signalSemaphores),
-  };
-
-  vk.reset_fences(ctx.device, 1, &ctx.inFlightFences[ctx.currentFrame]);
-
-  if (vk.queue_submit(ctx.graphicsQueue, 1, &submitInfo, ctx.inFlightFences[ctx.currentFrame]) != vk.Result.Success) {
-    return false;
-  }
-
-  swapChains := []vk.SwapchainKHR{ctx.swapChain};
-  presentInfo := vk.PresentInfoKHR{
-    sType = vk.StructureType.PresentInfoKhr,
-    waitSemaphoreCount = 1,
-    pWaitSemaphores = mem.raw_slice_data(signalSemaphores),
-    swapchainCount = 1,
-    pSwapchains = mem.raw_slice_data(swapChains),
-    pImageIndices = &imageIndex,
-  };
-
-  result := vk.queue_present_khr(ctx.presentQueue, &presentInfo);
-
-  if result == vk.Result.ErrorOutOfDateKhr || result == vk.Result.SuboptimalKhr || ctx.framebufferResized {
-    ctx.framebufferResized = false;
-    if !recreate_swap_chain(ctx) {
-      log.error("failed to recreate swap chain");
-      return false;
-    }
-    return true;
-  } else if result != vk.Result.Success {
-    return false;
-  }
-
-  ctx.currentFrame = (ctx.currentFrame + 1) % max_frames_in_flight;
-  return true;
-}
-
-ui_cleanup_swap_chain :: proc(ctx: ^UIContext) -> bool {
+graphics_cleanup_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
   vk.destroy_image_view(ctx.device, ctx.depthImageView, nil);
   vk.destroy_image(ctx.device, ctx.depthImage, nil);
   vk.free_memory(ctx.device, ctx.depthImageMemory, nil);
@@ -372,64 +238,27 @@ ui_cleanup_swap_chain :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-recreate_swap_chain :: proc(ctx: ^UIContext) -> bool {
+
+graphics_recreate_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
   if ctx.width == 0 || ctx.height == 0 do return true;
 
   vk.device_wait_idle(ctx.device);
 
-  if !ui_cleanup_swap_chain(ctx) {
-    return false;
-  }
-  if !ui_create_swap_chain(ctx) {
-    return false;
-  }
-  if !ui_create_image_views(ctx) {
-    return false;
-  }
-  if !ui_create_render_pass(ctx) {
-    return false;
-  }
-  if !ui_create_graphics_pipeline(ctx) {
-    return false;
-  }
-  if !ui_create_depth_resources(ctx) do return false;
-  if !ui_create_framebuffers(ctx) {
-    return false;
-  }
-  if !ui_create_uniform_buffers(ctx) {
-    return false;
-  }
-  if !ui_create_descriptor_pool(ctx) {
-    return false;
-  }
-  if !ui_create_descriptor_sets(ctx) {
-    return false;
-  }
-  if !ui_create_command_buffers(ctx) {
-    return false;
-  }
+  if !graphics_cleanup_swap_chain(ctx) do return false;
+  if !graphics_create_swap_chain(ctx) do return false;
+  if !graphics_create_image_views(ctx) do return false;
+  if !graphics_create_render_pass(ctx) do return false;
+  if !graphics_create_graphics_pipeline(ctx) do return false;
+  if !graphics_create_depth_resources(ctx) do return false;
+  if !graphics_create_framebuffers(ctx) do return false;
+  if !graphics_create_uniform_buffers(ctx) do return false;
+  if !graphics_create_descriptor_pool(ctx) do return false;
+  if !graphics_create_descriptor_sets(ctx) do return false;
   return true;
 }
 
-update_uniform_buffer :: proc(ctx: ^UIContext, currentImage: u32) {
-  now := time.now();
-  diff := time.duration_seconds(time.diff(ctx.startTime,now));
-  // diff := 0;
-  ubo := UniformBufferObject {
-    model = lin.matrix4_rotate_f32(f32(diff)*lin.radians(f32(90)),lin.VECTOR3F32_Z_AXIS),
-    view = lin.matrix4_look_at(lin.Vector3f32{2,2,2},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
-    proj = lin.matrix4_perspective_f32(lin.radians(f32(45)),f32(ctx.swapChainExtent.width)/f32(ctx.swapChainExtent.height),0.1,10),
-  };
 
-  ubo.proj[1][1] *= -1;
-
-  data: rawptr;
-  vk.map_memory(ctx.device,ctx.uniformBuffersMemory[currentImage],0,size_of(ubo),0,&data);
-  rt.mem_copy_non_overlapping(data,&ubo,size_of(ubo));
-  vk.unmap_memory(ctx.device,ctx.uniformBuffersMemory[currentImage]);
-}
-
-ui_create_sync_objects :: proc(ctx: ^UIContext) -> bool {
+graphics_create_sync_objects :: proc(ctx: ^GraphicsContext) -> bool {
   ctx.imageAvailableSemaphores = make([]vk.Semaphore,max_frames_in_flight);
   ctx.renderFinishedSemaphores = make([]vk.Semaphore,max_frames_in_flight);
   ctx.inFlightFences = make([]vk.Fence,max_frames_in_flight);
@@ -454,78 +283,8 @@ ui_create_sync_objects :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_create_command_buffers :: proc(ctx: ^UIContext) -> bool {
-  ctx.commandBuffers = make([]vk.CommandBuffer,len(ctx.swapChainFramebuffers));
 
-  allocInfo := vk.CommandBufferAllocateInfo{
-    sType = vk.StructureType.CommandBufferAllocateInfo,
-    commandPool = ctx.commandPool,
-    level = vk.CommandBufferLevel.Primary,
-    commandBufferCount = u32(len(ctx.commandBuffers)),
-  };
-
-  clear_color_value : vk.ClearColorValue;
-  clear_color_value.float32 = {0.0, 0.0, 0.0, 1.0};
-  clear_color : vk.ClearValue;
-  clear_color.color = clear_color_value;
-  clear_depth_stencil_value := vk.ClearDepthStencilValue{1.0, 0};
-  clear_depth_stencil: vk.ClearValue;
-  clear_depth_stencil.depthStencil = clear_depth_stencil_value;
-
-  clear_values := []vk.ClearValue{
-    clear_color,
-    clear_depth_stencil,
-  };
-
-  if vk.allocate_command_buffers(ctx.device, &allocInfo, mem.raw_slice_data(ctx.commandBuffers)) != vk.Result.Success {
-    log.error("Error: failed to allocate command buffers");
-    return false;
-  }
-
-  for cb, i in ctx.commandBuffers {
-    beginInfo := vk.CommandBufferBeginInfo{sType = vk.StructureType.CommandBufferBeginInfo};
-
-    if vk.begin_command_buffer(cb, &beginInfo) != vk.Result.Success {
-      log.error("Error: failed to begin command buffer");
-      return false;
-    }
-
-    renderPassInfo := vk.RenderPassBeginInfo{
-      sType = vk.StructureType.RenderPassBeginInfo,
-      renderPass = ctx.renderPass,
-      framebuffer = ctx.swapChainFramebuffers[i],
-      renderArea = {
-        offset = {0, 0},
-        extent = ctx.swapChainExtent,
-      },
-    };
-
-    renderPassInfo.clearValueCount = u32(len(clear_values));
-    renderPassInfo.pClearValues = mem.raw_slice_data(clear_values);
-
-    vk.cmd_begin_render_pass(cb, &renderPassInfo, vk.SubpassContents.Inline);
-
-    vk.cmd_bind_pipeline(cb, vk.PipelineBindPoint.Graphics, ctx.graphicsPipeline);
-
-    vertexBuffers := []vk.Buffer{ctx.vertexBuffer};
-    offsets := []vk.DeviceSize{0};
-    vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertexBuffers), mem.raw_slice_data(offsets));
-    vk.cmd_bind_index_buffer(ctx.commandBuffers[i],ctx.indexBuffer,0,vk.IndexType.Uint32);
-    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipelineLayout, 0, 1, &ctx.descriptorSets[i], 0, nil);
-    vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.indices)), 1, 0, 0, 0);
-
-    vk.cmd_end_render_pass(cb);
-
-    if vk.end_command_buffer(cb) != vk.Result.Success {
-      log.error("Error: failed to end the command buffer");
-      return false;
-    }
-  }
-  return true;
-}
-
-
-ui_create_descriptor_sets :: proc(ctx: ^UIContext) -> bool {
+graphics_create_descriptor_sets :: proc(ctx: ^GraphicsContext) -> bool {
   layouts := make([]vk.DescriptorSetLayout,len(ctx.swapChainImages));
   for _, i in layouts {
       layouts[i] = ctx.descriptorSetLayout;
@@ -583,7 +342,8 @@ ui_create_descriptor_sets :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_create_descriptor_pool :: proc(ctx: ^UIContext) -> bool {
+
+graphics_create_descriptor_pool :: proc(ctx: ^GraphicsContext) -> bool {
   poolSize := []vk.DescriptorPoolSize {
     {
       type = vk.DescriptorType.UniformBuffer,
@@ -610,14 +370,15 @@ ui_create_descriptor_pool :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_create_uniform_buffers :: proc(ctx: ^UIContext) -> bool {
+
+graphics_create_uniform_buffers :: proc(ctx: ^GraphicsContext) -> bool {
     bufferSize := vk.DeviceSize(size_of(UniformBufferObject));
 
     ctx.uniformBuffers = make([]vk.Buffer,len(ctx.swapChainImages));
     ctx.uniformBuffersMemory = make([]vk.DeviceMemory,len(ctx.swapChainImages));
 
     for _, i in ctx.swapChainImages {
-        if !create_buffer(ctx, bufferSize, vk.BufferUsageFlagBits.UniformBuffer, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &ctx.uniformBuffers[i], &ctx.uniformBuffersMemory[i]) {
+        if !graphics_create_buffer(ctx, bufferSize, vk.BufferUsageFlagBits.UniformBuffer, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &ctx.uniformBuffers[i], &ctx.uniformBuffersMemory[i]) {
           log.error("Error: failed to create needed buffer for the uniform buffer construction");
           return false;
         }
@@ -626,30 +387,7 @@ ui_create_uniform_buffers :: proc(ctx: ^UIContext) -> bool {
 }
 
 
-ui_create_index_buffer :: proc(ctx: ^UIContext) -> bool {
-  bufferSize : vk.DeviceSize = u64(size_of(ctx.indices[0]) * len(ctx.indices));
-
-  stagingBuffer : vk.Buffer;
-  stagingBufferMemory : vk.DeviceMemory;
-  create_buffer(ctx, bufferSize, vk.BufferUsageFlagBits.TransferSrc, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &stagingBuffer, &stagingBufferMemory);
-
-  data : rawptr;
-  vk.map_memory(ctx.device, stagingBufferMemory, 0, bufferSize, 0, &data);
-  rt.mem_copy_non_overlapping(data, mem.raw_slice_data(ctx.indices), int(bufferSize));
-  vk.unmap_memory(ctx.device, stagingBufferMemory);
-
-  create_buffer(ctx,bufferSize, vk.BufferUsageFlagBits.TransferDst | vk.BufferUsageFlagBits.IndexBuffer, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.indexBuffer, &ctx.indexBufferMemory);
-
-  copy_buffer(ctx,stagingBuffer, ctx.indexBuffer, bufferSize);
-
-  vk.destroy_buffer(ctx.device, stagingBuffer, nil);
-  vk.free_memory(ctx.device, stagingBufferMemory, nil);
-
-  return true;
-}
-
-
-copy_buffer :: proc(ctx: ^UIContext, srcBuffer: vk.Buffer, dstBuffer: vk.Buffer, size: vk.DeviceSize) {
+graphics_copy_buffer :: proc(ctx: ^GraphicsContext, srcBuffer: vk.Buffer, dstBuffer: vk.Buffer, size: vk.DeviceSize) {
   allocInfo := vk.CommandBufferAllocateInfo{
     sType = vk.StructureType.CommandBufferAllocateInfo,
     level = vk.CommandBufferLevel.Primary,
@@ -687,36 +425,7 @@ copy_buffer :: proc(ctx: ^UIContext, srcBuffer: vk.Buffer, dstBuffer: vk.Buffer,
 }
 
 
-ui_create_vertex_buffer :: proc(ctx: ^UIContext) -> bool {
-  bufferSize : vk.DeviceSize = u64(size_of(ctx.vertices[0]) * len(ctx.vertices));
-
-  stagingBuffer: vk.Buffer;
-  stagingBufferMemory: vk.DeviceMemory;
-  if !create_buffer(ctx,bufferSize,vk.BufferUsageFlagBits.TransferSrc,vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent,&stagingBuffer,&stagingBufferMemory) {
-    log.error("Error: failed to create host staging buffer");
-    return false;
-  }
-
-  data: rawptr;
-  vk.map_memory(ctx.device, stagingBufferMemory, 0, bufferSize, 0, &data);
-  rt.mem_copy_non_overlapping(data, mem.raw_slice_data(ctx.vertices), int(bufferSize));
-  vk.unmap_memory(ctx.device, stagingBufferMemory);
-
-  if !create_buffer(ctx,bufferSize,vk.BufferUsageFlagBits.TransferDst | vk.BufferUsageFlagBits.VertexBuffer, vk.MemoryPropertyFlagBits.DeviceLocal,&ctx.vertexBuffer,&ctx.vertexBufferMemory) {
-    log.error("Error: failed to create device local buffer");
-    return false;
-  }
-
-  copy_buffer(ctx,stagingBuffer,ctx.vertexBuffer,bufferSize);
-
-  vk.destroy_buffer(ctx.device,stagingBuffer,nil);
-  vk.free_memory(ctx.device,stagingBufferMemory,nil);
-
-  return true;
-}
-
-
-ui_create_texture_sampler :: proc(ctx: ^UIContext) -> bool {
+graphics_create_texture_sampler :: proc(ctx: ^GraphicsContext) -> bool {
   properties: vk.PhysicalDeviceProperties;
   vk.get_physical_device_properties(ctx.physicalDevice, &properties);
 
@@ -746,13 +455,15 @@ ui_create_texture_sampler :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_create_texture_image_view :: proc(ctx: ^UIContext) -> bool {
-  textureImageView, result := ui_create_image_view(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageAspectFlagBits.Color);
+
+graphics_create_texture_image_view :: proc(ctx: ^GraphicsContext) -> bool {
+  textureImageView, result := graphics_create_image_view(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageAspectFlagBits.Color);
   ctx.textureImageView = textureImageView;
   return result;
 }
 
-find_memory_type :: proc(ctx:^UIContext, typeFilter:u32, properties: vk.MemoryPropertyFlags) -> (u32, bool) {
+
+graphics_find_memory_type :: proc(ctx:^GraphicsContext, typeFilter:u32, properties: vk.MemoryPropertyFlags) -> (u32, bool) {
   memProperties := vk.PhysicalDeviceMemoryProperties{};
   vk.get_physical_device_memory_properties(ctx.physicalDevice, &memProperties);
 
@@ -765,7 +476,8 @@ find_memory_type :: proc(ctx:^UIContext, typeFilter:u32, properties: vk.MemoryPr
   return 0, false;
 }
 
-create_buffer :: proc(ctx: ^UIContext, size: vk.DeviceSize, usage: vk.BufferUsageFlagBits, properties: vk.MemoryPropertyFlagBits, buffer: ^vk.Buffer, bufferMemory: ^vk.DeviceMemory) -> bool {
+
+graphics_create_buffer :: proc(ctx: ^GraphicsContext, size: vk.DeviceSize, usage: vk.BufferUsageFlagBits, properties: vk.MemoryPropertyFlagBits, buffer: ^vk.Buffer, bufferMemory: ^vk.DeviceMemory) -> bool {
   bufferInfo := vk.BufferCreateInfo {
     sType = vk.StructureType.BufferCreateInfo,
     size = u64(size),
@@ -781,7 +493,7 @@ create_buffer :: proc(ctx: ^UIContext, size: vk.DeviceSize, usage: vk.BufferUsag
   memRequirements: vk.MemoryRequirements;
   vk.get_buffer_memory_requirements(ctx.device, buffer^, &memRequirements);
 
-  memoryTypeIndex, ok := find_memory_type(ctx, memRequirements.memoryTypeBits, u32(properties));
+  memoryTypeIndex, ok := graphics_find_memory_type(ctx, memRequirements.memoryTypeBits, u32(properties));
 
   if !ok {
     log.error("Error: failed to find desired memory type");
@@ -804,7 +516,7 @@ create_buffer :: proc(ctx: ^UIContext, size: vk.DeviceSize, usage: vk.BufferUsag
 }
 
 
-create_image :: proc(ctx: ^UIContext, width, height: u32, format: vk.Format, tiling: vk.ImageTiling, usage: vk.ImageUsageFlagBits, properties: vk.MemoryPropertyFlagBits, image: ^vk.Image, imageMemory: ^vk.DeviceMemory) -> bool {
+graphics_create_image :: proc(ctx: ^GraphicsContext, width, height: u32, format: vk.Format, tiling: vk.ImageTiling, usage: vk.ImageUsageFlagBits, properties: vk.MemoryPropertyFlagBits, image: ^vk.Image, imageMemory: ^vk.DeviceMemory) -> bool {
  imageInfo := vk.ImageCreateInfo{
     sType = vk.StructureType.ImageCreateInfo,
     imageType = vk.ImageType._2D,
@@ -832,7 +544,7 @@ create_image :: proc(ctx: ^UIContext, width, height: u32, format: vk.Format, til
   memRequirements: vk.MemoryRequirements;
   vk.get_image_memory_requirements(ctx.device,image^,&memRequirements);
 
-  mt, ok := find_memory_type(ctx, memRequirements.memoryTypeBits, u32(properties));
+  mt, ok := graphics_find_memory_type(ctx, memRequirements.memoryTypeBits, u32(properties));
   if !ok {
     log.error("Error: failed to find memory");
     return false;
@@ -854,7 +566,8 @@ create_image :: proc(ctx: ^UIContext, width, height: u32, format: vk.Format, til
   return true;
 }
 
-begin_single_time_commands :: proc(ctx: ^UIContext) -> vk.CommandBuffer {
+
+graphics_begin_single_time_commands :: proc(ctx: ^GraphicsContext) -> vk.CommandBuffer {
   allocInfo := vk.CommandBufferAllocateInfo{
     sType = vk.StructureType.CommandBufferAllocateInfo,
     level = vk.CommandBufferLevel.Primary,
@@ -875,7 +588,7 @@ begin_single_time_commands :: proc(ctx: ^UIContext) -> vk.CommandBuffer {
   return commandBuffer;
 }
 
-end_single_time_commands :: proc(ctx: ^UIContext, commandBuffer: ^vk.CommandBuffer) {
+graphics_end_single_time_commands :: proc(ctx: ^GraphicsContext, commandBuffer: ^vk.CommandBuffer) {
   vk.end_command_buffer(commandBuffer^);
 
   submitInfo := vk.SubmitInfo{
@@ -890,8 +603,8 @@ end_single_time_commands :: proc(ctx: ^UIContext, commandBuffer: ^vk.CommandBuff
   vk.free_command_buffers(ctx.device, ctx.commandPool, 1, commandBuffer);
 }
 
-copy_buffer_to_image :: proc(ctx: ^UIContext, buffer: vk.Buffer, image: vk.Image, width, height: u32) {
-  commandBuffer := begin_single_time_commands(ctx);
+graphics_copy_buffer_to_image :: proc(ctx: ^GraphicsContext, buffer: vk.Buffer, image: vk.Image, width, height: u32) {
+  commandBuffer := graphics_begin_single_time_commands(ctx);
 
   region := vk.BufferImageCopy{
     bufferOffset = 0,
@@ -909,12 +622,12 @@ copy_buffer_to_image :: proc(ctx: ^UIContext, buffer: vk.Buffer, image: vk.Image
 
   vk.cmd_copy_buffer_to_image(commandBuffer, buffer, image, vk.ImageLayout.TransferDstOptimal, 1, &region);
 
-  end_single_time_commands(ctx, &commandBuffer);
+  graphics_end_single_time_commands(ctx, &commandBuffer);
 }
 
 
-transition_image_layout :: proc(ctx: ^UIContext, image: vk.Image, format: vk.Format, oldLayout: vk.ImageLayout, newLayout: vk.ImageLayout) -> bool {
-  commandBuffer := begin_single_time_commands(ctx);
+graphics_transition_image_layout :: proc(ctx: ^GraphicsContext, image: vk.Image, format: vk.Format, oldLayout: vk.ImageLayout, newLayout: vk.ImageLayout) -> bool {
+  commandBuffer := graphics_begin_single_time_commands(ctx);
 
   ufi : i32 = vk.QUEUE_FAMILY_IGNORED;
 
@@ -966,102 +679,73 @@ transition_image_layout :: proc(ctx: ^UIContext, image: vk.Image, format: vk.For
     1, &barrier
   );
 
-  end_single_time_commands(ctx, &commandBuffer);
+  graphics_end_single_time_commands(ctx, &commandBuffer);
 
   return true;
 }
 
 
-render_image :: proc(surface: ^sdl.Surface) {
-    window := sdl.create_window("SDL2 Displaying Image",
-        i32(sdl.Window_Pos.Undefined), i32(sdl.Window_Pos.Undefined), surface.w, surface.h, sdl.Window_Flags(0));
-    defer sdl.destroy_window(window);
-    renderer := sdl.create_renderer(window, -1, sdl.Renderer_Flags(0));
-    defer sdl.destroy_renderer(renderer);
-    texture := sdl.create_texture_from_surface(renderer, surface);
-    defer sdl.destroy_texture(texture);
-    sdl.render_copy(renderer, texture, nil, nil);
-    sdl.render_present(renderer);
-    event: sdl.Event;
-    stop:
-    for {
-        for sdl.wait_event(&event) != 0 {
-            #partial switch event.type {
-            case sdl.Event_Type.Quit:
-                break stop;
-            case sdl.Event_Type.Window_Event:
-                #partial switch event.window.event {
-                    case sdl.Window_Event_ID.Close:
-                        break stop;
-                    case:
-                }
-            }
-        }
-    }
-}
+// graphics_create_texture_image :: proc(ctx: ^GraphicsContext) -> bool {
+//   origImageSurface := img.load("blender/viking_room.png");
+//   if origImageSurface == nil {
+//     log.error("Error loading texture image");
+//     return false;
+//   }
+//   defer sdl.free_surface(origImageSurface);
+//   texWidth := origImageSurface.w;
+//   texHeight := origImageSurface.h;
+//   targetSurface := sdl.create_rgb_surface_with_format(0, origImageSurface.w, origImageSurface.h, 32, sdl_pixelformat_rgba8888);
+//   defer sdl.free_surface(targetSurface);
+//   rect := sdl.Rect {
+//     x = 0,
+//     y = 0,
+//     w = origImageSurface.w,
+//     h = origImageSurface.h,
+//   };
+//   err := sdl.upper_blit(origImageSurface,&rect,targetSurface,&rect);
+//   if err != 0 {
+//     log.errorf("Error blitting texture image to target surface: %d", err);
+//     return false;
+//   }
+//   // render_image(targetSurface);
+//   imageSize : vk.DeviceSize = u64(texWidth * texHeight * 4);
+//   stagingBuffer : vk.Buffer;
+//   stagingBufferMemory : vk.DeviceMemory;
+
+//   if !graphics_create_buffer(ctx, imageSize, vk.BufferUsageFlagBits.TransferSrc, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &stagingBuffer, &stagingBufferMemory) {
+//     log.error("Error: failed to create texture buffer");
+//     return false;
+//   }
+//   defer vk.destroy_buffer(ctx.device, stagingBuffer, nil);
+//   defer vk.free_memory(ctx.device, stagingBufferMemory, nil);
+
+//   data: rawptr;
+//   vk.map_memory(ctx.device, stagingBufferMemory, 0, imageSize, 0, &data);
+//   sdl.lock_surface(targetSurface);
+//   rt.mem_copy_non_overlapping(data, targetSurface.pixels, int(imageSize));
+//   sdl.unlock_surface(targetSurface);
+//   vk.unmap_memory(ctx.device, stagingBufferMemory);
+
+//   if !graphics_create_image(ctx, u32(texWidth), u32(texHeight), vk.Format.R8G8B8A8Srgb,vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.TransferDst | vk.ImageUsageFlagBits.Sampled, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.textureImage, &ctx.textureImageMemory) {
+//     log.error("Error: could not create image");
+//     return false;
+//   }
+
+//   if !graphics_transition_image_layout(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.Undefined, vk.ImageLayout.TransferDstOptimal) {
+//     log.error("Error: could not create transition image layout");
+//     return false;
+//   }
+//   graphics_copy_buffer_to_image(ctx, stagingBuffer, ctx.textureImage, u32(texWidth), u32(texHeight));
+//   if !graphics_transition_image_layout(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.TransferDstOptimal, vk.ImageLayout.ShaderReadOnlyOptimal) {
+//     log.error("Error: could not create tranition image layout");
+//     return false;
+//   }
+
+//   return true;
+// }
 
 
-ui_create_texture_image :: proc(ctx: ^UIContext) -> bool {
-  origImageSurface := img.load("blender/viking_room.png");
-  if origImageSurface == nil {
-    log.error("Error loading texture image");
-    return false;
-  }
-  defer sdl.free_surface(origImageSurface);
-  texWidth := origImageSurface.w;
-  texHeight := origImageSurface.h;
-  targetSurface := sdl.create_rgb_surface_with_format(0, origImageSurface.w, origImageSurface.h, 32, sdl_pixelformat_rgba8888);
-  defer sdl.free_surface(targetSurface);
-  rect := sdl.Rect {
-    x = 0,
-    y = 0,
-    w = origImageSurface.w,
-    h = origImageSurface.h,
-  };
-  err := sdl.upper_blit(origImageSurface,&rect,targetSurface,&rect);
-  if err != 0 {
-    log.errorf("Error blitting texture image to target surface: %d", err);
-    return false;
-  }
-  // render_image(targetSurface);
-  imageSize : vk.DeviceSize = u64(texWidth * texHeight * 4);
-  stagingBuffer : vk.Buffer;
-  stagingBufferMemory : vk.DeviceMemory;
-
-  if !create_buffer(ctx, imageSize, vk.BufferUsageFlagBits.TransferSrc, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &stagingBuffer, &stagingBufferMemory) {
-    log.error("Error: failed to create texture buffer");
-    return false;
-  }
-  defer vk.destroy_buffer(ctx.device, stagingBuffer, nil);
-  defer vk.free_memory(ctx.device, stagingBufferMemory, nil);
-
-  data: rawptr;
-  vk.map_memory(ctx.device, stagingBufferMemory, 0, imageSize, 0, &data);
-  sdl.lock_surface(targetSurface);
-  rt.mem_copy_non_overlapping(data, targetSurface.pixels, int(imageSize));
-  sdl.unlock_surface(targetSurface);
-  vk.unmap_memory(ctx.device, stagingBufferMemory);
-
-  if !create_image(ctx, u32(texWidth), u32(texHeight), vk.Format.R8G8B8A8Srgb,vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.TransferDst | vk.ImageUsageFlagBits.Sampled, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.textureImage, &ctx.textureImageMemory) {
-    log.error("Error: could not create image");
-    return false;
-  }
-
-  if !transition_image_layout(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.Undefined, vk.ImageLayout.TransferDstOptimal) {
-    log.error("Error: could not create transition image layout");
-    return false;
-  }
-  copy_buffer_to_image(ctx, stagingBuffer, ctx.textureImage, u32(texWidth), u32(texHeight));
-  if !transition_image_layout(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.TransferDstOptimal, vk.ImageLayout.ShaderReadOnlyOptimal) {
-    log.error("Error: could not create tranition image layout");
-    return false;
-  }
-
-  return true;
-}
-
-
-ui_create_command_pool :: proc(ctx: ^UIContext) -> bool {
+graphics_create_command_pool :: proc(ctx: ^GraphicsContext) -> bool {
     poolInfo := vk.CommandPoolCreateInfo{
       sType = vk.StructureType.CommandPoolCreateInfo,
       queueFamilyIndex = ctx.graphicsFamily,
@@ -1074,7 +758,7 @@ ui_create_command_pool :: proc(ctx: ^UIContext) -> bool {
     return true;
 }
 
-ui_create_render_pass :: proc(ctx: ^UIContext) -> bool {
+graphics_create_render_pass :: proc(ctx: ^GraphicsContext) -> bool {
   colorAttachment := vk.AttachmentDescription{
     format = ctx.swapChainImageFormat,
     samples = vk.SampleCountFlagBits._1,
@@ -1086,7 +770,7 @@ ui_create_render_pass :: proc(ctx: ^UIContext) -> bool {
     finalLayout = vk.ImageLayout.PresentSrcKhr,
   };
 
-  depth_format, ok := find_depth_format(ctx);
+  depth_format, ok := graphics_find_depth_format(ctx);
   if !ok {
     log.error("Error: Failed to find a usable depth format");
     return false;
@@ -1149,7 +833,7 @@ ui_create_render_pass :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_choose_swap_surface_format :: proc(availableFormats: []vk.SurfaceFormatKHR) -> vk.SurfaceFormatKHR {
+graphics_choose_swap_surface_format :: proc(availableFormats: []vk.SurfaceFormatKHR) -> vk.SurfaceFormatKHR {
   for af, _ in availableFormats {
     if af.format == vk.Format.B8G8R8A8Srgb && af.colorSpace == vk.ColorSpaceKHR.ColorspaceSrgbNonlinear {
       return af;
@@ -1185,7 +869,7 @@ read_file :: proc(filename: string) -> ([]byte, bool) {
 }
 
 
-create_shader_module :: proc(ctx: ^UIContext, code: []byte) -> (vk.ShaderModule, bool) {
+graphics_create_shader_module :: proc(ctx: ^GraphicsContext, code: []byte) -> (vk.ShaderModule, bool) {
   createInfo := vk.ShaderModuleCreateInfo{};
   createInfo.sType = vk.StructureType.ShaderModuleCreateInfo;
   createInfo.codeSize = uint(len(code));
@@ -1211,6 +895,7 @@ get_binding_description :: proc() -> vk.VertexInputBindingDescription {
   return bindingDescription;
 }
 
+
 get_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
   attributeDescriptions := []vk.VertexInputAttributeDescription{
     {
@@ -1229,14 +914,15 @@ get_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
       binding = 0,
       location = 2,
       format = vk.Format.R32G32Sfloat,
-      offset = u32(offset_of(Vertex, texCoord)),
+      offset = u32(offset_of(Vertex, uv)),
     },
   };
 
   return attributeDescriptions;
 }
 
-ui_create_graphics_pipeline :: proc(ctx: ^UIContext) -> bool {
+
+graphics_create_graphics_pipeline :: proc(ctx: ^GraphicsContext) -> bool {
   vertShaderCode, ok := read_file("shaders/vert.spv");
   if !ok {
     return false;
@@ -1250,13 +936,13 @@ ui_create_graphics_pipeline :: proc(ctx: ^UIContext) -> bool {
   }
 
   vertShaderModule: vk.ShaderModule;
-  vertShaderModule, ok = create_shader_module(ctx, vertShaderCode);
+  vertShaderModule, ok = graphics_create_shader_module(ctx, vertShaderCode);
   if !ok {
     return false;
   }
   defer vk.destroy_shader_module(ctx.device, vertShaderModule, nil);
   fragShaderModule: vk.ShaderModule;
-  fragShaderModule, ok = create_shader_module(ctx, fragShaderCode);
+  fragShaderModule, ok = graphics_create_shader_module(ctx, fragShaderCode);
   if !ok {
     return false;
   }
@@ -1393,7 +1079,8 @@ ui_create_graphics_pipeline :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_create_framebuffers :: proc(ctx: ^UIContext) -> bool {
+
+graphics_create_framebuffers :: proc(ctx: ^GraphicsContext) -> bool {
   ctx.swapChainFramebuffers = make([]vk.Framebuffer, len(ctx.swapChainImageViews));
 
   for sciv, i in ctx.swapChainImageViews {
@@ -1419,7 +1106,7 @@ ui_create_framebuffers :: proc(ctx: ^UIContext) -> bool {
 
 
 
-ui_choose_swap_present_mode :: proc(availablePresentModes: []vk.PresentModeKHR) -> vk.PresentModeKHR {
+graphics_choose_swap_present_mode :: proc(availablePresentModes: []vk.PresentModeKHR) -> vk.PresentModeKHR {
   for apm, _ in availablePresentModes {
     if apm == vk.PresentModeKHR.Mailbox {
       return apm;
@@ -1429,14 +1116,16 @@ ui_choose_swap_present_mode :: proc(availablePresentModes: []vk.PresentModeKHR) 
   return vk.PresentModeKHR.Fifo;
 }
 
-ui_choose_swap_extent :: proc(ctx: ^UIContext, capabilities: ^vk.SurfaceCapabilitiesKHR) -> vk.Result {
+
+graphics_choose_swap_extent :: proc(ctx: ^GraphicsContext, capabilities: ^vk.SurfaceCapabilitiesKHR) -> vk.Result {
   return vk.get_physical_device_surface_capabilities_khr(ctx.physicalDevice, ctx.surface, capabilities);
 }
 
-ui_create_swap_chain :: proc(ctx: ^UIContext) -> bool {
-  surfaceFormat := ui_choose_swap_surface_format(ctx.formats);
-  presentMode := ui_choose_swap_present_mode(ctx.presentModes);
-  if ui_choose_swap_extent(ctx, &ctx.capabilities) != vk.Result.Success {
+
+graphics_create_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
+  surfaceFormat := graphics_choose_swap_surface_format(ctx.formats);
+  presentMode := graphics_choose_swap_present_mode(ctx.presentModes);
+  if graphics_choose_swap_extent(ctx, &ctx.capabilities) != vk.Result.Success {
     log.error("Error: could not choose a swap extent");
     return false;
   }
@@ -1459,7 +1148,7 @@ ui_create_swap_chain :: proc(ctx: ^UIContext) -> bool {
     imageUsage = u32(vk.ImageUsageFlagBits.ColorAttachment),
   };
 
-  if !ui_find_queue_families(ctx) {
+  if !graphics_find_queue_families(ctx) {
     return false;
   }
   queueFamilyIndices := []u32{ctx.graphicsFamily, ctx.presentFamily};
@@ -1494,7 +1183,8 @@ ui_create_swap_chain :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_create_image_view :: proc(ctx: ^UIContext, image: vk.Image, format: vk.Format, aspectMask: vk.ImageAspectFlagBits) -> (vk.ImageView, bool) {
+
+graphics_create_image_view :: proc(ctx: ^GraphicsContext, image: vk.Image, format: vk.Format, aspectMask: vk.ImageAspectFlagBits) -> (vk.ImageView, bool) {
   viewInfo := vk.ImageViewCreateInfo {
     sType = vk.StructureType.ImageViewCreateInfo,
     image = image,
@@ -1518,10 +1208,11 @@ ui_create_image_view :: proc(ctx: ^UIContext, image: vk.Image, format: vk.Format
   return nil, false;
 }
 
-ui_create_image_views :: proc(ctx: ^UIContext) -> bool {
+
+graphics_create_image_views :: proc(ctx: ^GraphicsContext) -> bool {
   ctx.swapChainImageViews = make([]vk.ImageView,len(ctx.swapChainImages));
   for _, i in ctx.swapChainImageViews {
-    view, result := ui_create_image_view(ctx, ctx.swapChainImages[i], ctx.swapChainImageFormat, vk.ImageAspectFlagBits.Color);
+    view, result := graphics_create_image_view(ctx, ctx.swapChainImages[i], ctx.swapChainImageFormat, vk.ImageAspectFlagBits.Color);
     if !result {
       return false;
     }
@@ -1531,7 +1222,7 @@ ui_create_image_views :: proc(ctx: ^UIContext) -> bool {
 }
 
 
-ui_query_swap_chain_support :: proc(ctx: ^UIContext) -> bool {
+graphics_query_swap_chain_support :: proc(ctx: ^GraphicsContext) -> bool {
   if vk.get_physical_device_surface_capabilities_khr(ctx.physicalDevice, ctx.surface, &ctx.capabilities) != vk.Result.Success {
     log.error("Error: unable to get device surface capabilities");
     return false;
@@ -1557,7 +1248,8 @@ ui_query_swap_chain_support :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_create_logical_device :: proc(ctx: ^UIContext) -> bool {
+
+graphics_create_logical_device :: proc(ctx: ^GraphicsContext) -> bool {
   queueCreateInfos: []vk.DeviceQueueCreateInfo;
   uniqueQueueFamilies: []u32;
   if ctx.graphicsFamily ==  ctx.presentFamily {
@@ -1606,7 +1298,8 @@ ui_create_logical_device :: proc(ctx: ^UIContext) -> bool {
   return true;
 }
 
-ui_create_descriptor_layout :: proc(ctx: ^UIContext) -> bool {
+
+graphics_create_descriptor_layout :: proc(ctx: ^GraphicsContext) -> bool {
   uboLayoutBinding := vk.DescriptorSetLayoutBinding{
     binding = 0,
     descriptorCount = 1,
@@ -1639,7 +1332,7 @@ ui_create_descriptor_layout :: proc(ctx: ^UIContext) -> bool {
 }
 
 
-ui_destroy :: proc(ctx: ^UIContext) {
+graphics_destroy :: proc(ctx: ^GraphicsContext) {
   vk.device_wait_idle(ctx.device);
   if ctx.depthImageView != nil do vk.destroy_image_view(ctx.device, ctx.depthImageView, nil);
   if ctx.depthImage != nil do vk.destroy_image(ctx.device, ctx.depthImage, nil);
@@ -1686,9 +1379,9 @@ ui_destroy :: proc(ctx: ^UIContext) {
 
   if ctx.device != nil do vk.destroy_device(ctx.device, nil);
   vk.destroy_surface_khr(ctx.instance,ctx.surface,nil);
-  sdl.destroy_window(ctx.window);
+  // sdl.destroy_window(ctx.window);
   vk.destroy_instance(ctx.instance, nil);
-  sdl.quit();
+  // sdl.quit();
 }
 
 extensions :: []cstring {
@@ -1699,48 +1392,51 @@ extensions :: []cstring {
   vk.KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME,
 };
 
-validation_layers :: []cstring {
-  "VK_LAYER_KHRONOS_validation",
-};
-
 device_extensions :: []cstring {
   vk.KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 
 
-ui_check_vulkan_validation_layer_support :: proc() -> bool {
-  layerCount: u32;
-  vk.enumerate_instance_layer_properties(&layerCount, nil);
+when bc.VULKAN_VALIDATION {
+  validation_layers :: []cstring {
+    "VK_LAYER_KHRONOS_validation",
+  };
 
-  availableLayers := make([]vk.LayerProperties,layerCount);
-  vk.enumerate_instance_layer_properties(&layerCount, mem.raw_slice_data(availableLayers));
+  graphics_check_vulkan_validation_layer_support :: proc() -> bool {
+    layerCount: u32;
+    vk.enumerate_instance_layer_properties(&layerCount, nil);
 
-  for layerName, _ in validation_layers {
-    layerFound := false;
+    availableLayers := make([]vk.LayerProperties,layerCount);
+    vk.enumerate_instance_layer_properties(&layerCount, mem.raw_slice_data(availableLayers));
 
-    for _, i in availableLayers {
-      layerProperties := availableLayers[i];
+    for layerName, _ in validation_layers {
+      layerFound := false;
 
-      if layerName == transmute(cstring)(&layerProperties.layerName) {
-        layerFound = true;
-        break;
+      for _, i in availableLayers {
+        layerProperties := availableLayers[i];
+
+        if layerName == transmute(cstring)(&layerProperties.layerName) {
+          layerFound = true;
+          break;
+        }
+      }
+
+      if !layerFound {
+        return false;
       }
     }
 
-    if !layerFound {
-      return false;
-    }
+    return true;
   }
-
-  return true;
 }
 
 
-ui_create_vulkan_instance :: proc(ctx : ^UIContext, application_name: string = "tic-tac-toe") -> bool {
-  // TODO(jim) Make this conditional based on the kind of build we are doing
-  if ctx.enableValidationLayers && !ui_check_vulkan_validation_layer_support() {
-    log.error("Could not find validation layer support");
-    return false;
+graphics_create_vulkan_instance :: proc(ctx: ^GraphicsContext, application_name: string = "tic-tac-toe") -> bool {
+  when bc.VULKAN_VALIDATION {
+    if !graphics_check_vulkan_validation_layer_support() {
+      log.error("Could not find validation layer support");
+      return false;
+    }
   }
 
   capplication_name := strings.clone_to_cstring(application_name, context.temp_allocator);
@@ -1760,7 +1456,7 @@ ui_create_vulkan_instance :: proc(ctx : ^UIContext, application_name: string = "
     ppEnabledExtensionNames = mem.raw_slice_data(extensions),
   };
 
-  if ctx.enableValidationLayers {
+  when bc.VULKAN_VALIDATION {
     instanceCreateInfo.enabledLayerCount = u32(len(validation_layers));
     instanceCreateInfo.ppEnabledLayerNames = mem.raw_slice_data(validation_layers);
   } else {
@@ -1779,7 +1475,8 @@ ui_create_vulkan_instance :: proc(ctx : ^UIContext, application_name: string = "
   return true;
 }
 
-ui_find_queue_families :: proc(ctx: ^UIContext) -> bool {
+
+graphics_find_queue_families :: proc(ctx: ^GraphicsContext) -> bool {
   remaining := 2;
   queueFamilyCount : u32;
   vk.get_physical_device_queue_family_properties(ctx.physicalDevice, &queueFamilyCount, nil);
@@ -1809,71 +1506,15 @@ ui_find_queue_families :: proc(ctx: ^UIContext) -> bool {
   return false;
 }
 
-ui_create_surface :: proc(ctx: ^UIContext) -> bool {
-  surface: vk.SurfaceKHR;
-  createInfo : vk.XlibSurfaceCreateInfoKHR;
-  createInfo.sType = vk.StructureType.XlibSurfaceCreateInfoKhr;
-  info : sdl.Sys_Wm_Info;
-  sdl.get_version(&info.version);
-  if sdl.get_window_wm_info(ctx.window, &info) == sdl.Bool.False {
-    log.error("Could not get window info.");
-    return false;
-  }
-  log.debugf("WOOT!  Got Window info: %v", info);
-  createInfo.dpy = info.info.x11.display;
-  createInfo.window = info.info.x11.window;
-  result := vk.create_xlib_surface_khr(ctx.instance, &createInfo, nil, &surface);
-  if result != vk.Result.Success {
-    log.errorf("Failed to create surface: ", result);
-    return false;
-  }
-  ctx.surface = surface;
-  return true;
-}
+// graphics_get_inputs :: proc(ctx: ^GraphicsContext) -> i32 {
+//   sdl.pump_events();
+//   return sdl.peep_events(mem.raw_array_data(&ctx.sdl_events),
+//                          max_sdl_events,
+//                          sdl.Event_Action.Get_Event,
+//                          u32(sdl.Event_Type.First_Event),
+//                          u32(sdl.Event_Type.Last_Event));
+// }
 
-ui_loop :: proc(ctx: ^UIContext) -> bool {
-  event: sdl.Event;
-  stop:
-  for {
-    for sdl.poll_event(&event) != 0 {
-      #partial switch event.type {
-      case sdl.Event_Type.Quit:
-        break stop;
-      case sdl.Event_Type.Window_Event:
-        #partial switch event.window.event {
-        case sdl.Window_Event_ID.Resized:
-          log.debug("RESIZED!!");
-          log.debugf("new size: %d %d\n",event.window.data1,event.window.data2);
-          ctx.width = u32(event.window.data1);
-          ctx.height = u32(event.window.data2);
-          sdl.update_window_surface(ctx.window);
-        case sdl.Window_Event_ID.Exposed:
-          log.debug("EXPOSED!!");
-          sdl.update_window_surface(ctx.window);
-        case sdl.Window_Event_ID.Shown:
-          log.debug("SHOWN!!");
-          sdl.update_window_surface(ctx.window);
-        }
-      case:
-      }
-    }
-  }
-  return true;
-}
-
-ui_get_error :: proc(ctx: ^UIContext) -> string {
-  err := sdl.get_error();
-  return rt.cstring_to_string(err);
-}
-
-ui_get_inputs :: proc(ctx: ^UIContext) -> i32 {
-  sdl.pump_events();
-  return sdl.peep_events(mem.raw_array_data(&ctx.sdl_events),
-                         max_sdl_events,
-                         sdl.Event_Action.Get_Event,
-                         u32(sdl.Event_Type.First_Event),
-                         u32(sdl.Event_Type.Last_Event));
-}
 
 is_device_suitable :: proc(physicalDevice: vk.PhysicalDevice) -> bool {
   deviceProperties : vk.PhysicalDeviceProperties;
@@ -1889,7 +1530,8 @@ is_device_suitable :: proc(physicalDevice: vk.PhysicalDevice) -> bool {
   return false;
 }
 
-ui_pick_physical_device :: proc(ctx: ^UIContext) -> bool {
+
+graphics_pick_physical_device :: proc(ctx: ^GraphicsContext) -> bool {
   // Find physical devices
   physicalDevicesCount : u32;
   vk.enumerate_physical_devices(ctx.instance, &physicalDevicesCount, nil);
@@ -1906,5 +1548,6 @@ ui_pick_physical_device :: proc(ctx: ^UIContext) -> bool {
       return true;
     }
   }
+  log.error("No suitable physical devices found.");
   return false;
 }

@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+/home/jim/projects/Odin/odin check "$1" -no-entry-point -vet -ignore-unknown-attributes -collection:shared=/home/jim/projects/tic-tac-toe/external '-define:TOOLKIT="sdl2"' -define:VULKAN_VALIDATION=true

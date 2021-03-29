@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-/home/jim/projects/Odin/odin "$1" "$2" -ignore-unknown-attributes -collection:shared=/home/jim/projects/tic-tac-toe/external
+set -x
+/home/jim/projects/Odin/odin "$1" "$2" -collection:shared=/home/jim/projects/tic-tac-toe/external '-define:TOOLKIT="sdl2"' -define:VULKAN_VALIDATION=true
