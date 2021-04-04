@@ -869,14 +869,15 @@ read_file :: proc(filename: string) -> ([]byte, bool) {
 }
 
 
-graphics_create_shader_module :: proc(ctx: ^GraphicsContext, code: []byte) -> (vk.ShaderModule, bool) {
-  createInfo := vk.ShaderModuleCreateInfo{};
-  createInfo.sType = vk.StructureType.ShaderModuleCreateInfo;
-  createInfo.codeSize = uint(len(code));
-  createInfo.pCode = transmute(^u32)mem.raw_slice_data(code);
+graphics_create_shader_module :: proc(device: vk.Device, code: []byte) -> (vk.ShaderModule, bool) {
+  createInfo := vk.ShaderModuleCreateInfo{
+    sType = vk.StructureType.ShaderModuleCreateInfo,
+    codeSize = uint(len(code)),
+    pCode = transmute(^u32)mem.raw_slice_data(code),
+  };
 
   shaderModule: vk.ShaderModule;
-  if vk.create_shader_module(ctx.device, &createInfo, nil, &shaderModule) != vk.Result.Success {
+  if vk.create_shader_module(device, &createInfo, nil, &shaderModule) != vk.Result.Success {
     log.error("Error: failed to create shader module");
     return nil, false;
   }
@@ -919,6 +920,172 @@ get_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
   };
 
   return attributeDescriptions;
+}
+
+
+graphics_create_common_graphics_pipeline :: proc(vertex_shader: string,
+                                                 fragment_shader: string,
+                                                 device: vk.Device,
+                                                 swap_chain_extent: vk.Extent2D,
+                                                 render_pass: vk.RenderPass,
+                                                 descriptor_set_layout: ^vk.DescriptorSetLayout,
+                                                 pipeline_layout: ^vk.PipelineLayout,
+                                                 pipeline_cache: vk.PipelineCache,
+                                                 graphics_pipeline: ^vk.Pipeline) -> bool {
+  vertShaderCode, ok := read_file(vertex_shader);
+  if !ok {
+    return false;
+  }
+  defer delete(vertShaderCode);
+  fragShaderCode: []byte;
+  fragShaderCode, ok = read_file(fragment_shader);
+  defer delete(fragShaderCode);
+  if !ok {
+    return false;
+  }
+
+  vertShaderModule: vk.ShaderModule;
+  vertShaderModule, ok = graphics_create_shader_module(device, vertShaderCode);
+  if !ok {
+    return false;
+  }
+  defer vk.destroy_shader_module(device, vertShaderModule, nil);
+  fragShaderModule: vk.ShaderModule;
+  fragShaderModule, ok = graphics_create_shader_module(device, fragShaderCode);
+  if !ok {
+    return false;
+  }
+  defer vk.destroy_shader_module(device, fragShaderModule, nil);
+
+  vertShaderStageInfo := vk.PipelineShaderStageCreateInfo{
+    sType = vk.StructureType.PipelineShaderStageCreateInfo,
+    stage = vk.ShaderStageFlagBits.Vertex,
+    module = vertShaderModule,
+    pName = "main",
+  };
+
+  fragShaderStageInfo := vk.PipelineShaderStageCreateInfo{
+    sType = vk.StructureType.PipelineShaderStageCreateInfo,
+    stage = vk.ShaderStageFlagBits.Fragment,
+    module = fragShaderModule,
+    pName = "main",
+  };
+
+  shaderStages := []vk.PipelineShaderStageCreateInfo{vertShaderStageInfo, fragShaderStageInfo};
+
+  bindingDescription := get_binding_description();
+  attributeDescriptions := get_attribute_descriptions();
+
+  vertexInputInfo := vk.PipelineVertexInputStateCreateInfo{
+    sType = vk.StructureType.PipelineVertexInputStateCreateInfo,
+    vertexBindingDescriptionCount = 1,
+    vertexAttributeDescriptionCount = u32(len(attributeDescriptions)),
+    pVertexBindingDescriptions = &bindingDescription,
+    pVertexAttributeDescriptions = mem.raw_slice_data(attributeDescriptions),
+  };
+
+  inputAssembly := vk.PipelineInputAssemblyStateCreateInfo{
+    sType = vk.StructureType.PipelineInputAssemblyStateCreateInfo,
+    topology = vk.PrimitiveTopology.TriangleList,
+    primitiveRestartEnable = vk.FALSE,
+  };
+
+  viewport := vk.Viewport{
+    x = 0.0,
+    y = 0.0,
+    width = f32(swap_chain_extent.width),
+    height = f32(swap_chain_extent.height),
+    minDepth = 0.0,
+    maxDepth = 1.0,
+  };
+
+  scissor := vk.Rect2D{
+    offset = {0, 0},
+    extent = swap_chain_extent,
+  };
+
+  viewportState := vk.PipelineViewportStateCreateInfo{
+    sType = vk.StructureType.PipelineViewportStateCreateInfo,
+    viewportCount = 1,
+    pViewports = &viewport,
+    scissorCount = 1,
+    pScissors = &scissor,
+  };
+
+  rasterizer := vk.PipelineRasterizationStateCreateInfo{
+    sType = vk.StructureType.PipelineRasterizationStateCreateInfo,
+    depthClampEnable = vk.FALSE,
+    rasterizerDiscardEnable = vk.FALSE,
+    polygonMode = vk.PolygonMode.Fill,
+    lineWidth = 1.0,
+    cullMode = u32(vk.CullModeFlagBits.Back),
+    frontFace = vk.FrontFace.CounterClockwise,
+    depthBiasEnable = vk.FALSE,
+  };
+
+  multisampling := vk.PipelineMultisampleStateCreateInfo{
+    sType = vk.StructureType.PipelineMultisampleStateCreateInfo,
+    sampleShadingEnable = vk.FALSE,
+    rasterizationSamples = vk.SampleCountFlagBits._1,
+  };
+
+  depthStencil := vk.PipelineDepthStencilStateCreateInfo {
+    sType = vk.StructureType.PipelineDepthStencilStateCreateInfo,
+    depthTestEnable = vk.TRUE,
+    depthWriteEnable = vk.TRUE,
+    depthCompareOp = vk.CompareOp.Less,
+    depthBoundsTestEnable = vk.FALSE,
+    stencilTestEnable = vk.FALSE,
+  };
+
+  colorBlendAttachment := vk.PipelineColorBlendAttachmentState{
+    colorWriteMask = u32(vk.ColorComponentFlagBits.R | vk.ColorComponentFlagBits.G | vk.ColorComponentFlagBits.B | vk.ColorComponentFlagBits.A),
+    blendEnable = vk.FALSE,
+  };
+
+  colorBlending := vk.PipelineColorBlendStateCreateInfo{
+    sType = vk.StructureType.PipelineColorBlendStateCreateInfo,
+    logicOpEnable = vk.FALSE,
+    logicOp = vk.LogicOp.Copy,
+    attachmentCount = 1,
+    pAttachments = &colorBlendAttachment,
+    blendConstants = { 0.0, 0.0, 0.0, 0.0 },
+  };
+
+  pipelineLayoutInfo := vk.PipelineLayoutCreateInfo{
+    sType = vk.StructureType.PipelineLayoutCreateInfo,
+    setLayoutCount = 1,
+    pSetLayouts = descriptor_set_layout,
+  };
+
+  if (vk.create_pipeline_layout(device, &pipelineLayoutInfo, nil, pipeline_layout) != vk.Result.Success) {
+    log.error("Error: could not create pipeline layout");
+    return false;
+  }
+
+  pipelineInfo := vk.GraphicsPipelineCreateInfo{
+    sType = vk.StructureType.GraphicsPipelineCreateInfo,
+    stageCount = 2,
+    pStages = mem.raw_slice_data(shaderStages),
+    pVertexInputState = &vertexInputInfo,
+    pInputAssemblyState = &inputAssembly,
+    pViewportState = &viewportState,
+    pRasterizationState = &rasterizer,
+    pMultisampleState = &multisampling,
+    pDepthStencilState = &depthStencil,
+    pColorBlendState = &colorBlending,
+    layout = pipeline_layout^,
+    renderPass = render_pass,
+    subpass = 0,
+    basePipelineHandle = nil,
+  };
+
+  if vk.create_graphics_pipelines(device, pipeline_cache, 1, &pipelineInfo, nil, graphics_pipeline) != vk.Result.Success {
+    log.error("Error: failed to create graphics pipleine");
+    return false;
+  }
+
+  return true;
 }
 
 
