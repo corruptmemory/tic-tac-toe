@@ -6,7 +6,7 @@ import "core:mem"
 import "core:os"
 import vk "shared:vulkan"
 import lin "core:math/linalg"
-// import time "core:time"
+//import time "core:time"
 import "core:log"
 import "core:strings"
 import bc "../build_config"
@@ -14,7 +14,7 @@ import bc "../build_config"
 
 max_frames_in_flight :: 2;
 
-SwapchainBuffer :: struct {
+Swapchain_Buffer :: struct {
   image: vk.Image,
   view: vk.ImageView,
 };
@@ -33,14 +33,21 @@ Vertex :: struct {
   weight0: lin.Vector3f32,
 };
 
-UniformBufferObject :: struct {
+Uniform_Buffer_Object :: struct {
     model: lin.Matrix4f32,
     view: lin.Matrix4f32,
     proj: lin.Matrix4f32,
 }
 
+Instance_Data :: struct {
+  pos: lin.Vector3f32,
+  rot: lin.Vector3f32,
+  scale: f32,
+  tex_index: u32,
+};
 
-GraphicsContext :: struct {
+
+Graphics_Context :: struct {
   instance : vk.Instance,
   device: vk.Device,
   physicalDevice: vk.PhysicalDevice,
@@ -58,11 +65,13 @@ GraphicsContext :: struct {
   capabilities: vk.SurfaceCapabilitiesKHR,
   formats: []vk.SurfaceFormatKHR,
   presentModes: []vk.PresentModeKHR,
-  pipelineLayout: vk.PipelineLayout,
+  pipeline_layout: vk.PipelineLayout,
   renderPass: vk.RenderPass,
   commandPool: vk.CommandPool,
   commandBuffers: []vk.CommandBuffer,
-  graphicsPipeline: vk.Pipeline,
+  background_pipeline: vk.Pipeline,
+  piece_pipeline: vk.Pipeline,
+  board_pipeline: vk.Pipeline,
   imageAvailableSemaphores: []vk.Semaphore,
   renderFinishedSemaphores: []vk.Semaphore,
   inFlightFences: []vk.Fence,
@@ -90,8 +99,42 @@ GraphicsContext :: struct {
   depthImageView: vk.ImageView,
 }
 
+Shader_Info :: struct {
+  vertex_info: vk.PipelineShaderStageCreateInfo,
+  fragment_info: vk.PipelineShaderStageCreateInfo,
+  bindings: []vk.VertexInputBindingDescription,
+  attributes: []vk.VertexInputAttributeDescription,
+}
 
-graphics_init :: proc(ctx: ^GraphicsContext,
+init_shader_info :: proc(info: ^Shader_Info,
+                         device: vk.Device,
+                         vertex_file: string,
+                         fragment_file: string,
+                         bindings: []vk.VertexInputBindingDescription,
+                         attributes: []vk.VertexInputAttributeDescription) -> bool {
+  ok: bool;
+  info.vertex_info, ok = load_shader(device, vertex_file, vk.ShaderStageFlagBits.Vertex);
+  if !ok do return false;
+  info.fragment_info, ok = load_shader(device, fragment_file, vk.ShaderStageFlagBits.Fragment);
+  if !ok {
+    vk.destroy_shader_module(device, info.vertex_info.module, nil);
+    return false;
+  }
+  info.bindings = bindings;
+  info.attributes = attributes;
+  return true;
+}
+
+
+delete_shader_info :: proc(device: vk.Device, info: ^Shader_Info) {
+  vk.destroy_shader_module(device, info.vertex_info.module, nil);
+  info.vertex_info.module = nil;
+  vk.destroy_shader_module(device, info.fragment_info.module, nil);
+  info.fragment_info.module = nil;
+}
+
+
+graphics_init :: proc(ctx: ^Graphics_Context,
                       application_name: string = "tic-tac-toe") -> bool {
 
   if !graphics_create_vulkan_instance(ctx, application_name) do return false;
@@ -101,7 +144,7 @@ graphics_init :: proc(ctx: ^GraphicsContext,
 }
 
 
-graphics_check_device_extension_support :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_check_device_extension_support :: proc(ctx: ^Graphics_Context) -> bool {
   context.allocator = context.temp_allocator;
   extension_count: u32;
   vk.enumerate_device_extension_properties(ctx.physicalDevice, nil, &extension_count, nil);
@@ -129,7 +172,7 @@ graphics_check_device_extension_support :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_find_supported_format :: proc(ctx:^GraphicsContext, candidates: []vk.Format, tiling: vk.ImageTiling, features: vk.FormatFeatureFlags) -> (vk.Format, bool) {
+graphics_find_supported_format :: proc(ctx:^Graphics_Context, candidates: []vk.Format, tiling: vk.ImageTiling, features: vk.FormatFeatureFlags) -> (vk.Format, bool) {
   for format in candidates {
     props: vk.FormatProperties;
     vk.get_physical_device_format_properties(ctx.physicalDevice, format, &props);
@@ -146,7 +189,7 @@ graphics_find_supported_format :: proc(ctx:^GraphicsContext, candidates: []vk.Fo
 }
 
 
-graphics_find_depth_format :: proc(ctx: ^GraphicsContext) -> (vk.Format, bool) {
+graphics_find_depth_format :: proc(ctx: ^Graphics_Context) -> (vk.Format, bool) {
   return graphics_find_supported_format(ctx,
                                {vk.Format.D32Sfloat, vk.Format.D32SfloatS8Uint, vk.Format.D24UnormS8Uint},
                                vk.ImageTiling.Optimal,
@@ -154,7 +197,7 @@ graphics_find_depth_format :: proc(ctx: ^GraphicsContext) -> (vk.Format, bool) {
 }
 
 
-graphics_create_depth_resources :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_depth_resources :: proc(ctx: ^Graphics_Context) -> bool {
   depth_format: vk.Format;
   ok: bool;
   if depth_format, ok = graphics_find_depth_format(ctx); !ok {
@@ -167,7 +210,7 @@ graphics_create_depth_resources :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_init_post_window :: proc(ctx: ^GraphicsContext,
+graphics_init_post_window :: proc(ctx: ^Graphics_Context,
                                   width: u32,
                                   height: u32) -> bool
 {
@@ -198,7 +241,7 @@ graphics_init_post_window :: proc(ctx: ^GraphicsContext,
 }
 
 
-graphics_cleanup_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_cleanup_swap_chain :: proc(ctx: ^Graphics_Context) -> bool {
   vk.destroy_image_view(ctx.device, ctx.depthImageView, nil);
   vk.destroy_image(ctx.device, ctx.depthImage, nil);
   vk.free_memory(ctx.device, ctx.depthImageMemory, nil);
@@ -212,8 +255,11 @@ graphics_cleanup_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
   delete(ctx.commandBuffers);
   ctx.commandBuffers = nil;
 
-  vk.destroy_pipeline(ctx.device, ctx.graphicsPipeline, nil);
-  vk.destroy_pipeline_layout(ctx.device, ctx.pipelineLayout, nil);
+  vk.destroy_pipeline(ctx.device, ctx.piece_pipeline, nil);
+  vk.destroy_pipeline(ctx.device, ctx.board_pipeline, nil);
+  vk.destroy_pipeline(ctx.device, ctx.background_pipeline, nil);
+
+  vk.destroy_pipeline_layout(ctx.device, ctx.pipeline_layout, nil);
   vk.destroy_render_pass(ctx.device, ctx.renderPass, nil);
 
   for imageView, _ in ctx.swapChainImageViews {
@@ -239,7 +285,7 @@ graphics_cleanup_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_recreate_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_recreate_swap_chain :: proc(ctx: ^Graphics_Context) -> bool {
   if ctx.width == 0 || ctx.height == 0 do return true;
 
   vk.device_wait_idle(ctx.device);
@@ -258,7 +304,7 @@ graphics_recreate_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_create_sync_objects :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_sync_objects :: proc(ctx: ^Graphics_Context) -> bool {
   ctx.imageAvailableSemaphores = make([]vk.Semaphore,max_frames_in_flight);
   ctx.renderFinishedSemaphores = make([]vk.Semaphore,max_frames_in_flight);
   ctx.inFlightFences = make([]vk.Fence,max_frames_in_flight);
@@ -284,7 +330,7 @@ graphics_create_sync_objects :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_create_descriptor_sets :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
   layouts := make([]vk.DescriptorSetLayout,len(ctx.swapChainImages));
   for _, i in layouts {
       layouts[i] = ctx.descriptorSetLayout;
@@ -307,7 +353,7 @@ graphics_create_descriptor_sets :: proc(ctx: ^GraphicsContext) -> bool {
     bufferInfo := vk.DescriptorBufferInfo{
       buffer = ctx.uniformBuffers[i],
       offset = 0,
-      range = size_of(UniformBufferObject),
+      range = size_of(Uniform_Buffer_Object),
     };
 
     imageInfo := vk.DescriptorImageInfo {
@@ -343,7 +389,7 @@ graphics_create_descriptor_sets :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_create_descriptor_pool :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_descriptor_pool :: proc(ctx: ^Graphics_Context) -> bool {
   poolSize := []vk.DescriptorPoolSize {
     {
       type = vk.DescriptorType.UniformBuffer,
@@ -371,8 +417,8 @@ graphics_create_descriptor_pool :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_create_uniform_buffers :: proc(ctx: ^GraphicsContext) -> bool {
-    bufferSize := vk.DeviceSize(size_of(UniformBufferObject));
+graphics_create_uniform_buffers :: proc(ctx: ^Graphics_Context) -> bool {
+    bufferSize := vk.DeviceSize(size_of(Uniform_Buffer_Object));
 
     ctx.uniformBuffers = make([]vk.Buffer,len(ctx.swapChainImages));
     ctx.uniformBuffersMemory = make([]vk.DeviceMemory,len(ctx.swapChainImages));
@@ -387,7 +433,7 @@ graphics_create_uniform_buffers :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_copy_buffer :: proc(ctx: ^GraphicsContext, srcBuffer: vk.Buffer, dstBuffer: vk.Buffer, size: vk.DeviceSize) {
+graphics_copy_buffer :: proc(ctx: ^Graphics_Context, srcBuffer: vk.Buffer, dstBuffer: vk.Buffer, size: vk.DeviceSize) {
   allocInfo := vk.CommandBufferAllocateInfo{
     sType = vk.StructureType.CommandBufferAllocateInfo,
     level = vk.CommandBufferLevel.Primary,
@@ -425,7 +471,7 @@ graphics_copy_buffer :: proc(ctx: ^GraphicsContext, srcBuffer: vk.Buffer, dstBuf
 }
 
 
-graphics_create_texture_sampler :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_texture_sampler :: proc(ctx: ^Graphics_Context) -> bool {
   properties: vk.PhysicalDeviceProperties;
   vk.get_physical_device_properties(ctx.physicalDevice, &properties);
 
@@ -456,14 +502,14 @@ graphics_create_texture_sampler :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_create_texture_image_view :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_texture_image_view :: proc(ctx: ^Graphics_Context) -> bool {
   textureImageView, result := graphics_create_image_view(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageAspectFlagBits.Color);
   ctx.textureImageView = textureImageView;
   return result;
 }
 
 
-graphics_find_memory_type :: proc(ctx:^GraphicsContext, typeFilter:u32, properties: vk.MemoryPropertyFlags) -> (u32, bool) {
+graphics_find_memory_type :: proc(ctx:^Graphics_Context, typeFilter:u32, properties: vk.MemoryPropertyFlags) -> (u32, bool) {
   memProperties := vk.PhysicalDeviceMemoryProperties{};
   vk.get_physical_device_memory_properties(ctx.physicalDevice, &memProperties);
 
@@ -477,7 +523,7 @@ graphics_find_memory_type :: proc(ctx:^GraphicsContext, typeFilter:u32, properti
 }
 
 
-graphics_create_buffer :: proc(ctx: ^GraphicsContext, size: vk.DeviceSize, usage: vk.BufferUsageFlagBits, properties: vk.MemoryPropertyFlagBits, buffer: ^vk.Buffer, bufferMemory: ^vk.DeviceMemory) -> bool {
+graphics_create_buffer :: proc(ctx: ^Graphics_Context, size: vk.DeviceSize, usage: vk.BufferUsageFlagBits, properties: vk.MemoryPropertyFlagBits, buffer: ^vk.Buffer, bufferMemory: ^vk.DeviceMemory) -> bool {
   bufferInfo := vk.BufferCreateInfo {
     sType = vk.StructureType.BufferCreateInfo,
     size = u64(size),
@@ -516,7 +562,7 @@ graphics_create_buffer :: proc(ctx: ^GraphicsContext, size: vk.DeviceSize, usage
 }
 
 
-graphics_create_image :: proc(ctx: ^GraphicsContext, width, height: u32, format: vk.Format, tiling: vk.ImageTiling, usage: vk.ImageUsageFlagBits, properties: vk.MemoryPropertyFlagBits, image: ^vk.Image, imageMemory: ^vk.DeviceMemory) -> bool {
+graphics_create_image :: proc(ctx: ^Graphics_Context, width, height: u32, format: vk.Format, tiling: vk.ImageTiling, usage: vk.ImageUsageFlagBits, properties: vk.MemoryPropertyFlagBits, image: ^vk.Image, imageMemory: ^vk.DeviceMemory) -> bool {
  imageInfo := vk.ImageCreateInfo{
     sType = vk.StructureType.ImageCreateInfo,
     imageType = vk.ImageType._2D,
@@ -567,7 +613,7 @@ graphics_create_image :: proc(ctx: ^GraphicsContext, width, height: u32, format:
 }
 
 
-graphics_begin_single_time_commands :: proc(ctx: ^GraphicsContext) -> vk.CommandBuffer {
+graphics_begin_single_time_commands :: proc(ctx: ^Graphics_Context) -> vk.CommandBuffer {
   allocInfo := vk.CommandBufferAllocateInfo{
     sType = vk.StructureType.CommandBufferAllocateInfo,
     level = vk.CommandBufferLevel.Primary,
@@ -588,7 +634,7 @@ graphics_begin_single_time_commands :: proc(ctx: ^GraphicsContext) -> vk.Command
   return commandBuffer;
 }
 
-graphics_end_single_time_commands :: proc(ctx: ^GraphicsContext, commandBuffer: ^vk.CommandBuffer) {
+graphics_end_single_time_commands :: proc(ctx: ^Graphics_Context, commandBuffer: ^vk.CommandBuffer) {
   vk.end_command_buffer(commandBuffer^);
 
   submitInfo := vk.SubmitInfo{
@@ -603,7 +649,7 @@ graphics_end_single_time_commands :: proc(ctx: ^GraphicsContext, commandBuffer: 
   vk.free_command_buffers(ctx.device, ctx.commandPool, 1, commandBuffer);
 }
 
-graphics_copy_buffer_to_image :: proc(ctx: ^GraphicsContext, buffer: vk.Buffer, image: vk.Image, width, height: u32) {
+graphics_copy_buffer_to_image :: proc(ctx: ^Graphics_Context, buffer: vk.Buffer, image: vk.Image, width, height: u32) {
   commandBuffer := graphics_begin_single_time_commands(ctx);
 
   region := vk.BufferImageCopy{
@@ -626,7 +672,7 @@ graphics_copy_buffer_to_image :: proc(ctx: ^GraphicsContext, buffer: vk.Buffer, 
 }
 
 
-graphics_transition_image_layout :: proc(ctx: ^GraphicsContext, image: vk.Image, format: vk.Format, oldLayout: vk.ImageLayout, newLayout: vk.ImageLayout) -> bool {
+graphics_transition_image_layout :: proc(ctx: ^Graphics_Context, image: vk.Image, format: vk.Format, oldLayout: vk.ImageLayout, newLayout: vk.ImageLayout) -> bool {
   commandBuffer := graphics_begin_single_time_commands(ctx);
 
   ufi : i32 = vk.QUEUE_FAMILY_IGNORED;
@@ -685,7 +731,7 @@ graphics_transition_image_layout :: proc(ctx: ^GraphicsContext, image: vk.Image,
 }
 
 
-// graphics_create_texture_image :: proc(ctx: ^GraphicsContext) -> bool {
+// graphics_create_texture_image :: proc(ctx: ^Graphics_Context) -> bool {
 //   origImageSurface := img.load("blender/viking_room.png");
 //   if origImageSurface == nil {
 //     log.error("Error loading texture image");
@@ -745,7 +791,7 @@ graphics_transition_image_layout :: proc(ctx: ^GraphicsContext, image: vk.Image,
 // }
 
 
-graphics_create_command_pool :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_command_pool :: proc(ctx: ^Graphics_Context) -> bool {
     poolInfo := vk.CommandPoolCreateInfo{
       sType = vk.StructureType.CommandPoolCreateInfo,
       queueFamilyIndex = ctx.graphicsFamily,
@@ -758,7 +804,7 @@ graphics_create_command_pool :: proc(ctx: ^GraphicsContext) -> bool {
     return true;
 }
 
-graphics_create_render_pass :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_render_pass :: proc(ctx: ^Graphics_Context) -> bool {
   colorAttachment := vk.AttachmentDescription{
     format = ctx.swapChainImageFormat,
     samples = vk.SampleCountFlagBits._1,
@@ -886,18 +932,25 @@ graphics_create_shader_module :: proc(device: vk.Device, code: []byte) -> (vk.Sh
 }
 
 
-get_binding_description :: proc() -> vk.VertexInputBindingDescription {
-  bindingDescription := vk.VertexInputBindingDescription{
-    binding = 0,
-    stride = size_of(Vertex),
-    inputRate = vk.VertexInputRate.Vertex,
+get_piece_binding_description :: proc() -> []vk.VertexInputBindingDescription {
+  bindingDescription := []vk.VertexInputBindingDescription{
+    {
+      binding = 0,
+      stride = size_of(Vertex),
+      inputRate = vk.VertexInputRate.Vertex,
+    },
+    {
+      binding = 1,
+      stride = size_of(Instance_Data),
+      inputRate = vk.VertexInputRate.Instance,
+    },
   };
 
   return bindingDescription;
 }
 
 
-get_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
+get_piece_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
   attributeDescriptions := []vk.VertexInputAttributeDescription{
     {
       binding = 0,
@@ -909,7 +962,76 @@ get_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
       binding = 0,
       location = 1,
       format = vk.Format.R32G32B32Sfloat,
+      offset = u32(offset_of(Vertex, normal)),
+    },
+    {
+      binding = 0,
+      location = 2,
+      format = vk.Format.R32G32Sfloat,
+      offset = u32(offset_of(Vertex, uv)),
+    },
+    {
+      binding = 0,
+      location = 3,
+      format = vk.Format.R32G32B32Sfloat,
       offset = u32(offset_of(Vertex, color)),
+    },
+    {
+      binding = 1,
+      location = 4,
+      format = vk.Format.R32G32B32Sfloat,
+      offset = u32(offset_of(Instance_Data, pos)),
+    },
+    {
+      binding = 1,
+      location = 5,
+      format = vk.Format.R32G32B32Sfloat,
+      offset = u32(offset_of(Instance_Data, rot)),
+    },
+    {
+      binding = 1,
+      location = 6,
+      format = vk.Format.R32Sfloat,
+      offset = u32(offset_of(Instance_Data, scale)),
+    },
+    {
+      binding = 1,
+      location = 7,
+      format = vk.Format.R32Sint,
+      offset = u32(offset_of(Instance_Data, tex_index)),
+    },
+  };
+
+  return attributeDescriptions;
+}
+
+
+get_board_binding_description :: proc() -> []vk.VertexInputBindingDescription {
+  bindingDescription := []vk.VertexInputBindingDescription{
+    {
+      binding = 0,
+      stride = size_of(Vertex),
+      inputRate = vk.VertexInputRate.Vertex,
+    },
+  };
+
+  return bindingDescription;
+}
+
+
+get_board_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
+  attributeDescriptions := []vk.VertexInputAttributeDescription{
+    {
+      binding = 0,
+      location = 0,
+      format = vk.Format.R32G32B32Sfloat,
+      offset = u32(offset_of(Vertex, pos)),
+    },
+    {
+      binding = 0,
+      location = 1,
+      format = vk.Format.R32G32B32Sfloat,
+      offset = u32(offset_of(Vertex, normal)),
     },
     {
       binding = 0,
@@ -923,226 +1045,74 @@ get_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
 }
 
 
-graphics_create_common_graphics_pipeline :: proc(vertex_shader: string,
-                                                 fragment_shader: string,
-                                                 device: vk.Device,
-                                                 swap_chain_extent: vk.Extent2D,
-                                                 render_pass: vk.RenderPass,
-                                                 descriptor_set_layout: ^vk.DescriptorSetLayout,
-                                                 pipeline_layout: ^vk.PipelineLayout,
-                                                 pipeline_cache: vk.PipelineCache,
-                                                 graphics_pipeline: ^vk.Pipeline) -> bool {
-  vertShaderCode, ok := read_file(vertex_shader);
+
+load_module :: proc(device: vk.Device, file: string) -> (vk.ShaderModule, bool) {
+  code, ok := read_file(file);
   if !ok {
-    return false;
+    return nil, false;
   }
-  defer delete(vertShaderCode);
-  fragShaderCode: []byte;
-  fragShaderCode, ok = read_file(fragment_shader);
-  defer delete(fragShaderCode);
-  if !ok {
-    return false;
-  }
+  defer delete(code);
 
-  vertShaderModule: vk.ShaderModule;
-  vertShaderModule, ok = graphics_create_shader_module(device, vertShaderCode);
-  if !ok {
-    return false;
-  }
-  defer vk.destroy_shader_module(device, vertShaderModule, nil);
-  fragShaderModule: vk.ShaderModule;
-  fragShaderModule, ok = graphics_create_shader_module(device, fragShaderCode);
-  if !ok {
-    return false;
-  }
-  defer vk.destroy_shader_module(device, fragShaderModule, nil);
-
-  vertShaderStageInfo := vk.PipelineShaderStageCreateInfo{
-    sType = vk.StructureType.PipelineShaderStageCreateInfo,
-    stage = vk.ShaderStageFlagBits.Vertex,
-    module = vertShaderModule,
-    pName = "main",
-  };
-
-  fragShaderStageInfo := vk.PipelineShaderStageCreateInfo{
-    sType = vk.StructureType.PipelineShaderStageCreateInfo,
-    stage = vk.ShaderStageFlagBits.Fragment,
-    module = fragShaderModule,
-    pName = "main",
-  };
-
-  shaderStages := []vk.PipelineShaderStageCreateInfo{vertShaderStageInfo, fragShaderStageInfo};
-
-  bindingDescription := get_binding_description();
-  attributeDescriptions := get_attribute_descriptions();
-
-  vertexInputInfo := vk.PipelineVertexInputStateCreateInfo{
-    sType = vk.StructureType.PipelineVertexInputStateCreateInfo,
-    vertexBindingDescriptionCount = 1,
-    vertexAttributeDescriptionCount = u32(len(attributeDescriptions)),
-    pVertexBindingDescriptions = &bindingDescription,
-    pVertexAttributeDescriptions = mem.raw_slice_data(attributeDescriptions),
-  };
-
-  inputAssembly := vk.PipelineInputAssemblyStateCreateInfo{
-    sType = vk.StructureType.PipelineInputAssemblyStateCreateInfo,
-    topology = vk.PrimitiveTopology.TriangleList,
-    primitiveRestartEnable = vk.FALSE,
-  };
-
-  viewport := vk.Viewport{
-    x = 0.0,
-    y = 0.0,
-    width = f32(swap_chain_extent.width),
-    height = f32(swap_chain_extent.height),
-    minDepth = 0.0,
-    maxDepth = 1.0,
-  };
-
-  scissor := vk.Rect2D{
-    offset = {0, 0},
-    extent = swap_chain_extent,
-  };
-
-  viewportState := vk.PipelineViewportStateCreateInfo{
-    sType = vk.StructureType.PipelineViewportStateCreateInfo,
-    viewportCount = 1,
-    pViewports = &viewport,
-    scissorCount = 1,
-    pScissors = &scissor,
-  };
-
-  rasterizer := vk.PipelineRasterizationStateCreateInfo{
-    sType = vk.StructureType.PipelineRasterizationStateCreateInfo,
-    depthClampEnable = vk.FALSE,
-    rasterizerDiscardEnable = vk.FALSE,
-    polygonMode = vk.PolygonMode.Fill,
-    lineWidth = 1.0,
-    cullMode = u32(vk.CullModeFlagBits.Back),
-    frontFace = vk.FrontFace.CounterClockwise,
-    depthBiasEnable = vk.FALSE,
-  };
-
-  multisampling := vk.PipelineMultisampleStateCreateInfo{
-    sType = vk.StructureType.PipelineMultisampleStateCreateInfo,
-    sampleShadingEnable = vk.FALSE,
-    rasterizationSamples = vk.SampleCountFlagBits._1,
-  };
-
-  depthStencil := vk.PipelineDepthStencilStateCreateInfo {
-    sType = vk.StructureType.PipelineDepthStencilStateCreateInfo,
-    depthTestEnable = vk.TRUE,
-    depthWriteEnable = vk.TRUE,
-    depthCompareOp = vk.CompareOp.Less,
-    depthBoundsTestEnable = vk.FALSE,
-    stencilTestEnable = vk.FALSE,
-  };
-
-  colorBlendAttachment := vk.PipelineColorBlendAttachmentState{
-    colorWriteMask = u32(vk.ColorComponentFlagBits.R | vk.ColorComponentFlagBits.G | vk.ColorComponentFlagBits.B | vk.ColorComponentFlagBits.A),
-    blendEnable = vk.FALSE,
-  };
-
-  colorBlending := vk.PipelineColorBlendStateCreateInfo{
-    sType = vk.StructureType.PipelineColorBlendStateCreateInfo,
-    logicOpEnable = vk.FALSE,
-    logicOp = vk.LogicOp.Copy,
-    attachmentCount = 1,
-    pAttachments = &colorBlendAttachment,
-    blendConstants = { 0.0, 0.0, 0.0, 0.0 },
-  };
-
-  pipelineLayoutInfo := vk.PipelineLayoutCreateInfo{
-    sType = vk.StructureType.PipelineLayoutCreateInfo,
-    setLayoutCount = 1,
-    pSetLayouts = descriptor_set_layout,
-  };
-
-  if (vk.create_pipeline_layout(device, &pipelineLayoutInfo, nil, pipeline_layout) != vk.Result.Success) {
-    log.error("Error: could not create pipeline layout");
-    return false;
-  }
-
-  pipelineInfo := vk.GraphicsPipelineCreateInfo{
-    sType = vk.StructureType.GraphicsPipelineCreateInfo,
-    stageCount = 2,
-    pStages = mem.raw_slice_data(shaderStages),
-    pVertexInputState = &vertexInputInfo,
-    pInputAssemblyState = &inputAssembly,
-    pViewportState = &viewportState,
-    pRasterizationState = &rasterizer,
-    pMultisampleState = &multisampling,
-    pDepthStencilState = &depthStencil,
-    pColorBlendState = &colorBlending,
-    layout = pipeline_layout^,
-    renderPass = render_pass,
-    subpass = 0,
-    basePipelineHandle = nil,
-  };
-
-  if vk.create_graphics_pipelines(device, pipeline_cache, 1, &pipelineInfo, nil, graphics_pipeline) != vk.Result.Success {
-    log.error("Error: failed to create graphics pipleine");
-    return false;
-  }
-
-  return true;
+  return graphics_create_shader_module(device, code);
 }
 
 
-graphics_create_graphics_pipeline :: proc(ctx: ^GraphicsContext) -> bool {
-  vertShaderCode, ok := read_file("shaders/vert.spv");
-  if !ok {
-    return false;
-  }
-  defer delete(vertShaderCode);
-  fragShaderCode: []byte;
-  fragShaderCode, ok = read_file("shaders/frag.spv");
-  defer delete(fragShaderCode);
-  if !ok {
-    return false;
-  }
+load_shader :: proc(device: vk.Device, file: string, stage: vk.ShaderStageFlagBits) -> (vk.PipelineShaderStageCreateInfo, bool) {
+  module, ok := load_module(device, file);
+  if !ok do return vk.PipelineShaderStageCreateInfo{}, false;
 
-  vertShaderModule: vk.ShaderModule;
-  vertShaderModule, ok = graphics_create_shader_module(ctx, vertShaderCode);
-  if !ok {
-    return false;
-  }
-  defer vk.destroy_shader_module(ctx.device, vertShaderModule, nil);
-  fragShaderModule: vk.ShaderModule;
-  fragShaderModule, ok = graphics_create_shader_module(ctx, fragShaderCode);
-  if !ok {
-    return false;
-  }
-  defer vk.destroy_shader_module(ctx.device, fragShaderModule, nil);
-
-  vertShaderStageInfo := vk.PipelineShaderStageCreateInfo{
+  return vk.PipelineShaderStageCreateInfo{
     sType = vk.StructureType.PipelineShaderStageCreateInfo,
-    stage = vk.ShaderStageFlagBits.Vertex,
-    module = vertShaderModule,
+    stage = stage,
+    module = module,
     pName = "main",
-  };
+  }, true;
+}
 
-  fragShaderStageInfo := vk.PipelineShaderStageCreateInfo{
-    sType = vk.StructureType.PipelineShaderStageCreateInfo,
-    stage = vk.ShaderStageFlagBits.Fragment,
-    module = fragShaderModule,
-    pName = "main",
-  };
 
-  shaderStages := []vk.PipelineShaderStageCreateInfo{vertShaderStageInfo, fragShaderStageInfo};
+graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
+  ok: bool;
+  background_info: Shader_Info;
+  board_info: Shader_Info;
+  piece_info: Shader_Info;
 
-  bindingDescription := get_binding_description();
-  attributeDescriptions := get_attribute_descriptions();
+  ok = init_shader_info(&background_info,
+                       ctx.device,
+                       "shaders/background-vert.spv",
+                       "shaders/background-frag.spv",
+                       nil,
+                       nil);
+  if !ok do return false;
+  defer delete_shader_info(ctx.device, &background_info);
+  ok = init_shader_info(&board_info,
+                       ctx.device,
+                       "shaders/board-vert.spv",
+                       "shaders/board-frag.spv",
+                       get_board_binding_description(),
+                       get_board_attribute_descriptions());
+  if !ok do return false;
+  defer delete_shader_info(ctx.device, &board_info);
+  ok = init_shader_info(&piece_info,
+                       ctx.device,
+                       "shaders/piece-vert.spv",
+                       "shaders/piece-frag.spv",
+                       get_piece_binding_description(),
+                       get_piece_attribute_descriptions());
+  if !ok do return false;
+  defer delete_shader_info(ctx.device, &piece_info);
 
-  vertexInputInfo := vk.PipelineVertexInputStateCreateInfo{
+  shader_stages: [2]vk.PipelineShaderStageCreateInfo;
+
+  binding_description: []vk.VertexInputBindingDescription;
+  attribute_descriptions: []vk.VertexInputAttributeDescription;
+
+  vertex_input_info := vk.PipelineVertexInputStateCreateInfo{
     sType = vk.StructureType.PipelineVertexInputStateCreateInfo,
-    vertexBindingDescriptionCount = 1,
-    vertexAttributeDescriptionCount = u32(len(attributeDescriptions)),
-    pVertexBindingDescriptions = &bindingDescription,
-    pVertexAttributeDescriptions = mem.raw_slice_data(attributeDescriptions),
+    pVertexBindingDescriptions = mem.raw_slice_data(binding_description),
+    pVertexAttributeDescriptions = mem.raw_slice_data(attribute_descriptions),
   };
 
-  inputAssembly := vk.PipelineInputAssemblyStateCreateInfo{
+  input_assembly := vk.PipelineInputAssemblyStateCreateInfo{
     sType = vk.StructureType.PipelineInputAssemblyStateCreateInfo,
     topology = vk.PrimitiveTopology.TriangleList,
     primitiveRestartEnable = vk.FALSE,
@@ -1162,7 +1132,7 @@ graphics_create_graphics_pipeline :: proc(ctx: ^GraphicsContext) -> bool {
     extent = ctx.swapChainExtent,
   };
 
-  viewportState := vk.PipelineViewportStateCreateInfo{
+  viewport_state := vk.PipelineViewportStateCreateInfo{
     sType = vk.StructureType.PipelineViewportStateCreateInfo,
     viewportCount = 1,
     pViewports = &viewport,
@@ -1187,7 +1157,7 @@ graphics_create_graphics_pipeline :: proc(ctx: ^GraphicsContext) -> bool {
     rasterizationSamples = vk.SampleCountFlagBits._1,
   };
 
-  depthStencil := vk.PipelineDepthStencilStateCreateInfo {
+  depth_stencil := vk.PipelineDepthStencilStateCreateInfo {
     sType = vk.StructureType.PipelineDepthStencilStateCreateInfo,
     depthTestEnable = vk.TRUE,
     depthWriteEnable = vk.TRUE,
@@ -1196,58 +1166,87 @@ graphics_create_graphics_pipeline :: proc(ctx: ^GraphicsContext) -> bool {
     stencilTestEnable = vk.FALSE,
   };
 
-  colorBlendAttachment := vk.PipelineColorBlendAttachmentState{
+  color_blend_attachment := vk.PipelineColorBlendAttachmentState{
     colorWriteMask = u32(vk.ColorComponentFlagBits.R | vk.ColorComponentFlagBits.G | vk.ColorComponentFlagBits.B | vk.ColorComponentFlagBits.A),
     blendEnable = vk.FALSE,
   };
 
-  colorBlending := vk.PipelineColorBlendStateCreateInfo{
+  color_blending := vk.PipelineColorBlendStateCreateInfo{
     sType = vk.StructureType.PipelineColorBlendStateCreateInfo,
     logicOpEnable = vk.FALSE,
     logicOp = vk.LogicOp.Copy,
     attachmentCount = 1,
-    pAttachments = &colorBlendAttachment,
+    pAttachments = &color_blend_attachment,
     blendConstants = { 0.0, 0.0, 0.0, 0.0 },
   };
 
-  pipelineLayoutInfo := vk.PipelineLayoutCreateInfo{
+  pipeline_layout_info := vk.PipelineLayoutCreateInfo{
     sType = vk.StructureType.PipelineLayoutCreateInfo,
     setLayoutCount = 1,
     pSetLayouts = &ctx.descriptorSetLayout,
   };
 
-  if (vk.create_pipeline_layout(ctx.device, &pipelineLayoutInfo, nil, &ctx.pipelineLayout) != vk.Result.Success) {
+  if (vk.create_pipeline_layout(ctx.device, &pipeline_layout_info, nil, &ctx.pipeline_layout) != vk.Result.Success) {
     log.error("Error: could not create pipeline layout");
     return false;
   }
 
-  pipelineInfo := vk.GraphicsPipelineCreateInfo{
+  pipeline_info := vk.GraphicsPipelineCreateInfo{
     sType = vk.StructureType.GraphicsPipelineCreateInfo,
     stageCount = 2,
-    pStages = mem.raw_slice_data(shaderStages),
-    pVertexInputState = &vertexInputInfo,
-    pInputAssemblyState = &inputAssembly,
-    pViewportState = &viewportState,
+    pStages = mem.raw_slice_data(shader_stages[:]),
+    pVertexInputState = &vertex_input_info,
+    pInputAssemblyState = &input_assembly,
+    pViewportState = &viewport_state,
     pRasterizationState = &rasterizer,
     pMultisampleState = &multisampling,
-    pDepthStencilState = &depthStencil,
-    pColorBlendState = &colorBlending,
-    layout = ctx.pipelineLayout,
+    pDepthStencilState = &depth_stencil,
+    pColorBlendState = &color_blending,
+    layout = ctx.pipeline_layout,
     renderPass = ctx.renderPass,
     subpass = 0,
     basePipelineHandle = nil,
   };
 
-  if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipelineInfo, nil, &ctx.graphicsPipeline) != vk.Result.Success {
-    log.error("Error: failed to create graphics pipleine");
+  shader_stages[0] = piece_info.vertex_info;
+  shader_stages[1] = piece_info.fragment_info;
+  vertex_input_info.vertexBindingDescriptionCount = u32(len(piece_info.bindings));
+  vertex_input_info.vertexAttributeDescriptionCount = u32(len(piece_info.attributes));
+  if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.piece_pipeline) != vk.Result.Success {
+    log.error("Error: failed to create graphics pipleine for piece");
     return false;
   }
+
+  shader_stages[0] = board_info.vertex_info;
+  shader_stages[1] = board_info.fragment_info;
+  vertex_input_info.vertexBindingDescriptionCount = u32(len(board_info.bindings));
+  vertex_input_info.vertexAttributeDescriptionCount = u32(len(board_info.attributes));
+  if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.board_pipeline) != vk.Result.Success {
+    vk.destroy_pipeline(ctx.device, ctx.piece_pipeline, nil);
+    ctx.piece_pipeline = nil;
+    log.error("Error: failed to create graphics pipleine for board");
+    return false;
+  }
+
+  shader_stages[0] = background_info.vertex_info;
+  shader_stages[1] = background_info.fragment_info;
+  vertex_input_info.vertexBindingDescriptionCount = 0;
+  vertex_input_info.vertexAttributeDescriptionCount = 0;
+  if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.background_pipeline) != vk.Result.Success {
+    vk.destroy_pipeline(ctx.device, ctx.piece_pipeline, nil);
+    vk.destroy_pipeline(ctx.device, ctx.board_pipeline, nil);
+    ctx.piece_pipeline = nil;
+    ctx.board_pipeline = nil;
+    log.error("Error: failed to create graphics pipleine for background");
+    return false;
+  }
+
 
   return true;
 }
 
 
-graphics_create_framebuffers :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_framebuffers :: proc(ctx: ^Graphics_Context) -> bool {
   ctx.swapChainFramebuffers = make([]vk.Framebuffer, len(ctx.swapChainImageViews));
 
   for sciv, i in ctx.swapChainImageViews {
@@ -1284,12 +1283,12 @@ graphics_choose_swap_present_mode :: proc(availablePresentModes: []vk.PresentMod
 }
 
 
-graphics_choose_swap_extent :: proc(ctx: ^GraphicsContext, capabilities: ^vk.SurfaceCapabilitiesKHR) -> vk.Result {
+graphics_choose_swap_extent :: proc(ctx: ^Graphics_Context, capabilities: ^vk.SurfaceCapabilitiesKHR) -> vk.Result {
   return vk.get_physical_device_surface_capabilities_khr(ctx.physicalDevice, ctx.surface, capabilities);
 }
 
 
-graphics_create_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_swap_chain :: proc(ctx: ^Graphics_Context) -> bool {
   surfaceFormat := graphics_choose_swap_surface_format(ctx.formats);
   presentMode := graphics_choose_swap_present_mode(ctx.presentModes);
   if graphics_choose_swap_extent(ctx, &ctx.capabilities) != vk.Result.Success {
@@ -1351,7 +1350,7 @@ graphics_create_swap_chain :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_create_image_view :: proc(ctx: ^GraphicsContext, image: vk.Image, format: vk.Format, aspectMask: vk.ImageAspectFlagBits) -> (vk.ImageView, bool) {
+graphics_create_image_view :: proc(ctx: ^Graphics_Context, image: vk.Image, format: vk.Format, aspectMask: vk.ImageAspectFlagBits) -> (vk.ImageView, bool) {
   viewInfo := vk.ImageViewCreateInfo {
     sType = vk.StructureType.ImageViewCreateInfo,
     image = image,
@@ -1376,7 +1375,7 @@ graphics_create_image_view :: proc(ctx: ^GraphicsContext, image: vk.Image, forma
 }
 
 
-graphics_create_image_views :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_image_views :: proc(ctx: ^Graphics_Context) -> bool {
   ctx.swapChainImageViews = make([]vk.ImageView,len(ctx.swapChainImages));
   for _, i in ctx.swapChainImageViews {
     view, result := graphics_create_image_view(ctx, ctx.swapChainImages[i], ctx.swapChainImageFormat, vk.ImageAspectFlagBits.Color);
@@ -1389,7 +1388,7 @@ graphics_create_image_views :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_query_swap_chain_support :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_query_swap_chain_support :: proc(ctx: ^Graphics_Context) -> bool {
   if vk.get_physical_device_surface_capabilities_khr(ctx.physicalDevice, ctx.surface, &ctx.capabilities) != vk.Result.Success {
     log.error("Error: unable to get device surface capabilities");
     return false;
@@ -1416,7 +1415,7 @@ graphics_query_swap_chain_support :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_create_logical_device :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_logical_device :: proc(ctx: ^Graphics_Context) -> bool {
   queueCreateInfos: []vk.DeviceQueueCreateInfo;
   uniqueQueueFamilies: []u32;
   if ctx.graphicsFamily ==  ctx.presentFamily {
@@ -1466,7 +1465,7 @@ graphics_create_logical_device :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_create_descriptor_layout :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_create_descriptor_layout :: proc(ctx: ^Graphics_Context) -> bool {
   uboLayoutBinding := vk.DescriptorSetLayoutBinding{
     binding = 0,
     descriptorCount = 1,
@@ -1499,7 +1498,7 @@ graphics_create_descriptor_layout :: proc(ctx: ^GraphicsContext) -> bool {
 }
 
 
-graphics_destroy :: proc(ctx: ^GraphicsContext) {
+graphics_destroy :: proc(ctx: ^Graphics_Context) {
   vk.device_wait_idle(ctx.device);
   if ctx.depthImageView != nil do vk.destroy_image_view(ctx.device, ctx.depthImageView, nil);
   if ctx.depthImage != nil do vk.destroy_image(ctx.device, ctx.depthImage, nil);
@@ -1523,8 +1522,11 @@ graphics_destroy :: proc(ctx: ^GraphicsContext) {
   }
 
   if ctx.descriptorPool != nil do vk.destroy_descriptor_pool(ctx.device, ctx.descriptorPool, nil);
-  if ctx.graphicsPipeline != nil do vk.destroy_pipeline(ctx.device, ctx.graphicsPipeline, nil);
-  if ctx.pipelineLayout != nil do vk.destroy_pipeline_layout(ctx.device, ctx.pipelineLayout, nil);
+  if ctx.piece_pipeline != nil do vk.destroy_pipeline(ctx.device, ctx.piece_pipeline, nil);
+  if ctx.board_pipeline != nil do vk.destroy_pipeline(ctx.device, ctx.board_pipeline, nil);
+  if ctx.background_pipeline != nil do vk.destroy_pipeline(ctx.device, ctx.background_pipeline, nil);
+
+  if ctx.pipeline_layout != nil do vk.destroy_pipeline_layout(ctx.device, ctx.pipeline_layout, nil);
   if ctx.descriptorSetLayout != nil do vk.destroy_descriptor_set_layout(ctx.device, ctx.descriptorSetLayout, nil);
   if ctx.renderPass != nil do vk.destroy_render_pass(ctx.device, ctx.renderPass, nil);
   if ctx.commandPool != nil do vk.destroy_command_pool(ctx.device, ctx.commandPool, nil);
@@ -1598,7 +1600,7 @@ when bc.VULKAN_VALIDATION {
 }
 
 
-graphics_create_vulkan_instance :: proc(ctx: ^GraphicsContext, application_name: string = "tic-tac-toe") -> bool {
+graphics_create_vulkan_instance :: proc(ctx: ^Graphics_Context, application_name: string = "tic-tac-toe") -> bool {
   when bc.VULKAN_VALIDATION {
     if !graphics_check_vulkan_validation_layer_support() {
       log.error("Could not find validation layer support");
@@ -1643,7 +1645,7 @@ graphics_create_vulkan_instance :: proc(ctx: ^GraphicsContext, application_name:
 }
 
 
-graphics_find_queue_families :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_find_queue_families :: proc(ctx: ^Graphics_Context) -> bool {
   remaining := 2;
   queueFamilyCount : u32;
   vk.get_physical_device_queue_family_properties(ctx.physicalDevice, &queueFamilyCount, nil);
@@ -1673,7 +1675,7 @@ graphics_find_queue_families :: proc(ctx: ^GraphicsContext) -> bool {
   return false;
 }
 
-// graphics_get_inputs :: proc(ctx: ^GraphicsContext) -> i32 {
+// graphics_get_inputs :: proc(ctx: ^Graphics_Context) -> i32 {
 //   sdl.pump_events();
 //   return sdl.peep_events(mem.raw_array_data(&ctx.sdl_events),
 //                          max_sdl_events,
@@ -1698,7 +1700,7 @@ is_device_suitable :: proc(physicalDevice: vk.PhysicalDevice) -> bool {
 }
 
 
-graphics_pick_physical_device :: proc(ctx: ^GraphicsContext) -> bool {
+graphics_pick_physical_device :: proc(ctx: ^Graphics_Context) -> bool {
   // Find physical devices
   physicalDevicesCount : u32;
   vk.enumerate_physical_devices(ctx.instance, &physicalDevicesCount, nil);

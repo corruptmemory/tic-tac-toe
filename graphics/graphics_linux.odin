@@ -19,7 +19,7 @@ when bc.TOOLKIT == "sdl2" {
 
   sdl_pixelformat_rgba8888 := sdl_define_pixelformat(sdl_pixeltype_packed32, sdl_packedorder_rgba, sdl_packedlayout_8888, 32, 4);
 
-  graphics_create_surface :: proc(ctx: ^GraphicsContext) -> bool {
+  graphics_create_surface :: proc(ctx: ^Graphics_Context) -> bool {
     surface: vk.SurfaceKHR;
     createInfo : vk.XlibSurfaceCreateInfoKHR;
     createInfo.sType = vk.StructureType.XlibSurfaceCreateInfoKhr;
@@ -41,7 +41,7 @@ when bc.TOOLKIT == "sdl2" {
     return true;
   }
 
-  graphics_get_error :: proc(ctx: ^GraphicsContext) -> string {
+  graphics_get_error :: proc(ctx: ^Graphics_Context) -> string {
     err := sdl.get_error();
     return rt.cstring_to_string(err);
   }
