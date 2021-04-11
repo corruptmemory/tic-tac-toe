@@ -55,6 +55,8 @@ ThreeD_Asset :: struct {
   vertex_buffer_memory: vk.DeviceMemory,
   index_buffer: vk.Buffer,
   index_buffer_memory: vk.DeviceMemory,
+  pipeline: vk.Pipeline,
+  descriptor_sets: []vk.DescriptorSet,
 };
 
 Graphics_Context :: struct {
@@ -80,8 +82,6 @@ Graphics_Context :: struct {
   commandPool: vk.CommandPool,
   commandBuffers: []vk.CommandBuffer,
   background_pipeline: vk.Pipeline,
-  piece_pipeline: vk.Pipeline,
-  board_pipeline: vk.Pipeline,
   imageAvailableSemaphores: []vk.Semaphore,
   renderFinishedSemaphores: []vk.Semaphore,
   inFlightFences: []vk.Fence,
@@ -90,7 +90,6 @@ Graphics_Context :: struct {
   uniform_buffers: []vk.Buffer,
   uniform_buffers_memory: []vk.DeviceMemory,
   descriptorPool: vk.DescriptorPool,
-  descriptorSets: []vk.DescriptorSet,
   currentFrame: int,
   framebufferResized: bool,
   texture_image: vk.Image,
@@ -278,8 +277,8 @@ graphics_cleanup_swap_chain :: proc(ctx: ^Graphics_Context) -> bool {
   delete(ctx.commandBuffers);
   ctx.commandBuffers = nil;
 
-  vk.destroy_pipeline(ctx.device, ctx.piece_pipeline, nil);
-  vk.destroy_pipeline(ctx.device, ctx.board_pipeline, nil);
+  vk.destroy_pipeline(ctx.device, ctx.piece.pipeline, nil);
+  vk.destroy_pipeline(ctx.device, ctx.board.pipeline, nil);
   vk.destroy_pipeline(ctx.device, ctx.background_pipeline, nil);
 
   vk.destroy_pipeline_layout(ctx.device, ctx.pipeline_layout, nil);
@@ -365,9 +364,15 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
       pSetLayouts = mem.raw_slice_data(layouts),
   };
 
-  ctx.descriptorSets = make([]vk.DescriptorSet,len(ctx.swapChainImages));
+  ctx.piece.descriptor_sets = make([]vk.DescriptorSet,len(ctx.swapChainImages));
+  ctx.board.descriptor_sets = make([]vk.DescriptorSet,len(ctx.swapChainImages));
 
-  if vk.allocate_descriptor_sets(ctx.device,&allocInfo,mem.raw_slice_data(ctx.descriptorSets)) != vk.Result.Success {
+  if vk.allocate_descriptor_sets(ctx.device,&allocInfo,mem.raw_slice_data(ctx.piece.descriptor_sets)) != vk.Result.Success {
+    log.error("Error: failed to allocate descriptor sets");
+    return false;
+  }
+
+  if vk.allocate_descriptor_sets(ctx.device,&allocInfo,mem.raw_slice_data(ctx.board.descriptor_sets)) != vk.Result.Success {
     log.error("Error: failed to allocate descriptor sets");
     return false;
   }
@@ -388,7 +393,7 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
     descriptorWrite := []vk.WriteDescriptorSet {
       {
         sType = vk.StructureType.WriteDescriptorSet,
-        dstSet = ctx.descriptorSets[i],
+        dstSet = ctx.piece.descriptor_sets[i],
         dstBinding = 0,
         dstArrayElement = 0,
         descriptorType = vk.DescriptorType.UniformBuffer,
@@ -397,7 +402,7 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
       },
       {
         sType = vk.StructureType.WriteDescriptorSet,
-        dstSet = ctx.descriptorSets[i],
+        dstSet = ctx.piece.descriptor_sets[i],
         dstBinding = 1,
         dstArrayElement = 0,
         descriptorType = vk.DescriptorType.CombinedImageSampler,
@@ -405,6 +410,9 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
         pImageInfo = &imageInfo,
       },
     };
+    vk.update_descriptor_sets(ctx.device, u32(len(descriptorWrite)), mem.raw_slice_data(descriptorWrite), 0, nil);
+    descriptorWrite[0].dstSet = ctx.board.descriptor_sets[i];
+    descriptorWrite[1].dstSet = ctx.board.descriptor_sets[i];
     vk.update_descriptor_sets(ctx.device, u32(len(descriptorWrite)), mem.raw_slice_data(descriptorWrite), 0, nil);
   }
 
@@ -856,7 +864,7 @@ graphics_create_index_buffer :: proc(ctx: ^Graphics_Context, asset: ^ThreeD_Asse
 }
 
 
-graphics_create_command_buffers :: proc(ctx: ^Graphics_Context, asset: ^ThreeD_Asset, pipeline: vk.Pipeline) -> bool {
+graphics_create_command_buffers :: proc(ctx: ^Graphics_Context) -> bool {
   ctx.commandBuffers = make([]vk.CommandBuffer,len(ctx.swapChainFramebuffers));
 
   allocInfo := vk.CommandBufferAllocateInfo{
@@ -907,10 +915,38 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context, asset: ^ThreeD_A
 
     vk.cmd_begin_render_pass(cb, &renderPassInfo, vk.SubpassContents.Inline);
 
-    vk.cmd_bind_pipeline(cb, vk.PipelineBindPoint.Graphics, pipeline);
+    // background
+    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.board.descriptor_sets[i], 0, nil);
+    vk.cmd_bind_pipeline(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.background_pipeline);
+    vk.cmd_draw(ctx.commandBuffers[i], 4, 1, 0, 0);
 
-    vertexBuffers := []vk.Buffer{asset.vertex_buffer};
     offsets := []vk.DeviceSize{0};
+    vertex_buffers: []vk.Buffer;
+    // board
+    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.board.descriptor_sets[i], 0, nil);
+    vk.cmd_bind_pipeline(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.board.pipeline);
+    vertex_buffers = []vk.Buffer{ctx.board.vertex_buffer};
+    vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets));
+    vk.cmd_bind_index_buffer(ctx.commandBuffers[i], ctx.board.index_buffer, 0, vk.IndexType.Uint32);
+    vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.board.indices)), 1, 0, 0, 0);
+
+    // Instanced pieces
+    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.piece.descriptor_sets[i], 0, nil);
+    vk.cmd_bind_pipeline(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.piece.pipeline);
+    // Binding point 0 : Mesh vertex buffer
+    vertex_buffers = []vk.Buffer{ctx.piece.vertex_buffer};
+    vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets));
+    // Binding point 1 : Instance data buffer
+    vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 1, 1, &instance_buffer.buffer, offsets);
+    vk.cmd_bind_index_buffer(ctx.commandBuffers[i], rock_index_buffer->get_handle(), 0, VK_INDEX_TYPE_UINT32);
+    // Render instances
+    vk.cmd_draw_indexed(ctx.commandBuffers[i], models.rock->vertex_indices, INSTANCE_COUNT, 0, 0, 0);
+
+
+
+    vk.cmd_bind_pipeline(cb, vk.PipelineBindPoint.Graphics, asset.pipeline);
+
+
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertexBuffers), mem.raw_slice_data(offsets));
     vk.cmd_bind_index_buffer(ctx.commandBuffers[i],asset.index_buffer,0,vk.IndexType.Uint32);
     vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.descriptorSets[i], 0, nil);
@@ -1348,7 +1384,7 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
   shader_stages[1] = piece_info.fragment_info;
   vertex_input_info.vertexBindingDescriptionCount = u32(len(piece_info.bindings));
   vertex_input_info.vertexAttributeDescriptionCount = u32(len(piece_info.attributes));
-  if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.piece_pipeline) != vk.Result.Success {
+  if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.piece.pipeline) != vk.Result.Success {
     log.error("Error: failed to create graphics pipleine for piece");
     return false;
   }
@@ -1357,9 +1393,9 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
   shader_stages[1] = board_info.fragment_info;
   vertex_input_info.vertexBindingDescriptionCount = u32(len(board_info.bindings));
   vertex_input_info.vertexAttributeDescriptionCount = u32(len(board_info.attributes));
-  if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.board_pipeline) != vk.Result.Success {
-    vk.destroy_pipeline(ctx.device, ctx.piece_pipeline, nil);
-    ctx.piece_pipeline = nil;
+  if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.board.pipeline) != vk.Result.Success {
+    vk.destroy_pipeline(ctx.device, ctx.piece.pipeline, nil);
+    ctx.piece.pipeline = nil;
     log.error("Error: failed to create graphics pipleine for board");
     return false;
   }
@@ -1369,10 +1405,10 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
   vertex_input_info.vertexBindingDescriptionCount = 0;
   vertex_input_info.vertexAttributeDescriptionCount = 0;
   if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.background_pipeline) != vk.Result.Success {
-    vk.destroy_pipeline(ctx.device, ctx.piece_pipeline, nil);
-    vk.destroy_pipeline(ctx.device, ctx.board_pipeline, nil);
-    ctx.piece_pipeline = nil;
-    ctx.board_pipeline = nil;
+    vk.destroy_pipeline(ctx.device, ctx.piece.pipeline, nil);
+    vk.destroy_pipeline(ctx.device, ctx.board.pipeline, nil);
+    ctx.piece.pipeline = nil;
+    ctx.board.pipeline = nil;
     log.error("Error: failed to create graphics pipleine for background");
     return false;
   }
@@ -1665,8 +1701,8 @@ graphics_destroy :: proc(ctx: ^Graphics_Context) {
   }
 
   if ctx.descriptorPool != nil do vk.destroy_descriptor_pool(ctx.device, ctx.descriptorPool, nil);
-  if ctx.piece_pipeline != nil do vk.destroy_pipeline(ctx.device, ctx.piece_pipeline, nil);
-  if ctx.board_pipeline != nil do vk.destroy_pipeline(ctx.device, ctx.board_pipeline, nil);
+  if ctx.piece.pipeline != nil do vk.destroy_pipeline(ctx.device, ctx.piece.pipeline, nil);
+  if ctx.board.pipeline != nil do vk.destroy_pipeline(ctx.device, ctx.board.pipeline, nil);
   if ctx.background_pipeline != nil do vk.destroy_pipeline(ctx.device, ctx.background_pipeline, nil);
 
   if ctx.pipeline_layout != nil do vk.destroy_pipeline_layout(ctx.device, ctx.pipeline_layout, nil);
