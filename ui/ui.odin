@@ -150,7 +150,7 @@ ui_check_device_extension_support :: proc(ctx: ^UIContext) -> bool {
 ui_load_geometry :: proc(ctx: ^UIContext) -> bool {
   ac: assets.Asset_Catalog;
   assets.init_assets(&ac);
-  ok := assets.load_3d_models(&ac, "/home/jim/projects/tic-tac-toe/blender/viking_room.obj");
+  ok := assets.load_3d_models(&ac, "/home/jim/projects/tic-tac-toe/blender/X.obj");
   if !ok {
     log.error("Error: failed to load geometry");
     return false;
