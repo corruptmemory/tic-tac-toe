@@ -5,6 +5,7 @@ import bc "../build_config"
 when bc.TOOLKIT == "sdl2" {
   import sdl "shared:sdl2"
   import "core:mem"
+  import rt "core:runtime"
 
   MAX_SDL_EVENTS :: 10;
 
@@ -21,4 +22,8 @@ when bc.TOOLKIT == "sdl2" {
                            u32(sdl.Event_Type.Last_Event));
   }
 
+  input_get_error :: proc(input_ctx: ^Input_Context) -> string {
+    err := sdl.get_error();
+    return rt.cstring_to_string(err);
+  }
 }

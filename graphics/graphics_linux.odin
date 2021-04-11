@@ -112,7 +112,7 @@ when bc.TOOLKIT == "sdl2" {
       return false;
   }
 
-  update_uniform_buffer(ctx, imageIndex);
+  graphics_update_uniform_buffer(ctx, imageIndex);
 
   if ctx.imagesInFlight[imageIndex] != nil {
     vk.wait_for_fences(ctx.device, 1, &ctx.imagesInFlight[imageIndex], vk.TRUE, bits.U64_MAX);
@@ -155,7 +155,7 @@ when bc.TOOLKIT == "sdl2" {
 
   if result == vk.Result.ErrorOutOfDateKhr || result == vk.Result.SuboptimalKhr || ctx.framebufferResized {
     ctx.framebufferResized = false;
-    if !recreate_swap_chain(ctx) {
+    if !graphics_recreate_swap_chain(ctx) {
       log.error("failed to recreate swap chain");
       return false;
     }

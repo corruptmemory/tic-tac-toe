@@ -34,9 +34,11 @@ Vertex :: struct {
 };
 
 Uniform_Buffer_Object :: struct {
-    model: lin.Matrix4f32,
-    view: lin.Matrix4f32,
     proj: lin.Matrix4f32,
+    view: lin.Matrix4f32,
+    light_pos: lin.Vector4f32,
+    loc_speed: f32,
+    glob_speed: f32,
 };
 
 Instance_Data :: struct {
@@ -84,9 +86,9 @@ Graphics_Context :: struct {
   renderFinishedSemaphores: []vk.Semaphore,
   inFlightFences: []vk.Fence,
   imagesInFlight: []vk.Fence,
-  descriptorSetLayout: vk.DescriptorSetLayout,
-  uniformBuffers: []vk.Buffer,
-  uniformBuffersMemory: []vk.DeviceMemory,
+  descriptor_set_layout: vk.DescriptorSetLayout,
+  uniform_buffers: []vk.Buffer,
+  uniform_buffers_memory: []vk.DeviceMemory,
   descriptorPool: vk.DescriptorPool,
   descriptorSets: []vk.DescriptorSet,
   currentFrame: int,
@@ -177,21 +179,19 @@ graphics_check_device_extension_support :: proc(ctx: ^Graphics_Context) -> bool 
 }
 
 
-graphics_update_uniform_buffer :: proc(ctx: ^Graphics_Context, currentImage: u32) {
-
-  diff := 0;
-  ubo := UniformBufferObject {
-    model = lin.matrix4_rotate_f32(f32(diff)*lin.radians(f32(90)),lin.VECTOR3F32_Z_AXIS),
+graphics_update_uniform_buffer :: proc(ctx: ^Graphics_Context, current_image: u32) {
+  ubo := Uniform_Buffer_Object {
     view = lin.matrix4_look_at(lin.Vector3f32{2,2,2},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
     proj = lin.matrix4_perspective_f32(lin.radians(f32(45)),f32(ctx.swapChainExtent.width)/f32(ctx.swapChainExtent.height),0.1,10),
+    light_pos  = lin.Vector4f32{0.0, -5.0, 0.0, 1.0},
   };
 
   ubo.proj[1][1] *= -1;
 
   data: rawptr;
-  vk.map_memory(ctx.device,ctx.uniformBuffersMemory[currentImage],0,size_of(ubo),0,&data);
+  vk.map_memory(ctx.device,ctx.uniform_buffers_memory[current_image],0,size_of(ubo),0,&data);
   rt.mem_copy_non_overlapping(data,&ubo,size_of(ubo));
-  vk.unmap_memory(ctx.device,ctx.uniformBuffersMemory[currentImage]);
+  vk.unmap_memory(ctx.device,ctx.uniform_buffers_memory[current_image]);
 }
 
 
@@ -294,13 +294,13 @@ graphics_cleanup_swap_chain :: proc(ctx: ^Graphics_Context) -> bool {
   vk.destroy_swapchain_khr(ctx.device, ctx.swapChain, nil);
 
   for i := 0; i < len(ctx.swapChainImages); i += 1 {
-    vk.destroy_buffer(ctx.device, ctx.uniformBuffers[i], nil);
-    vk.free_memory(ctx.device, ctx.uniformBuffersMemory[i], nil);
+    vk.destroy_buffer(ctx.device, ctx.uniform_buffers[i], nil);
+    vk.free_memory(ctx.device, ctx.uniform_buffers_memory[i], nil);
   }
-  delete(ctx.uniformBuffers);
-  delete(ctx.uniformBuffersMemory);
-  ctx.uniformBuffers = nil;
-  ctx.uniformBuffersMemory = nil;
+  delete(ctx.uniform_buffers);
+  delete(ctx.uniform_buffers_memory);
+  ctx.uniform_buffers = nil;
+  ctx.uniform_buffers_memory = nil;
 
   vk.destroy_descriptor_pool(ctx.device, ctx.descriptorPool, nil);
 
@@ -356,7 +356,7 @@ graphics_create_sync_objects :: proc(ctx: ^Graphics_Context) -> bool {
 graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
   layouts := make([]vk.DescriptorSetLayout,len(ctx.swapChainImages));
   for _, i in layouts {
-      layouts[i] = ctx.descriptorSetLayout;
+      layouts[i] = ctx.descriptor_set_layout;
   }
   allocInfo := vk.DescriptorSetAllocateInfo{
       sType = vk.StructureType.DescriptorSetAllocateInfo,
@@ -374,7 +374,7 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
 
   for _, i in ctx.swapChainImages {
     bufferInfo := vk.DescriptorBufferInfo{
-      buffer = ctx.uniformBuffers[i],
+      buffer = ctx.uniform_buffers[i],
       offset = 0,
       range = size_of(Uniform_Buffer_Object),
     };
@@ -443,11 +443,11 @@ graphics_create_descriptor_pool :: proc(ctx: ^Graphics_Context) -> bool {
 graphics_create_uniform_buffers :: proc(ctx: ^Graphics_Context) -> bool {
     bufferSize := vk.DeviceSize(size_of(Uniform_Buffer_Object));
 
-    ctx.uniformBuffers = make([]vk.Buffer,len(ctx.swapChainImages));
-    ctx.uniformBuffersMemory = make([]vk.DeviceMemory,len(ctx.swapChainImages));
+    ctx.uniform_buffers = make([]vk.Buffer,len(ctx.swapChainImages));
+    ctx.uniform_buffers_memory = make([]vk.DeviceMemory,len(ctx.swapChainImages));
 
     for _, i in ctx.swapChainImages {
-        if !graphics_create_buffer(ctx, bufferSize, vk.BufferUsageFlagBits.UniformBuffer, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &ctx.uniformBuffers[i], &ctx.uniformBuffersMemory[i]) {
+        if !graphics_create_buffer(ctx, bufferSize, vk.BufferUsageFlagBits.UniformBuffer, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &ctx.uniform_buffers[i], &ctx.uniform_buffers_memory[i]) {
           log.error("Error: failed to create needed buffer for the uniform buffer construction");
           return false;
         }
@@ -1379,7 +1379,7 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
   pipeline_layout_info := vk.PipelineLayoutCreateInfo{
     sType = vk.StructureType.PipelineLayoutCreateInfo,
     setLayoutCount = 1,
-    pSetLayouts = &ctx.descriptorSetLayout,
+    pSetLayouts = &ctx.descriptor_set_layout,
   };
 
   if (vk.create_pipeline_layout(ctx.device, &pipeline_layout_info, nil, &ctx.pipeline_layout) != vk.Result.Success) {
@@ -1685,7 +1685,7 @@ graphics_create_descriptor_layout :: proc(ctx: ^Graphics_Context) -> bool {
     pBindings = mem.raw_slice_data(bindings),
   };
 
-  if vk.create_descriptor_set_layout(ctx.device, &layoutInfo, nil, &ctx.descriptorSetLayout) != vk.Result.Success {
+  if vk.create_descriptor_set_layout(ctx.device, &layoutInfo, nil, &ctx.descriptor_set_layout) != vk.Result.Success {
     log.error("Error: failed to create descriptor layout");
     return false;
   }
@@ -1731,20 +1731,20 @@ graphics_destroy :: proc(ctx: ^Graphics_Context) {
   if ctx.background_pipeline != nil do vk.destroy_pipeline(ctx.device, ctx.background_pipeline, nil);
 
   if ctx.pipeline_layout != nil do vk.destroy_pipeline_layout(ctx.device, ctx.pipeline_layout, nil);
-  if ctx.descriptorSetLayout != nil do vk.destroy_descriptor_set_layout(ctx.device, ctx.descriptorSetLayout, nil);
+  if ctx.descriptor_set_layout != nil do vk.destroy_descriptor_set_layout(ctx.device, ctx.descriptor_set_layout, nil);
   if ctx.renderPass != nil do vk.destroy_render_pass(ctx.device, ctx.renderPass, nil);
   if ctx.commandPool != nil do vk.destroy_command_pool(ctx.device, ctx.commandPool, nil);
   if ctx.swapChain != nil do vk.destroy_swapchain_khr(ctx.device, ctx.swapChain, nil);
 
   if len(ctx.swapChainImages) > 0 {
     for _, i in ctx.swapChainImages {
-      if ctx.uniformBuffers != nil do vk.destroy_buffer(ctx.device, ctx.uniformBuffers[i], nil);
-      if ctx.uniformBuffersMemory != nil do vk.free_memory(ctx.device, ctx.uniformBuffersMemory[i], nil);
+      if ctx.uniform_buffers != nil do vk.destroy_buffer(ctx.device, ctx.uniform_buffers[i], nil);
+      if ctx.uniform_buffers_memory != nil do vk.free_memory(ctx.device, ctx.uniform_buffers_memory[i], nil);
       if ctx.swapChainFramebuffers != nil do vk.destroy_framebuffer(ctx.device, ctx.swapChainFramebuffers[i], nil);
       vk.destroy_image_view(ctx.device, ctx.swapChainImageViews[i], nil);
     }
-    if ctx.uniformBuffers != nil do delete(ctx.uniformBuffers);
-    if ctx.uniformBuffersMemory != nil do delete(ctx.uniformBuffersMemory);
+    if ctx.uniform_buffers != nil do delete(ctx.uniform_buffers);
+    if ctx.uniform_buffers_memory != nil do delete(ctx.uniform_buffers_memory);
     if ctx.swapChainFramebuffers != nil do delete(ctx.swapChainFramebuffers);
     delete(ctx.swapChainImages);
     delete(ctx.swapChainImageViews);

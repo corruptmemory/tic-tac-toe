@@ -1,7 +1,6 @@
 package wavefront
 
 import lin "core:math/linalg"
-import "core:math/bits"
 
 Wavefront_Object_File :: struct {
   file: string,

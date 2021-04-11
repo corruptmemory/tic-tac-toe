@@ -1,6 +1,5 @@
 package main
 
-import "ui"
 import "core:log"
 import "core:os"
 import sdl "shared:sdl2"
@@ -16,16 +15,10 @@ main :: proc() {
   }
   defer graphics.graphics_destroy(&grCtx);
 
-  // ctx: ui.UIContext;
-  // if !ui.ui_init(&ctx) {
-  //   os.exit(-1);
-  // }
-  // defer ui.ui_destroy(&ctx);
-
   if !graphics.graphics_create_window(ctx = &grCtx, width = 640, height = 480) {
     os.exit(-1);
   }
-  if !ui.ui_draw_frame(&ctx, ctx.window) {
+  if !graphics.graphics_draw_frame(&grCtx, grCtx.window) {
     os.exit(-1);
   }
 
@@ -35,31 +28,31 @@ main :: proc() {
     events := input.input_get_inputs(&inputCtx);
     for events > 0 {
       for i in 0..<events {
-        event := ctx.sdl_events[i];
+        event := inputCtx.events[i];
         #partial switch event.type {
         case sdl.Event_Type.Quit:
           break stop;
         case sdl.Event_Type.Window_Event:
           #partial switch event.window.event {
           case sdl.Window_Event_ID.Resized:
-            ctx.framebufferResized = true;
-            ctx.width = u32(event.window.data1);
-            ctx.height = u32(event.window.data2);
+            grCtx.framebufferResized = true;
+            grCtx.width = u32(event.window.data1);
+            grCtx.height = u32(event.window.data2);
           case sdl.Window_Event_ID.Exposed:
           case sdl.Window_Event_ID.Shown:
           }
         case:
         }
       }
-      sdl.update_window_surface(ctx.window);
-      events = ui.ui_get_inputs(&ctx);
+      sdl.update_window_surface(grCtx.window);
+      events = input.input_get_inputs(&inputCtx);
     }
     if events < 0 {
-      log.errorf("Error getting input events: %v", ui.ui_get_error(&ctx));
+      log.errorf("Error getting input events: %v", input.input_get_error(&inputCtx));
       break stop;
     }
 
-    if !ui.ui_draw_frame(&ctx, ctx.window) {
+    if !graphics.graphics_draw_frame(&grCtx, grCtx.window) {
       break stop;
     }
   }
