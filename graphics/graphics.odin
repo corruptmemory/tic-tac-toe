@@ -93,10 +93,10 @@ Graphics_Context :: struct {
   descriptorSets: []vk.DescriptorSet,
   currentFrame: int,
   framebufferResized: bool,
-  textureImage: vk.Image,
-  textureImageMemory: vk.DeviceMemory,
-  textureImageView: vk.ImageView,
-  textureSampler: vk.Sampler,
+  texture_image: vk.Image,
+  texture_image_memory: vk.DeviceMemory,
+  texture_image_view: vk.ImageView,
+  texture_sampler: vk.Sampler,
   window: WINDOW_TYPE,
   width: u32,
   height: u32,
@@ -381,8 +381,8 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
 
     imageInfo := vk.DescriptorImageInfo {
       imageLayout = vk.ImageLayout.ShaderReadOnlyOptimal,
-      imageView = ctx.textureImageView,
-      sampler = ctx.textureSampler,
+      imageView = ctx.texture_image_view,
+      sampler = ctx.texture_sampler,
     };
 
     descriptorWrite := []vk.WriteDescriptorSet {
@@ -517,7 +517,7 @@ graphics_create_texture_sampler :: proc(ctx: ^Graphics_Context) -> bool {
     maxLod = 0.0,
   };
 
-  if vk.create_sampler(ctx.device, &samplerInfo, nil, &ctx.textureSampler) != vk.Result.Success {
+  if vk.create_sampler(ctx.device, &samplerInfo, nil, &ctx.texture_sampler) != vk.Result.Success {
     log.error("Error: failed to create texture sampler!");
     return false;
   }
@@ -526,8 +526,8 @@ graphics_create_texture_sampler :: proc(ctx: ^Graphics_Context) -> bool {
 
 
 graphics_create_texture_image_view :: proc(ctx: ^Graphics_Context) -> bool {
-  textureImageView, result := graphics_create_image_view(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageAspectFlagBits.Color);
-  ctx.textureImageView = textureImageView;
+  textureImageView, result := graphics_create_image_view(ctx, ctx.texture_image, vk.Format.R8G8B8A8Srgb, vk.ImageAspectFlagBits.Color);
+  ctx.texture_image_view = textureImageView;
   return result;
 }
 
@@ -927,66 +927,6 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context, asset: ^ThreeD_A
 }
 
 
-// graphics_create_texture_image :: proc(ctx: ^Graphics_Context) -> bool {
-//   origImageSurface := img.load("blender/viking_room.png");
-//   if origImageSurface == nil {
-//     log.error("Error loading texture image");
-//     return false;
-//   }
-//   defer sdl.free_surface(origImageSurface);
-//   texWidth := origImageSurface.w;
-//   texHeight := origImageSurface.h;
-//   targetSurface := sdl.create_rgb_surface_with_format(0, origImageSurface.w, origImageSurface.h, 32, sdl_pixelformat_rgba8888);
-//   defer sdl.free_surface(targetSurface);
-//   rect := sdl.Rect {
-//     x = 0,
-//     y = 0,
-//     w = origImageSurface.w,
-//     h = origImageSurface.h,
-//   };
-//   err := sdl.upper_blit(origImageSurface,&rect,targetSurface,&rect);
-//   if err != 0 {
-//     log.errorf("Error blitting texture image to target surface: %d", err);
-//     return false;
-//   }
-//   // render_image(targetSurface);
-//   imageSize : vk.DeviceSize = u64(texWidth * texHeight * 4);
-//   stagingBuffer : vk.Buffer;
-//   stagingBufferMemory : vk.DeviceMemory;
-
-//   if !graphics_create_buffer(ctx, imageSize, vk.BufferUsageFlagBits.TransferSrc, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &stagingBuffer, &stagingBufferMemory) {
-//     log.error("Error: failed to create texture buffer");
-//     return false;
-//   }
-//   defer vk.destroy_buffer(ctx.device, stagingBuffer, nil);
-//   defer vk.free_memory(ctx.device, stagingBufferMemory, nil);
-
-//   data: rawptr;
-//   vk.map_memory(ctx.device, stagingBufferMemory, 0, imageSize, 0, &data);
-//   sdl.lock_surface(targetSurface);
-//   rt.mem_copy_non_overlapping(data, targetSurface.pixels, int(imageSize));
-//   sdl.unlock_surface(targetSurface);
-//   vk.unmap_memory(ctx.device, stagingBufferMemory);
-
-//   if !graphics_create_image(ctx, u32(texWidth), u32(texHeight), vk.Format.R8G8B8A8Srgb,vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.TransferDst | vk.ImageUsageFlagBits.Sampled, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.textureImage, &ctx.textureImageMemory) {
-//     log.error("Error: could not create image");
-//     return false;
-//   }
-
-//   if !graphics_transition_image_layout(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.Undefined, vk.ImageLayout.TransferDstOptimal) {
-//     log.error("Error: could not create transition image layout");
-//     return false;
-//   }
-//   graphics_copy_buffer_to_image(ctx, stagingBuffer, ctx.textureImage, u32(texWidth), u32(texHeight));
-//   if !graphics_transition_image_layout(ctx, ctx.textureImage, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.TransferDstOptimal, vk.ImageLayout.ShaderReadOnlyOptimal) {
-//     log.error("Error: could not create tranition image layout");
-//     return false;
-//   }
-
-//   return true;
-// }
-
-
 graphics_create_command_pool :: proc(ctx: ^Graphics_Context) -> bool {
     poolInfo := vk.CommandPoolCreateInfo{
       sType = vk.StructureType.CommandPoolCreateInfo,
@@ -1299,8 +1239,8 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
 
   shader_stages: [2]vk.PipelineShaderStageCreateInfo;
 
-  binding_description: []vk.VertexInputBindingDescription;
-  attribute_descriptions: []vk.VertexInputAttributeDescription;
+  binding_description := get_piece_binding_description();
+  attribute_descriptions := get_piece_attribute_descriptions();
 
   vertex_input_info := vk.PipelineVertexInputStateCreateInfo{
     sType = vk.StructureType.PipelineVertexInputStateCreateInfo,
@@ -1550,7 +1490,7 @@ graphics_create_image_view :: proc(ctx: ^Graphics_Context, image: vk.Image, form
   viewInfo := vk.ImageViewCreateInfo {
     sType = vk.StructureType.ImageViewCreateInfo,
     image = image,
-    viewType = vk.ImageViewType._2D,
+    viewType = vk.ImageViewType._2DArray,
     format = format,
     subresourceRange = {
       aspectMask = u32(aspectMask),
@@ -1699,11 +1639,10 @@ graphics_destroy :: proc(ctx: ^Graphics_Context) {
   if ctx.depthImageView != nil do vk.destroy_image_view(ctx.device, ctx.depthImageView, nil);
   if ctx.depthImage != nil do vk.destroy_image(ctx.device, ctx.depthImage, nil);
   if ctx.depthImageMemory != nil do vk.free_memory(ctx.device, ctx.depthImageMemory, nil);
-  if ctx.textureSampler != nil do vk.destroy_sampler(ctx.device, ctx.textureSampler, nil);
-  if ctx.textureImageView != nil do vk.destroy_image_view(ctx.device, ctx.textureImageView, nil);
-  if ctx.textureImage != nil do vk.destroy_image(ctx.device, ctx.textureImage, nil);
-  if ctx.textureImageMemory != nil do vk.free_memory(ctx.device, ctx.textureImageMemory, nil);
-
+  if ctx.texture_sampler != nil do vk.destroy_sampler(ctx.device, ctx.texture_sampler, nil);
+  if ctx.texture_image_view != nil do vk.destroy_image_view(ctx.device, ctx.texture_image_view, nil);
+  if ctx.texture_image != nil do vk.destroy_image(ctx.device, ctx.texture_image, nil);
+  if ctx.texture_image_memory != nil do vk.free_memory(ctx.device, ctx.texture_image_memory, nil);
   if ctx.piece.index_buffer != nil do vk.destroy_buffer(ctx.device, ctx.piece.index_buffer,nil);
   if ctx.piece.index_buffer_memory != nil do vk.free_memory(ctx.device, ctx.piece.index_buffer_memory, nil);
   if ctx.board.index_buffer != nil do vk.destroy_buffer(ctx.device, ctx.board.index_buffer,nil);

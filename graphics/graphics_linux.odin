@@ -5,6 +5,7 @@ import bc "../build_config"
 
 when bc.TOOLKIT == "sdl2" {
   import sdl "shared:sdl2"
+  import img "shared:sdl2/image"
   import rt "core:runtime"
   import "core:strings"
   import "core:mem"
@@ -80,7 +81,7 @@ when bc.TOOLKIT == "sdl2" {
     if !graphics_create_command_pool(ctx) do return false;
     if !graphics_create_depth_resources(ctx) do return false;
     if !graphics_create_framebuffers(ctx) do return false;
-    // if !graphics_create_texture_image(ctx) do return false;
+    if !graphics_create_texture_image(ctx) do return false;
     if !graphics_create_texture_image_view(ctx) do return false;
     if !graphics_create_texture_sampler(ctx) do return false;
     if !graphics_create_vertex_buffer(ctx, &ctx.piece) do return false;
@@ -99,72 +100,132 @@ when bc.TOOLKIT == "sdl2" {
 
 
   graphics_draw_frame :: proc(ctx: ^Graphics_Context, window: ^sdl.Window) -> bool {
-  vk.wait_for_fences(ctx.device, 1, &ctx.inFlightFences[ctx.currentFrame], vk.TRUE, bits.U64_MAX);
+    vk.wait_for_fences(ctx.device, 1, &ctx.inFlightFences[ctx.currentFrame], vk.TRUE, bits.U64_MAX);
 
-  imageIndex: u32;
-  #partial switch vk.acquire_next_image_khr(ctx.device, ctx.swapChain, bits.U64_MAX, ctx.imageAvailableSemaphores[ctx.currentFrame], nil, &imageIndex) {
-    case vk.Result.ErrorOutOfDateKhr, vk.Result.SuboptimalKhr:
-      return graphics_recreate_swap_chain(ctx);
-    case vk.Result.Success:
-    // nothing
-    case:
-      log.error("Error: what am I doing here?");
-      return false;
-  }
+    imageIndex: u32;
+    #partial switch vk.acquire_next_image_khr(ctx.device, ctx.swapChain, bits.U64_MAX, ctx.imageAvailableSemaphores[ctx.currentFrame], nil, &imageIndex) {
+      case vk.Result.ErrorOutOfDateKhr, vk.Result.SuboptimalKhr:
+        return graphics_recreate_swap_chain(ctx);
+      case vk.Result.Success:
+      // nothing
+      case:
+        log.error("Error: what am I doing here?");
+        return false;
+    }
 
-  graphics_update_uniform_buffer(ctx, imageIndex);
+    graphics_update_uniform_buffer(ctx, imageIndex);
 
-  if ctx.imagesInFlight[imageIndex] != nil {
-    vk.wait_for_fences(ctx.device, 1, &ctx.imagesInFlight[imageIndex], vk.TRUE, bits.U64_MAX);
-  }
-  ctx.imagesInFlight[imageIndex] = ctx.inFlightFences[ctx.currentFrame];
+    if ctx.imagesInFlight[imageIndex] != nil {
+      vk.wait_for_fences(ctx.device, 1, &ctx.imagesInFlight[imageIndex], vk.TRUE, bits.U64_MAX);
+    }
+    ctx.imagesInFlight[imageIndex] = ctx.inFlightFences[ctx.currentFrame];
 
-  waitSemaphores := []vk.Semaphore{ctx.imageAvailableSemaphores[ctx.currentFrame]};
-  waitStages := []vk.PipelineStageFlags{u32(vk.PipelineStageFlagBits.ColorAttachmentOutput)};
-  signalSemaphores := []vk.Semaphore{ctx.renderFinishedSemaphores[ctx.currentFrame]};
+    waitSemaphores := []vk.Semaphore{ctx.imageAvailableSemaphores[ctx.currentFrame]};
+    waitStages := []vk.PipelineStageFlags{u32(vk.PipelineStageFlagBits.ColorAttachmentOutput)};
+    signalSemaphores := []vk.Semaphore{ctx.renderFinishedSemaphores[ctx.currentFrame]};
 
 
-  submitInfo := vk.SubmitInfo{
-    sType = vk.StructureType.SubmitInfo,
-    waitSemaphoreCount = 1,
-    pWaitSemaphores = mem.raw_slice_data(waitSemaphores),
-    pWaitDstStageMask = mem.raw_slice_data(waitStages),
-    commandBufferCount = 1,
-    pCommandBuffers = &ctx.commandBuffers[imageIndex],
-    signalSemaphoreCount = 1,
-    pSignalSemaphores = mem.raw_slice_data(signalSemaphores),
-  };
+    submitInfo := vk.SubmitInfo{
+      sType = vk.StructureType.SubmitInfo,
+      waitSemaphoreCount = 1,
+      pWaitSemaphores = mem.raw_slice_data(waitSemaphores),
+      pWaitDstStageMask = mem.raw_slice_data(waitStages),
+      commandBufferCount = 1,
+      pCommandBuffers = &ctx.commandBuffers[imageIndex],
+      signalSemaphoreCount = 1,
+      pSignalSemaphores = mem.raw_slice_data(signalSemaphores),
+    };
 
-  vk.reset_fences(ctx.device, 1, &ctx.inFlightFences[ctx.currentFrame]);
+    vk.reset_fences(ctx.device, 1, &ctx.inFlightFences[ctx.currentFrame]);
 
-  if (vk.queue_submit(ctx.graphicsQueue, 1, &submitInfo, ctx.inFlightFences[ctx.currentFrame]) != vk.Result.Success) {
-    return false;
-  }
-
-  swapChains := []vk.SwapchainKHR{ctx.swapChain};
-  presentInfo := vk.PresentInfoKHR{
-    sType = vk.StructureType.PresentInfoKhr,
-    waitSemaphoreCount = 1,
-    pWaitSemaphores = mem.raw_slice_data(signalSemaphores),
-    swapchainCount = 1,
-    pSwapchains = mem.raw_slice_data(swapChains),
-    pImageIndices = &imageIndex,
-  };
-
-  result := vk.queue_present_khr(ctx.presentQueue, &presentInfo);
-
-  if result == vk.Result.ErrorOutOfDateKhr || result == vk.Result.SuboptimalKhr || ctx.framebufferResized {
-    ctx.framebufferResized = false;
-    if !graphics_recreate_swap_chain(ctx) {
-      log.error("failed to recreate swap chain");
+    if (vk.queue_submit(ctx.graphicsQueue, 1, &submitInfo, ctx.inFlightFences[ctx.currentFrame]) != vk.Result.Success) {
       return false;
     }
+
+    swapChains := []vk.SwapchainKHR{ctx.swapChain};
+    presentInfo := vk.PresentInfoKHR{
+      sType = vk.StructureType.PresentInfoKhr,
+      waitSemaphoreCount = 1,
+      pWaitSemaphores = mem.raw_slice_data(signalSemaphores),
+      swapchainCount = 1,
+      pSwapchains = mem.raw_slice_data(swapChains),
+      pImageIndices = &imageIndex,
+    };
+
+    result := vk.queue_present_khr(ctx.presentQueue, &presentInfo);
+
+    if result == vk.Result.ErrorOutOfDateKhr || result == vk.Result.SuboptimalKhr || ctx.framebufferResized {
+      ctx.framebufferResized = false;
+      if !graphics_recreate_swap_chain(ctx) {
+        log.error("failed to recreate swap chain");
+        return false;
+      }
+      return true;
+    } else if result != vk.Result.Success {
+      return false;
+    }
+
+    ctx.currentFrame = (ctx.currentFrame + 1) % max_frames_in_flight;
     return true;
-  } else if result != vk.Result.Success {
-    return false;
   }
 
-  ctx.currentFrame = (ctx.currentFrame + 1) % max_frames_in_flight;
-  return true;
-}
+
+  graphics_create_texture_image :: proc(ctx: ^Graphics_Context) -> bool {
+    origImageSurface := img.load("blender/viking_room.png");
+    if origImageSurface == nil {
+      log.error("Error loading texture image");
+      return false;
+    }
+    defer sdl.free_surface(origImageSurface);
+    texWidth := origImageSurface.w;
+    texHeight := origImageSurface.h;
+    targetSurface := sdl.create_rgb_surface_with_format(0, origImageSurface.w, origImageSurface.h, 32, sdl_pixelformat_rgba8888);
+    defer sdl.free_surface(targetSurface);
+    rect := sdl.Rect {
+      x = 0,
+      y = 0,
+      w = origImageSurface.w,
+      h = origImageSurface.h,
+    };
+    err := sdl.upper_blit(origImageSurface,&rect,targetSurface,&rect);
+    if err != 0 {
+      log.errorf("Error blitting texture image to target surface: %d", err);
+      return false;
+    }
+    // render_image(targetSurface);
+    imageSize : vk.DeviceSize = u64(texWidth * texHeight * 4);
+    stagingBuffer : vk.Buffer;
+    stagingBufferMemory : vk.DeviceMemory;
+
+    if !graphics_create_buffer(ctx, imageSize, vk.BufferUsageFlagBits.TransferSrc, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &stagingBuffer, &stagingBufferMemory) {
+      log.error("Error: failed to create texture buffer");
+      return false;
+    }
+    defer vk.destroy_buffer(ctx.device, stagingBuffer, nil);
+    defer vk.free_memory(ctx.device, stagingBufferMemory, nil);
+
+    data: rawptr;
+    vk.map_memory(ctx.device, stagingBufferMemory, 0, imageSize, 0, &data);
+    sdl.lock_surface(targetSurface);
+    rt.mem_copy_non_overlapping(data, targetSurface.pixels, int(imageSize));
+    sdl.unlock_surface(targetSurface);
+    vk.unmap_memory(ctx.device, stagingBufferMemory);
+
+    if !graphics_create_image(ctx, u32(texWidth), u32(texHeight), vk.Format.R8G8B8A8Srgb,vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.TransferDst | vk.ImageUsageFlagBits.Sampled, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.texture_image, &ctx.texture_image_memory) {
+      log.error("Error: could not create image");
+      return false;
+    }
+
+    if !graphics_transition_image_layout(ctx, ctx.texture_image, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.Undefined, vk.ImageLayout.TransferDstOptimal) {
+      log.error("Error: could not create transition image layout");
+      return false;
+    }
+    graphics_copy_buffer_to_image(ctx, stagingBuffer, ctx.texture_image, u32(texWidth), u32(texHeight));
+    if !graphics_transition_image_layout(ctx, ctx.texture_image, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.TransferDstOptimal, vk.ImageLayout.ShaderReadOnlyOptimal) {
+      log.error("Error: could not create tranition image layout");
+      return false;
+    }
+
+    return true;
+  }
 }
