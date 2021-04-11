@@ -15,7 +15,7 @@ load_3d_models :: proc(assets: ^Asset_Catalog, file: string, allocator := contex
     indices := make([dynamic]u32, 0, len(obj.faces) * 3, allocator);
     unique_vertices := make(map[Vertex]u32, 16, allocator);
 
-    for f, fidx in obj.faces {
+    for f, _ in obj.faces {
       for i, iidx in f.vertices {
         v := obj.vertices[i];
         tv := obj.texture_coords[f.texture_vertices[iidx]];

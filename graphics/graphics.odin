@@ -1,16 +1,16 @@
 package graphics
 
 import "core:mem"
-// import rt "core:runtime"
+import rt "core:runtime"
 // import "core:math/bits"
 import "core:os"
 import vk "shared:vulkan"
 import lin "core:math/linalg"
-//import time "core:time"
 import "core:log"
 import "core:strings"
 import bc "../build_config"
 // import stbi "shared:stb/stbi"
+import "../assets"
 
 max_frames_in_flight :: 2;
 
@@ -37,7 +37,7 @@ Uniform_Buffer_Object :: struct {
     model: lin.Matrix4f32,
     view: lin.Matrix4f32,
     proj: lin.Matrix4f32,
-}
+};
 
 Instance_Data :: struct {
   pos: lin.Vector3f32,
@@ -46,6 +46,14 @@ Instance_Data :: struct {
   tex_index: u32,
 };
 
+ThreeD_Asset :: struct {
+  vertices: []Vertex,
+  indices: []u32,
+  vertex_buffer: vk.Buffer,
+  vertex_buffer_memory: vk.DeviceMemory,
+  index_buffer: vk.Buffer,
+  index_buffer_memory: vk.DeviceMemory,
+};
 
 Graphics_Context :: struct {
   instance : vk.Instance,
@@ -76,10 +84,6 @@ Graphics_Context :: struct {
   renderFinishedSemaphores: []vk.Semaphore,
   inFlightFences: []vk.Fence,
   imagesInFlight: []vk.Fence,
-  vertexBuffer: vk.Buffer,
-  vertexBufferMemory: vk.DeviceMemory,
-  indexBuffer: vk.Buffer,
-  indexBufferMemory: vk.DeviceMemory,
   descriptorSetLayout: vk.DescriptorSetLayout,
   uniformBuffers: []vk.Buffer,
   uniformBuffersMemory: []vk.DeviceMemory,
@@ -97,6 +101,8 @@ Graphics_Context :: struct {
   depthImage: vk.Image,
   depthImageMemory: vk.DeviceMemory,
   depthImageView: vk.ImageView,
+  piece: ThreeD_Asset,
+  board: ThreeD_Asset,
 }
 
 Shader_Info :: struct {
@@ -164,11 +170,28 @@ graphics_check_device_extension_support :: proc(ctx: ^Graphics_Context) -> bool 
     delete_key(&expected, en);
   }
 
-  if len(expected) == 0 {
-    log.error("Error: unable to find expected device extensions");
-    return false;
-  }
-  return true;
+  if len(expected) == 0 do return true;
+
+  log.error("Error: unable to find expected device extensions");
+  return false;
+}
+
+
+graphics_update_uniform_buffer :: proc(ctx: ^Graphics_Context, currentImage: u32) {
+
+  diff := 0;
+  ubo := UniformBufferObject {
+    model = lin.matrix4_rotate_f32(f32(diff)*lin.radians(f32(90)),lin.VECTOR3F32_Z_AXIS),
+    view = lin.matrix4_look_at(lin.Vector3f32{2,2,2},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
+    proj = lin.matrix4_perspective_f32(lin.radians(f32(45)),f32(ctx.swapChainExtent.width)/f32(ctx.swapChainExtent.height),0.1,10),
+  };
+
+  ubo.proj[1][1] *= -1;
+
+  data: rawptr;
+  vk.map_memory(ctx.device,ctx.uniformBuffersMemory[currentImage],0,size_of(ubo),0,&data);
+  rt.mem_copy_non_overlapping(data,&ubo,size_of(ubo));
+  vk.unmap_memory(ctx.device,ctx.uniformBuffersMemory[currentImage]);
 }
 
 
@@ -727,6 +750,179 @@ graphics_transition_image_layout :: proc(ctx: ^Graphics_Context, image: vk.Image
 
   graphics_end_single_time_commands(ctx, &commandBuffer);
 
+  return true;
+}
+
+graphics_load_geometry :: proc(ctx: ^Graphics_Context) -> bool {
+  ac: assets.Asset_Catalog;
+  assets.init_assets(&ac);
+  ok := assets.load_3d_models(&ac, "/home/jim/projects/tic-tac-toe/blender/X.obj");
+  if !ok {
+    log.error("Error: failed to load piece geometry");
+    return false;
+  }
+  // defer free_all(context.temp_allocator);
+
+  for _, v in ac.models {
+    vertices := make([dynamic]Vertex, 0, len(v.vertices));
+
+    for v in v.vertices {
+      append(&vertices, Vertex {
+          pos = v.pos,
+          color = v.color,
+          uv = v.texture_coord,
+      });
+    }
+
+    ctx.piece.vertices = vertices[:];
+    ctx.piece.indices = v.indices[:];
+  }
+
+  ok = assets.load_3d_models(&ac, "/home/jim/projects/tic-tac-toe/blender/board.obj");
+  if !ok {
+    log.error("Error: failed to load board geometry");
+    return false;
+  }
+  // defer free_all(context.temp_allocator);
+
+  for _, v in ac.models {
+    vertices := make([dynamic]Vertex, 0, len(v.vertices));
+
+    for v in v.vertices {
+      append(&vertices, Vertex {
+          pos = v.pos,
+          color = v.color,
+          uv = v.texture_coord,
+      });
+    }
+
+    ctx.board.vertices = vertices[:];
+    ctx.board.indices = v.indices[:];
+  }
+
+  return true;
+}
+
+
+graphics_create_vertex_buffer :: proc(ctx: ^Graphics_Context, asset: ^ThreeD_Asset) -> bool {
+  bufferSize : vk.DeviceSize = u64(size_of(asset.vertices[0]) * len(asset.vertices));
+
+  stagingBuffer: vk.Buffer;
+  stagingBufferMemory: vk.DeviceMemory;
+  if !graphics_create_buffer(ctx,bufferSize,vk.BufferUsageFlagBits.TransferSrc,vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent,&stagingBuffer,&stagingBufferMemory) {
+    log.error("Error: failed to create host staging buffer");
+    return false;
+  }
+
+  data: rawptr;
+  vk.map_memory(ctx.device, stagingBufferMemory, 0, bufferSize, 0, &data);
+  rt.mem_copy_non_overlapping(data, mem.raw_slice_data(asset.vertices), int(bufferSize));
+  vk.unmap_memory(ctx.device, stagingBufferMemory);
+
+  if !graphics_create_buffer(ctx,bufferSize,vk.BufferUsageFlagBits.TransferDst | vk.BufferUsageFlagBits.VertexBuffer, vk.MemoryPropertyFlagBits.DeviceLocal,&asset.vertex_buffer,&asset.vertex_buffer_memory) {
+    log.error("Error: failed to create device local buffer");
+    return false;
+  }
+
+  graphics_copy_buffer(ctx,stagingBuffer,asset.vertex_buffer,bufferSize);
+
+  vk.destroy_buffer(ctx.device,stagingBuffer,nil);
+  vk.free_memory(ctx.device,stagingBufferMemory,nil);
+
+  return true;
+}
+
+
+graphics_create_index_buffer :: proc(ctx: ^Graphics_Context, asset: ^ThreeD_Asset) -> bool {
+  bufferSize : vk.DeviceSize = u64(size_of(asset.indices[0]) * len(asset.indices));
+
+  stagingBuffer : vk.Buffer;
+  stagingBufferMemory : vk.DeviceMemory;
+  graphics_create_buffer(ctx, bufferSize, vk.BufferUsageFlagBits.TransferSrc, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &stagingBuffer, &stagingBufferMemory);
+
+  data : rawptr;
+  vk.map_memory(ctx.device, stagingBufferMemory, 0, bufferSize, 0, &data);
+  rt.mem_copy_non_overlapping(data, mem.raw_slice_data(asset.indices), int(bufferSize));
+  vk.unmap_memory(ctx.device, stagingBufferMemory);
+
+  graphics_create_buffer(ctx,bufferSize, vk.BufferUsageFlagBits.TransferDst | vk.BufferUsageFlagBits.IndexBuffer, vk.MemoryPropertyFlagBits.DeviceLocal, &asset.index_buffer, &asset.index_buffer_memory);
+
+  graphics_copy_buffer(ctx,stagingBuffer, asset.index_buffer, bufferSize);
+
+  vk.destroy_buffer(ctx.device, stagingBuffer, nil);
+  vk.free_memory(ctx.device, stagingBufferMemory, nil);
+
+  return true;
+}
+
+
+graphics_create_command_buffers :: proc(ctx: ^Graphics_Context, asset: ^ThreeD_Asset, pipeline: vk.Pipeline) -> bool {
+  ctx.commandBuffers = make([]vk.CommandBuffer,len(ctx.swapChainFramebuffers));
+
+  allocInfo := vk.CommandBufferAllocateInfo{
+    sType = vk.StructureType.CommandBufferAllocateInfo,
+    commandPool = ctx.commandPool,
+    level = vk.CommandBufferLevel.Primary,
+    commandBufferCount = u32(len(ctx.commandBuffers)),
+  };
+
+  clear_color_value : vk.ClearColorValue;
+  clear_color_value.float32 = {0.0, 0.0, 0.0, 1.0};
+  clear_color : vk.ClearValue;
+  clear_color.color = clear_color_value;
+  clear_depth_stencil_value := vk.ClearDepthStencilValue{1.0, 0};
+  clear_depth_stencil: vk.ClearValue;
+  clear_depth_stencil.depthStencil = clear_depth_stencil_value;
+
+  clear_values := []vk.ClearValue{
+    clear_color,
+    clear_depth_stencil,
+  };
+
+  if vk.allocate_command_buffers(ctx.device, &allocInfo, mem.raw_slice_data(ctx.commandBuffers)) != vk.Result.Success {
+    log.error("Error: failed to allocate command buffers");
+    return false;
+  }
+
+  for cb, i in ctx.commandBuffers {
+    beginInfo := vk.CommandBufferBeginInfo{sType = vk.StructureType.CommandBufferBeginInfo};
+
+    if vk.begin_command_buffer(cb, &beginInfo) != vk.Result.Success {
+      log.error("Error: failed to begin command buffer");
+      return false;
+    }
+
+    renderPassInfo := vk.RenderPassBeginInfo{
+      sType = vk.StructureType.RenderPassBeginInfo,
+      renderPass = ctx.renderPass,
+      framebuffer = ctx.swapChainFramebuffers[i],
+      renderArea = {
+        offset = {0, 0},
+        extent = ctx.swapChainExtent,
+      },
+    };
+
+    renderPassInfo.clearValueCount = u32(len(clear_values));
+    renderPassInfo.pClearValues = mem.raw_slice_data(clear_values);
+
+    vk.cmd_begin_render_pass(cb, &renderPassInfo, vk.SubpassContents.Inline);
+
+    vk.cmd_bind_pipeline(cb, vk.PipelineBindPoint.Graphics, pipeline);
+
+    vertexBuffers := []vk.Buffer{asset.vertex_buffer};
+    offsets := []vk.DeviceSize{0};
+    vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertexBuffers), mem.raw_slice_data(offsets));
+    vk.cmd_bind_index_buffer(ctx.commandBuffers[i],asset.index_buffer,0,vk.IndexType.Uint32);
+    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.descriptorSets[i], 0, nil);
+    vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(asset.indices)), 1, 0, 0, 0);
+
+    vk.cmd_end_render_pass(cb);
+
+    if vk.end_command_buffer(cb) != vk.Result.Success {
+      log.error("Error: failed to end the command buffer");
+      return false;
+    }
+  }
   return true;
 }
 
@@ -1508,10 +1704,18 @@ graphics_destroy :: proc(ctx: ^Graphics_Context) {
   if ctx.textureImage != nil do vk.destroy_image(ctx.device, ctx.textureImage, nil);
   if ctx.textureImageMemory != nil do vk.free_memory(ctx.device, ctx.textureImageMemory, nil);
 
-  if ctx.indexBuffer != nil do vk.destroy_buffer(ctx.device, ctx.indexBuffer,nil);
-  if ctx.indexBufferMemory != nil do vk.free_memory(ctx.device, ctx.indexBufferMemory, nil);
-  if ctx.vertexBuffer != nil do vk.destroy_buffer(ctx.device, ctx.vertexBuffer,nil);
-  if ctx.vertexBufferMemory != nil do vk.free_memory(ctx.device, ctx.vertexBufferMemory, nil);
+  if ctx.piece.index_buffer != nil do vk.destroy_buffer(ctx.device, ctx.piece.index_buffer,nil);
+  if ctx.piece.index_buffer_memory != nil do vk.free_memory(ctx.device, ctx.piece.index_buffer_memory, nil);
+  if ctx.board.index_buffer != nil do vk.destroy_buffer(ctx.device, ctx.board.index_buffer,nil);
+  if ctx.board.index_buffer_memory != nil do vk.free_memory(ctx.device, ctx.board.index_buffer_memory, nil);
+  if ctx.piece.vertices != nil do delete(ctx.piece.vertices);
+  if ctx.piece.indices != nil do delete(ctx.piece.indices);
+  if ctx.board.vertices != nil do delete(ctx.piece.vertices);
+  if ctx.board.indices != nil do delete(ctx.piece.indices);
+  if ctx.piece.vertex_buffer != nil do vk.destroy_buffer(ctx.device, ctx.piece.vertex_buffer,nil);
+  if ctx.board.vertex_buffer != nil do vk.destroy_buffer(ctx.device, ctx.board.vertex_buffer,nil);
+  if ctx.piece.vertex_buffer_memory != nil do vk.free_memory(ctx.device, ctx.piece.vertex_buffer_memory, nil);
+  if ctx.board.vertex_buffer_memory != nil do vk.free_memory(ctx.device, ctx.board.vertex_buffer_memory, nil);
 
   if len(ctx.renderFinishedSemaphores) > 0 {
     for i := 0; i < max_frames_in_flight; i += 1 {

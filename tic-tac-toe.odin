@@ -4,24 +4,35 @@ import "ui"
 import "core:log"
 import "core:os"
 import sdl "shared:sdl2"
+import "input"
+import "graphics"
 
 main :: proc() {
   context.logger = log.create_console_logger(lowest = log.Level.Debug);
-  ctx: ui.UIContext;
-  if !ui.ui_init(&ctx) {
+
+  grCtx: graphics.Graphics_Context;
+  if !graphics.graphics_init(&grCtx) {
     os.exit(-1);
   }
-  defer ui.ui_destroy(&ctx);
-  if !ui.ui_create_window(ctx = &ctx, width = 640, height = 480) {
+  defer graphics.graphics_destroy(&grCtx);
+
+  // ctx: ui.UIContext;
+  // if !ui.ui_init(&ctx) {
+  //   os.exit(-1);
+  // }
+  // defer ui.ui_destroy(&ctx);
+
+  if !graphics.graphics_create_window(ctx = &grCtx, width = 640, height = 480) {
     os.exit(-1);
   }
   if !ui.ui_draw_frame(&ctx, ctx.window) {
     os.exit(-1);
   }
 
+  inputCtx: input.Input_Context;
   stop:
   for {
-    events := ui.ui_get_inputs(&ctx);
+    events := input.input_get_inputs(&inputCtx);
     for events > 0 {
       for i in 0..<events {
         event := ctx.sdl_events[i];
