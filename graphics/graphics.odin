@@ -13,6 +13,7 @@ import bc "../build_config"
 import "../assets"
 
 max_frames_in_flight :: 2;
+INSTANCE_COUNT :: 1;
 
 Swapchain_Buffer :: struct {
   image: vk.Image,
@@ -34,11 +35,11 @@ Vertex :: struct {
 };
 
 Uniform_Buffer_Object :: struct {
-    proj: lin.Matrix4f32,
-    view: lin.Matrix4f32,
-    light_pos: lin.Vector4f32,
-    loc_speed: f32,
-    glob_speed: f32,
+  proj: lin.Matrix4f32,
+  view: lin.Matrix4f32,
+  light_pos: lin.Vector4f32,
+  loc_speed: f32,
+  glob_speed: f32,
 };
 
 Instance_Data :: struct {
@@ -47,6 +48,13 @@ Instance_Data :: struct {
   scale: f32,
   tex_index: u32,
 };
+
+Instance_Buffer :: struct {
+  buffer: vk.Buffer,
+  memory: vk.DeviceMemory,
+  size: u64,
+  descriptor: vk.DescriptorBufferInfo,
+}
 
 ThreeD_Asset :: struct {
   vertices: []Vertex,
@@ -102,6 +110,8 @@ Graphics_Context :: struct {
   depthImage: vk.Image,
   depthImageMemory: vk.DeviceMemory,
   depthImageView: vk.ImageView,
+  instance_data: []Instance_Data,
+  instance_buffer: Instance_Buffer,
   piece: ThreeD_Asset,
   board: ThreeD_Asset,
 }
@@ -147,6 +157,60 @@ graphics_init :: proc(ctx: ^Graphics_Context,
   if !graphics_create_vulkan_instance(ctx, application_name) do return false;
   if !graphics_pick_physical_device(ctx) do return false;
   if !graphics_check_device_extension_support(ctx) do return false;
+  return true;
+}
+
+
+graphics_prepare_instance_data :: proc(ctx: ^Graphics_Context) -> bool {
+  ctx.instance_data = make([]Instance_Data,INSTANCE_COUNT);
+
+  ctx.instance_data[0].pos = lin.Vector3f32{0.0,0.0,0.0};
+  ctx.instance_data[0].rot = lin.Vector3f32{0.0,0.0,0.0};
+  ctx.instance_data[0].scale = 1.0;
+  ctx.instance_data[0].tex_index = 0;
+
+  staging_buffer: vk.Buffer;
+  staging_buffer_memory: vk.DeviceMemory;
+
+  ctx.instance_buffer.size = size_of(Instance_Data);
+
+  if !graphics_create_buffer(ctx,
+                            size_of(Instance_Data),
+                            vk.BufferUsageFlagBits.TransferSrc,
+                            vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent,
+                            &staging_buffer,
+                            &staging_buffer_memory) {
+    log.error("Error: failed to create instance buffer");
+    return false;
+  }
+
+  data: rawptr;
+  vk.map_memory(ctx.device, staging_buffer_memory, 0, u64(ctx.instance_buffer.size), 0, &data);
+  rt.mem_copy_non_overlapping(data, mem.raw_slice_data(ctx.instance_data), int(ctx.instance_buffer.size));
+  vk.unmap_memory(ctx.device, staging_buffer_memory);
+
+
+
+
+  if !graphics_create_buffer(ctx,
+                             size_of(Instance_Data),
+                             vk.BufferUsageFlagBits.TransferDst | vk.BufferUsageFlagBits.VertexBuffer,
+                             vk.MemoryPropertyFlagBits.DeviceLocal,
+                             &ctx.instance_buffer.buffer,
+                             &ctx.instance_buffer.memory) {
+    log.error("Error: failed to create instance buffer");
+    return false;
+  }
+
+  graphics_copy_buffer(ctx, staging_buffer, ctx.instance_buffer.buffer, u64(ctx.instance_buffer.size));
+
+  ctx.instance_buffer.descriptor.range  = ctx.instance_buffer.size;
+  ctx.instance_buffer.descriptor.buffer = ctx.instance_buffer.buffer;
+  ctx.instance_buffer.descriptor.offset = 0;
+
+  vk.destroy_buffer(ctx.device,staging_buffer,nil);
+  vk.free_memory(ctx.device,staging_buffer_memory,nil);
+
   return true;
 }
 
@@ -248,6 +312,7 @@ graphics_init_post_window :: proc(ctx: ^Graphics_Context,
   if !graphics_create_render_pass(ctx) do return false;
   if !graphics_create_descriptor_layout(ctx) do return false;
   if !graphics_create_graphics_pipeline(ctx) do return false;
+  if !graphics_prepare_instance_data(ctx) do return false;
   if !graphics_create_command_pool(ctx) do return false;
   if !graphics_create_depth_resources(ctx) do return false;
   if !graphics_create_framebuffers(ctx) do return false;
@@ -352,6 +417,11 @@ graphics_create_sync_objects :: proc(ctx: ^Graphics_Context) -> bool {
 }
 
 
+print_result :: proc(r: vk.Result) -> vk.Result {
+  log.infof("result: %v", r);
+  return r;
+}
+
 graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
   layouts := make([]vk.DescriptorSetLayout,len(ctx.swapChainImages));
   for _, i in layouts {
@@ -372,7 +442,7 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
     return false;
   }
 
-  if vk.allocate_descriptor_sets(ctx.device,&allocInfo,mem.raw_slice_data(ctx.board.descriptor_sets)) != vk.Result.Success {
+  if print_result(vk.allocate_descriptor_sets(ctx.device,&allocInfo,mem.raw_slice_data(ctx.board.descriptor_sets))) != vk.Result.Success {
     log.error("Error: failed to allocate descriptor sets");
     return false;
   }
@@ -436,7 +506,7 @@ graphics_create_descriptor_pool :: proc(ctx: ^Graphics_Context) -> bool {
     sType = vk.StructureType.DescriptorPoolCreateInfo,
     poolSizeCount = u32(len(poolSize)),
     pPoolSizes = mem.raw_slice_data(poolSize),
-    maxSets = u32(len(ctx.swapChainImages)),
+    maxSets = u32(len(ctx.swapChainImages)) * 3,
   };
 
   if vk.create_descriptor_pool(ctx.device, &poolInfo, nil, &ctx.descriptorPool) != vk.Result.Success {
@@ -937,20 +1007,10 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context) -> bool {
     vertex_buffers = []vk.Buffer{ctx.piece.vertex_buffer};
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets));
     // Binding point 1 : Instance data buffer
-    vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 1, 1, &instance_buffer.buffer, offsets);
-    vk.cmd_bind_index_buffer(ctx.commandBuffers[i], rock_index_buffer->get_handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 1, 1, &ctx.instance_buffer.buffer, mem.raw_slice_data(offsets));
+    vk.cmd_bind_index_buffer(ctx.commandBuffers[i], ctx.piece.index_buffer, 0, vk.IndexType.Uint32);
     // Render instances
-    vk.cmd_draw_indexed(ctx.commandBuffers[i], models.rock->vertex_indices, INSTANCE_COUNT, 0, 0, 0);
-
-
-
-    vk.cmd_bind_pipeline(cb, vk.PipelineBindPoint.Graphics, asset.pipeline);
-
-
-    vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertexBuffers), mem.raw_slice_data(offsets));
-    vk.cmd_bind_index_buffer(ctx.commandBuffers[i],asset.index_buffer,0,vk.IndexType.Uint32);
-    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.descriptorSets[i], 0, nil);
-    vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(asset.indices)), 1, 0, 0, 0);
+    vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.piece.indices)), INSTANCE_COUNT, 0, 0, 0);
 
     vk.cmd_end_render_pass(cb);
 

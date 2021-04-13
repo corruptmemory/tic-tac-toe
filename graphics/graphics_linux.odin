@@ -91,8 +91,7 @@ when bc.TOOLKIT == "sdl2" {
     if !graphics_create_uniform_buffers(ctx) do return false;
     if !graphics_create_descriptor_pool(ctx) do return false;
     if !graphics_create_descriptor_sets(ctx) do return false;
-    if !graphics_create_command_buffers(ctx, &ctx.piece) do return false;
-    if !graphics_create_command_buffers(ctx, &ctx.board) do return false;
+    if !graphics_create_command_buffers(ctx) do return false;
     if !graphics_create_sync_objects(ctx) do return false;
 
     return true;
