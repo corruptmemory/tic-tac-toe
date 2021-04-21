@@ -202,6 +202,9 @@ graphics_prepare_instance_data :: proc(ctx: ^Graphics_Context) -> bool {
     return false;
   }
 
+  log.infof("instace_buffer.buffer: %v", ctx.instance_buffer.buffer);
+  log.infof("instace_buffer.memory: %v", ctx.instance_buffer.memory);
+
   graphics_copy_buffer(ctx, staging_buffer, ctx.instance_buffer.buffer, u64(ctx.instance_buffer.size));
 
   ctx.instance_buffer.descriptor.range  = ctx.instance_buffer.size;
@@ -306,14 +309,15 @@ graphics_init_post_window :: proc(ctx: ^Graphics_Context,
   if !graphics_create_surface(ctx) do return false;
   if !graphics_find_queue_families(ctx) do return false;
   if !graphics_create_logical_device(ctx) do return false;
+  if !graphics_prepare_instance_data(ctx) do return false;
   if !graphics_query_swap_chain_support(ctx) do return false;
   if !graphics_create_swap_chain(ctx) do return false;
   if !graphics_create_image_views(ctx) do return false;
   if !graphics_create_render_pass(ctx) do return false;
   if !graphics_create_descriptor_layout(ctx) do return false;
   if !graphics_create_graphics_pipeline(ctx) do return false;
-  if !graphics_prepare_instance_data(ctx) do return false;
   if !graphics_create_command_pool(ctx) do return false;
+  if !graphics_create_command_buffers(ctx) do return false;
   if !graphics_create_depth_resources(ctx) do return false;
   if !graphics_create_framebuffers(ctx) do return false;
   // if !graphics_create_texture_image(ctx) do return false;
@@ -996,6 +1000,7 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context) -> bool {
     vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.board.descriptor_sets[i], 0, nil);
     vk.cmd_bind_pipeline(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.board.pipeline);
     vertex_buffers = []vk.Buffer{ctx.board.vertex_buffer};
+    log.info("vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets))");
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets));
     vk.cmd_bind_index_buffer(ctx.commandBuffers[i], ctx.board.index_buffer, 0, vk.IndexType.Uint32);
     vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.board.indices)), 1, 0, 0, 0);
@@ -1005,9 +1010,12 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context) -> bool {
     vk.cmd_bind_pipeline(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.piece.pipeline);
     // Binding point 0 : Mesh vertex buffer
     vertex_buffers = []vk.Buffer{ctx.piece.vertex_buffer};
+    log.info("vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets))");
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets));
     // Binding point 1 : Instance data buffer
+    log.infof("vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 1, 1, %v, mem.raw_slice_data(offsets))", ctx.instance_buffer.buffer);
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 1, 1, &ctx.instance_buffer.buffer, mem.raw_slice_data(offsets));
+    log.info("After the shizzle...");
     vk.cmd_bind_index_buffer(ctx.commandBuffers[i], ctx.piece.index_buffer, 0, vk.IndexType.Uint32);
     // Render instances
     vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.piece.indices)), INSTANCE_COUNT, 0, 0, 0);
@@ -1586,7 +1594,7 @@ graphics_create_image_view :: proc(ctx: ^Graphics_Context, image: vk.Image, form
   viewInfo := vk.ImageViewCreateInfo {
     sType = vk.StructureType.ImageViewCreateInfo,
     image = image,
-    viewType = vk.ImageViewType._2DArray,
+    viewType = vk.ImageViewType._2D,
     format = format,
     subresourceRange = {
       aspectMask = u32(aspectMask),

@@ -79,6 +79,7 @@ when bc.TOOLKIT == "sdl2" {
     if !graphics_create_descriptor_layout(ctx) do return false;
     if !graphics_create_graphics_pipeline(ctx) do return false;
     if !graphics_create_command_pool(ctx) do return false;
+    if !graphics_prepare_instance_data(ctx) do return false;
     if !graphics_create_depth_resources(ctx) do return false;
     if !graphics_create_framebuffers(ctx) do return false;
     if !graphics_create_texture_image(ctx) do return false;
