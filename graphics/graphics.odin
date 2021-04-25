@@ -1000,7 +1000,6 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context) -> bool {
     vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.board.descriptor_sets[i], 0, nil);
     vk.cmd_bind_pipeline(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.board.pipeline);
     vertex_buffers = []vk.Buffer{ctx.board.vertex_buffer};
-    log.info("vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets))");
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets));
     vk.cmd_bind_index_buffer(ctx.commandBuffers[i], ctx.board.index_buffer, 0, vk.IndexType.Uint32);
     vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.board.indices)), 1, 0, 0, 0);
@@ -1010,15 +1009,14 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context) -> bool {
     vk.cmd_bind_pipeline(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.piece.pipeline);
     // Binding point 0 : Mesh vertex buffer
     vertex_buffers = []vk.Buffer{ctx.piece.vertex_buffer};
-    log.info("vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets))");
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets));
     // Binding point 1 : Instance data buffer
-    log.infof("vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 1, 1, %v, mem.raw_slice_data(offsets))", ctx.instance_buffer.buffer);
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 1, 1, &ctx.instance_buffer.buffer, mem.raw_slice_data(offsets));
-    log.info("After the shizzle...");
     vk.cmd_bind_index_buffer(ctx.commandBuffers[i], ctx.piece.index_buffer, 0, vk.IndexType.Uint32);
     // Render instances
+    log.info("before");
     vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.piece.indices)), INSTANCE_COUNT, 0, 0, 0);
+    log.info("after");
 
     vk.cmd_end_render_pass(cb);
 
