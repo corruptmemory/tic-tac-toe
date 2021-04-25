@@ -5,7 +5,6 @@ import bc "../build_config"
 
 when bc.TOOLKIT == "sdl2" {
   import sdl "shared:sdl2"
-  import img "shared:sdl2/image"
   import rt "core:runtime"
   import "core:strings"
   import "core:mem"
@@ -171,61 +170,9 @@ when bc.TOOLKIT == "sdl2" {
 
 
   graphics_create_texture_image :: proc(ctx: ^Graphics_Context) -> bool {
-    origImageSurface := img.load("blender/viking_room.png");
-    if origImageSurface == nil {
-      log.error("Error loading texture image");
-      return false;
-    }
-    defer sdl.free_surface(origImageSurface);
-    texWidth := origImageSurface.w;
-    texHeight := origImageSurface.h;
-    targetSurface := sdl.create_rgb_surface_with_format(0, origImageSurface.w, origImageSurface.h, 32, sdl_pixelformat_rgba8888);
-    defer sdl.free_surface(targetSurface);
-    rect := sdl.Rect {
-      x = 0,
-      y = 0,
-      w = origImageSurface.w,
-      h = origImageSurface.h,
-    };
-    err := sdl.upper_blit(origImageSurface,&rect,targetSurface,&rect);
-    if err != 0 {
-      log.errorf("Error blitting texture image to target surface: %d", err);
-      return false;
-    }
-    // render_image(targetSurface);
-    imageSize : vk.DeviceSize = u64(texWidth * texHeight * 4);
-    stagingBuffer : vk.Buffer;
-    stagingBufferMemory : vk.DeviceMemory;
-
-    if !graphics_create_buffer(ctx, imageSize, vk.BufferUsageFlagBits.TransferSrc, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &stagingBuffer, &stagingBufferMemory) {
-      log.error("Error: failed to create texture buffer");
-      return false;
-    }
-    defer vk.destroy_buffer(ctx.device, stagingBuffer, nil);
-    defer vk.free_memory(ctx.device, stagingBufferMemory, nil);
-
-    data: rawptr;
-    vk.map_memory(ctx.device, stagingBufferMemory, 0, imageSize, 0, &data);
-    sdl.lock_surface(targetSurface);
-    rt.mem_copy_non_overlapping(data, targetSurface.pixels, int(imageSize));
-    sdl.unlock_surface(targetSurface);
-    vk.unmap_memory(ctx.device, stagingBufferMemory);
-
-    if !graphics_create_image(ctx, u32(texWidth), u32(texHeight), vk.Format.R8G8B8A8Srgb,vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.TransferDst | vk.ImageUsageFlagBits.Sampled, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.texture_image, &ctx.texture_image_memory) {
-      log.error("Error: could not create image");
-      return false;
-    }
-
-    if !graphics_transition_image_layout(ctx, ctx.texture_image, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.Undefined, vk.ImageLayout.TransferDstOptimal) {
-      log.error("Error: could not create transition image layout");
-      return false;
-    }
-    graphics_copy_buffer_to_image(ctx, stagingBuffer, ctx.texture_image, u32(texWidth), u32(texHeight));
-    if !graphics_transition_image_layout(ctx, ctx.texture_image, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.TransferDstOptimal, vk.ImageLayout.ShaderReadOnlyOptimal) {
-      log.error("Error: could not create tranition image layout");
-      return false;
-    }
-
-    return true;
+    return image_load_image_from_file(image = &ctx.texture_image,
+                                      file = "blender/viking_room.png",
+                                      command_pool = ctx.commandPool,
+                                      queue = ctx.graphicsQueue);
   }
 }

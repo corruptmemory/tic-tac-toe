@@ -45,19 +45,10 @@ Image_View :: struct {
 image_init :: proc(image: ^Image,
                    device: vk.Device,
                    physical_device: vk.PhysicalDevice,
-                   name: string,
-                   data: []byte,
-                   mipmap: []Mipmap,
-                   format: vk.Format = vk.Format.B8G8R8A8Unorm) {
+                   name: string) {
   image.device = device;
   image.physical_device = physical_device;
-  resize(&image.data, len(data));
-  copy(image.data[:], data);
   image.name = strings.clone(name);
-  resize(&image.mipmap, len(mipmap));
-  copy(image.mipmap[:], mipmap);
-  image.format = format;
-  image.layers = 1;
   image.allocator = context.allocator;
 }
 
@@ -65,35 +56,16 @@ image_init_allocator :: proc(image: ^Image,
                              device: vk.Device,
                              physical_device: vk.PhysicalDevice,
                              name: string,
-                             data: []byte,
-                             mipmap: []Mipmap,
-                             format: vk.Format = vk.Format.B8G8R8A8Unorm,
                              allocator := context.allocator) {
   image.device = device;
   image.physical_device = physical_device;
   image.allocator = allocator;
-  image.data.allocator = allocator;
-  resize(&image.data, len(data));
-  copy(image.data[:], data);
   image.name = strings.clone(name, image.allocator);
-  image.mipmap.allocator = allocator;
-  resize(&image.mipmap, len(mipmap));
-  copy(image.mipmap[:], mipmap);
-  image.layers = 1;
-  image.format = format;
 }
 
 
 image_get_extent :: proc(image: ^Image) -> vk.Extent3D {
   return image.mipmap[0].extent;
-}
-
-image_clear_data :: proc(image: ^Image) {
-  context.allocator = image.allocator;
-  if image.data != nil {
-    delete(image.data);
-    image.data = nil;
-  }
 }
 
 image_create_vk_image :: proc(image: ^Image,
@@ -194,42 +166,95 @@ image_destroy :: proc(image: ^Image) {
   }
 }
 
+image_copy_buffer_to_image :: proc(image: ^Image,
+                                   command_pool: vk.CommandPool,
+                                   queue: vk.Queue,
+                                   buffer: vk.Buffer) {
+  command_buffer := vk_begin_single_time_commands(image.device, command_pool);
 
+  region := vk.BufferImageCopy{
+    bufferOffset        = 0,
+    bufferRowLength     = 0,
+    bufferImageHeight   = 0,
+    imageSubresource = {
+      aspectMask     = u32(vk.ImageAspectFlagBits.Color),
+      mipLevel       = 0,
+      baseArrayLayer = 0,
+      layerCount     = 1,
+    },
+    imageOffset         = {0, 0, 0},
+    imageExtent         = image.mipmap[0].extent,
+  };
 
-// ImageViewCreateInfo :: struct {
-//     sType : StructureType,
-//     pNext : rawptr,
-//     flags : ImageViewCreateFlags,
-//     image : Image,
-//     viewType : ImageViewType,
-//     format : Format,
-//     components : ComponentMapping,
-//     subresourceRange : ImageSubresourceRange,
-// };
+  vk.cmd_copy_buffer_to_image(command_buffer, buffer, image.vk_image, vk.ImageLayout.TransferDstOptimal, 1, &region);
 
-// image_create_vk_image_view :: proc(image: ^Image,
-//                                    device: vk.Device,
-//                                    format: vk.Format,
-//                                    aspectMask: vk.ImageAspectFlagBits) -> bool {
-//   view_info := vk.ImageViewCreateInfo {
-//     sType = vk.StructureType.ImageViewCreateInfo,
-//     image = image.vk_image,
-//     viewType = vk.ImageViewType._2D,
-//     format = format,
-//     subresourceRange = {
-//       aspectMask = u32(aspectMask),
-//       baseMipLevel = 0,
-//       levelCount = 1,
-//       baseArrayLayer = 0,
-//       layerCount = 1,
-//     },
-//   };
+  vk_end_single_time_commands(image.device,
+                              command_pool,
+                              queue,
+                              &command_buffer);
+}
 
-//   imageView: vk.ImageView;
-//   if vk.create_image_view(ctx.device, &viewInfo, nil, &imageView) == vk.Result.Success {
-//     return imageView, true;
-//   }
+image_transition_image_layout :: proc(image: ^Image,
+                                      command_pool: vk.CommandPool,
+                                      queue: vk.Queue,
+                                      old_layout: vk.ImageLayout,
+                                      new_layout: vk.ImageLayout) -> bool {
+  command_buffer := vk_begin_single_time_commands(image.device, command_pool);
 
-//   log.error("Error: failed to create image view");
-//   return nil, false;
-// }
+  ufi : i32 = vk.QUEUE_FAMILY_IGNORED;
+
+  barrier := vk.ImageMemoryBarrier {
+    sType = vk.StructureType.ImageMemoryBarrier,
+    oldLayout = old_layout,
+    newLayout = new_layout,
+    srcQueueFamilyIndex = transmute(u32)(ufi),
+    dstQueueFamilyIndex = transmute(u32)(ufi),
+    image = image.vk_image,
+    subresourceRange = vk.ImageSubresourceRange{
+      aspectMask = u32(vk.ImageAspectFlagBits.Color),
+      baseMipLevel = 0,
+      levelCount = 1,
+      baseArrayLayer = 0,
+      layerCount = 1,
+    },
+  };
+
+  source_stage: vk.PipelineStageFlags;
+  destination_stage: vk.PipelineStageFlags;
+
+  if old_layout == vk.ImageLayout.Undefined && new_layout == vk.ImageLayout.TransferDstOptimal {
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = u32(vk.AccessFlagBits.TransferWrite);
+    source_stage = u32(vk.PipelineStageFlagBits.TopOfPipe);
+    destination_stage = u32(vk.PipelineStageFlagBits.Transfer);
+  } else if old_layout == vk.ImageLayout.TransferDstOptimal && new_layout == vk.ImageLayout.ShaderReadOnlyOptimal {
+    barrier.srcAccessMask = u32(vk.AccessFlagBits.TransferWrite);
+    barrier.dstAccessMask = u32(vk.AccessFlagBits.ShaderRead);
+    source_stage = u32(vk.PipelineStageFlagBits.Transfer);
+    destination_stage = u32(vk.PipelineStageFlagBits.FragmentShader);
+  } else if old_layout == vk.ImageLayout.Undefined && new_layout == vk.ImageLayout.DepthStencilAttachmentOptimal {
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = u32(vk.AccessFlagBits.DepthStencilAttachmentRead | vk.AccessFlagBits.DepthStencilAttachmentWrite);
+    source_stage = u32(vk.PipelineStageFlagBits.TopOfPipe);
+    destination_stage = u32(vk.PipelineStageFlagBits.EarlyFragmentTests);
+  } else {
+    log.error("Error: unsupported layout transition!");
+    return false;
+  }
+
+  vk.cmd_pipeline_barrier(
+    command_buffer,
+    source_stage, destination_stage,
+    0,
+    0, nil,
+    0, nil,
+    1, &barrier
+  );
+
+  vk_end_single_time_commands(image.device,
+                              command_pool,
+                              queue,
+                              &command_buffer);
+
+  return true;
+}

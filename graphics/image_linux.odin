@@ -12,6 +12,18 @@ when bc.TOOLKIT == "sdl2" {
 
   image_load_image_from_file :: proc(image: ^Image,
                                      file: string,
+                                     command_pool: vk.CommandPool,
+                                     queue: vk.Queue,
+                                     image_type: vk.ImageType = vk.ImageType._2D,
+                                     properties: vk.MemoryPropertyFlagBits = vk.MemoryPropertyFlagBits.DeviceLocal,
+                                     format: vk.Format = vk.Format.B8G8R8A8Unorm,
+                                     usage: vk.ImageUsageFlags = u32(vk.ImageUsageFlagBits.TransferDst | vk.ImageUsageFlagBits.Sampled),
+                                     mip_levels: u32 = 1,
+                                     array_layers: u32 = 1,
+                                     tiling: vk.ImageTiling = vk.ImageTiling.Optimal,
+                                     flags: vk.ImageCreateFlags = 0,
+                                     samples: vk.SampleCountFlagBits = vk.SampleCountFlagBits._1,
+                                     queue_families: []u32 = nil,
                                      sdl_pixel_format: u32 = sdl_pixelformat_rgba8888) -> bool {
     fn := strings.clone_to_cstring(file);
     defer delete(fn);
@@ -55,17 +67,37 @@ when bc.TOOLKIT == "sdl2" {
     sdl.unlock_surface(target_surface);
     vk.unmap_memory(image.device, staging_buffer_memory);
 
-    if !graphics_create_image(ctx, u32(image_width), u32(image_height), vk.Format.R8G8B8A8Srgb,vk.ImageTiling.Optimal, vk.ImageUsageFlagBits.TransferDst | vk.ImageUsageFlagBits.Sampled, vk.MemoryPropertyFlagBits.DeviceLocal, &ctx.texture_image, &ctx.texture_image_memory) {
+    append(&image.mipmap, Mipmap{extent = vk.Extent3D{width = u32(image_width), height = u32(image_height), depth = 1}});
+
+    if !image_create_vk_image(image = image,
+                              image_type = image_type,
+                              properties = properties,
+                              format = format,
+                              usage = usage,
+                              mip_levels = mip_levels,
+                              array_layers = array_layers,
+                              tiling = tiling,
+                              flags = flags,
+                              samples = samples,
+                              queue_families = queue_families) {
       log.error("Error: could not create image");
       return false;
     }
 
-    if !graphics_transition_image_layout(ctx, ctx.texture_image, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.Undefined, vk.ImageLayout.TransferDstOptimal) {
+    if !image_transition_image_layout(image = image,
+                                      command_pool = command_pool,
+                                      queue = queue,
+                                      old_layout = vk.ImageLayout.Undefined,
+                                      new_layout = vk.ImageLayout.TransferDstOptimal) {
       log.error("Error: could not create transition image layout");
       return false;
     }
-    graphics_copy_buffer_to_image(ctx, stagingBuffer, ctx.texture_image, u32(image_width), u32(image_height));
-    if !graphics_transition_image_layout(ctx, ctx.texture_image, vk.Format.R8G8B8A8Srgb, vk.ImageLayout.TransferDstOptimal, vk.ImageLayout.ShaderReadOnlyOptimal) {
+    image_copy_buffer_to_image(image, command_pool, queue, staging_buffer);
+    if !image_transition_image_layout(image = image,
+                                      command_pool = command_pool,
+                                      queue = queue,
+                                      old_layout = vk.ImageLayout.TransferDstOptimal,
+                                      new_layout = vk.ImageLayout.ShaderReadOnlyOptimal) {
       log.error("Error: could not create tranition image layout");
       return false;
     }

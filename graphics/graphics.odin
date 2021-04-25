@@ -100,8 +100,7 @@ Graphics_Context :: struct {
   descriptorPool: vk.DescriptorPool,
   currentFrame: int,
   framebufferResized: bool,
-  texture_image: vk.Image,
-  texture_image_memory: vk.DeviceMemory,
+  texture_image: Image,
   texture_image_view: vk.ImageView,
   texture_sampler: vk.Sampler,
   window: WINDOW_TYPE,
@@ -608,7 +607,7 @@ graphics_create_texture_sampler :: proc(ctx: ^Graphics_Context) -> bool {
 
 
 graphics_create_texture_image_view :: proc(ctx: ^Graphics_Context) -> bool {
-  textureImageView, result := graphics_create_image_view(ctx, ctx.texture_image, vk.Format.R8G8B8A8Srgb, vk.ImageAspectFlagBits.Color);
+  textureImageView, result := image_create_vk_image_view(&ctx.texture_image, ctx.device, vk.Format.R8G8B8A8Srgb, vk.ImageAspectFlagBits.Color);
   ctx.texture_image_view = textureImageView;
   return result;
 }
@@ -1743,8 +1742,7 @@ graphics_destroy :: proc(ctx: ^Graphics_Context) {
   if ctx.depthImageMemory != nil do vk.free_memory(ctx.device, ctx.depthImageMemory, nil);
   if ctx.texture_sampler != nil do vk.destroy_sampler(ctx.device, ctx.texture_sampler, nil);
   if ctx.texture_image_view != nil do vk.destroy_image_view(ctx.device, ctx.texture_image_view, nil);
-  if ctx.texture_image != nil do vk.destroy_image(ctx.device, ctx.texture_image, nil);
-  if ctx.texture_image_memory != nil do vk.free_memory(ctx.device, ctx.texture_image_memory, nil);
+  image_destroy(&ctx.texture_image);
   if ctx.piece.index_buffer != nil do vk.destroy_buffer(ctx.device, ctx.piece.index_buffer,nil);
   if ctx.piece.index_buffer_memory != nil do vk.free_memory(ctx.device, ctx.piece.index_buffer_memory, nil);
   if ctx.board.index_buffer != nil do vk.destroy_buffer(ctx.device, ctx.board.index_buffer,nil);
