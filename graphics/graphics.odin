@@ -687,7 +687,7 @@ graphics_create_image :: proc(ctx: ^Graphics_Context, width, height: u32, format
     flags = 0,
   };
 
-  if vk.create_image(ctx.device, &imageInfo, nil, image) != vk.Result.Success {
+  if vk_fail(vk.create_image(ctx.device, &imageInfo, nil, image)) {
     log.error("Failed to create image for the texture map");
     return false;
   }

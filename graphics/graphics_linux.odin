@@ -138,7 +138,7 @@ when bc.TOOLKIT == "sdl2" {
 
     vk.reset_fences(ctx.device, 1, &ctx.inFlightFences[ctx.currentFrame]);
 
-    if (vk.queue_submit(ctx.graphicsQueue, 1, &submitInfo, ctx.inFlightFences[ctx.currentFrame]) != vk.Result.Success) {
+    if vk.queue_submit(ctx.graphicsQueue, 1, &submitInfo, ctx.inFlightFences[ctx.currentFrame]) != vk.Result.Success {
       return false;
     }
 
