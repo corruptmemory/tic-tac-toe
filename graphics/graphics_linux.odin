@@ -170,8 +170,10 @@ when bc.TOOLKIT == "sdl2" {
 
 
   graphics_create_texture_image :: proc(ctx: ^Graphics_Context) -> bool {
-    image_init(&ctx.texture_image, ctx.device, ctx.physicalDevice, "texture");
     return image_load_image_from_file(image = &ctx.texture_image,
+                                      device = ctx.device,
+                                      physical_device = ctx.physicalDevice,
+                                      name = "texture",
                                       file = "blender/viking_room.png",
                                       command_pool = ctx.commandPool,
                                       queue = ctx.graphicsQueue);

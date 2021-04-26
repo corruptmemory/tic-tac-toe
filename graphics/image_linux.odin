@@ -11,6 +11,9 @@ when bc.TOOLKIT == "sdl2" {
   import "core:strings"
 
   image_load_image_from_file :: proc(image: ^Image,
+                                     device: vk.Device,
+                                     physical_device: vk.PhysicalDevice,
+                                     name: string,
                                      file: string,
                                      command_pool: vk.CommandPool,
                                      queue: vk.Queue,
@@ -24,7 +27,9 @@ when bc.TOOLKIT == "sdl2" {
                                      flags: vk.ImageCreateFlags = 0,
                                      samples: vk.SampleCountFlagBits = vk.SampleCountFlagBits._1,
                                      queue_families: []u32 = nil,
-                                     sdl_pixel_format: u32 = sdl_pixelformat_rgba8888) -> bool {
+                                     sdl_pixel_format: u32 = sdl_pixelformat_rgba8888,
+                                     allocator := context.allocator) -> bool {
+    image_init(image, device, physical_device, name, allocator);
     fn := strings.clone_to_cstring(file);
     defer delete(fn);
     orig_image_surface := img.load(fn);

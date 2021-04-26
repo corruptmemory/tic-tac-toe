@@ -45,24 +45,13 @@ Image_View :: struct {
 image_init :: proc(image: ^Image,
                    device: vk.Device,
                    physical_device: vk.PhysicalDevice,
-                   name: string) {
-  image.device = device;
-  image.physical_device = physical_device;
-  image.name = strings.clone(name);
-  image.allocator = context.allocator;
-}
-
-image_init_allocator :: proc(image: ^Image,
-                             device: vk.Device,
-                             physical_device: vk.PhysicalDevice,
-                             name: string,
-                             allocator := context.allocator) {
+                   name: string,
+                   allocator := context.allocator) {
   image.device = device;
   image.physical_device = physical_device;
   image.allocator = allocator;
-  image.name = strings.clone(name, image.allocator);
+  image.name = strings.clone(name, allocator);
 }
-
 
 image_get_extent :: proc(image: ^Image) -> vk.Extent3D {
   return image.mipmap[0].extent;
