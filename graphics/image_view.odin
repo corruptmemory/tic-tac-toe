@@ -17,7 +17,7 @@ import "core:log"
 image_create_vk_image_view :: proc(image: ^Image,
                                    device: vk.Device,
                                    format: vk.Format,
-                                   aspectMask: vk.ImageAspectFlagBits,
+                                   aspect_mask: vk.ImageAspectFlagBits,
                                    view_type: vk.ImageViewType = vk.ImageViewType._2D) -> (vk.ImageView, bool) {
   view_info := vk.ImageViewCreateInfo {
     sType = vk.StructureType.ImageViewCreateInfo,
@@ -25,7 +25,7 @@ image_create_vk_image_view :: proc(image: ^Image,
     viewType = view_type,
     format = format,
     subresourceRange = {
-      aspectMask = u32(aspectMask),
+      aspectMask = u32(aspect_mask),
       baseMipLevel = 0,
       levelCount = 1,
       baseArrayLayer = 0,

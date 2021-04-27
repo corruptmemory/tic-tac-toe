@@ -82,7 +82,14 @@ when bc.TOOLKIT == "sdl2" {
     if !graphics_create_depth_resources(ctx) do return false;
     if !graphics_create_framebuffers(ctx) do return false;
     if !graphics_create_texture_image(ctx) do return false;
-    if !graphics_create_texture_image_view(ctx) do return false;
+    if !graphics_create_texture_image_view(ctx,
+                                           &ctx.piece_texture_image,
+                                           &ctx.piece_texture_image_view,
+                                           vk.ImageViewType._2DArray) { return false; }
+    if !graphics_create_texture_image_view(ctx,
+                                           &ctx.board_texture_image,
+                                           &ctx.board_texture_image_view,
+                                           vk.ImageViewType._2D) { return false; }
     if !graphics_create_texture_sampler(ctx) do return false;
     if !graphics_create_vertex_buffer(ctx, &ctx.piece) do return false;
     if !graphics_create_vertex_buffer(ctx, &ctx.board) do return false;
@@ -170,10 +177,17 @@ when bc.TOOLKIT == "sdl2" {
 
 
   graphics_create_texture_image :: proc(ctx: ^Graphics_Context) -> bool {
-    return image_load_image_from_file(image = &ctx.texture_image,
+    if !image_load_image_from_file(image = &ctx.piece_texture_image,
+                                   device = ctx.device,
+                                   physical_device = ctx.physicalDevice,
+                                   name = "piece",
+                                   file = "blender/viking_room.png",
+                                   command_pool = ctx.commandPool,
+                                   queue = ctx.graphicsQueue) { return false; }
+    return image_load_image_from_file(image = &ctx.board_texture_image,
                                       device = ctx.device,
                                       physical_device = ctx.physicalDevice,
-                                      name = "texture",
+                                      name = "piece",
                                       file = "blender/viking_room.png",
                                       command_pool = ctx.commandPool,
                                       queue = ctx.graphicsQueue);

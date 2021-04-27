@@ -19,7 +19,7 @@ when bc.TOOLKIT == "sdl2" {
                                      queue: vk.Queue,
                                      image_type: vk.ImageType = vk.ImageType._2D,
                                      properties: vk.MemoryPropertyFlagBits = vk.MemoryPropertyFlagBits.DeviceLocal,
-                                     format: vk.Format = vk.Format.B8G8R8A8Unorm,
+                                     format: vk.Format = vk.Format.R8G8B8A8Srgb,
                                      usage: vk.ImageUsageFlags = u32(vk.ImageUsageFlagBits.TransferDst | vk.ImageUsageFlagBits.Sampled),
                                      mip_levels: u32 = 1,
                                      array_layers: u32 = 1,
@@ -41,7 +41,6 @@ when bc.TOOLKIT == "sdl2" {
     image_width := orig_image_surface.w;
     image_height := orig_image_surface.h;
     target_surface := sdl.create_rgb_surface_with_format(0, image_width, image_height, 32, sdl_pixel_format);
-    log.debug("We got the target surface.");
     defer sdl.free_surface(target_surface);
     rect := sdl.Rect {
       x = 0,
@@ -50,40 +49,30 @@ when bc.TOOLKIT == "sdl2" {
       h = image_height,
     };
     err := sdl.upper_blit(orig_image_surface,&rect,target_surface,&rect);
-    log.debug("Blittage!");
     if err != 0 {
       log.errorf("Error blitting texture image to target surface: %d", err);
       return false;
     }
 
     image_size : vk.DeviceSize = u64(image_width * image_height * auto_cast target_surface.format.bytes_per_pixel);
-    log.debugf("Let me guess, we have a 0 image size: %d", image_size);
     staging_buffer : vk.Buffer;
     staging_buffer_memory : vk.DeviceMemory;
 
-    log.debug("before vk_create_buffer");
     if !vk_create_buffer(image.device, image.physical_device, image_size, vk.BufferUsageFlagBits.TransferSrc, vk.MemoryPropertyFlagBits.HostVisible | vk.MemoryPropertyFlagBits.HostCoherent, &staging_buffer, &staging_buffer_memory) {
       log.error("Error: failed to create texture buffer");
       return false;
     }
     defer vk.destroy_buffer(image.device, staging_buffer, nil);
     defer vk.free_memory(image.device, staging_buffer_memory, nil);
-    log.debug("after vk_create_buffer");
 
     data: rawptr;
     vk.map_memory(image.device, staging_buffer_memory, 0, image_size, 0, &data);
-    log.debug("Mappage!");
     sdl.lock_surface(target_surface);
-    log.debug("Lockage!");
     rt.mem_copy_non_overlapping(data, target_surface.pixels, auto_cast image_size);
-    log.debug("Copyage!");
     sdl.unlock_surface(target_surface);
-    log.debug("Unlockage!");
     vk.unmap_memory(image.device, staging_buffer_memory);
-    log.debug("Unmappage!");
 
 
-    log.debug("append(&image.mipmap, Mipmap{extent = vk.Extent3D{width = u32(image_width), height = u32(image_height), depth = 1}});");
     append(&image.mipmap, Mipmap{extent = vk.Extent3D{width = u32(image_width), height = u32(image_height), depth = 1}});
 
     if !image_create_vk_image(image = image,
@@ -101,8 +90,6 @@ when bc.TOOLKIT == "sdl2" {
       return false;
     }
 
-    log.debug("But why can't we keep going?");
-
     if !image_transition_image_layout(image = image,
                                       command_pool = command_pool,
                                       queue = queue,
@@ -111,9 +98,7 @@ when bc.TOOLKIT == "sdl2" {
       log.error("Error: could not create transition image layout");
       return false;
     }
-    log.debug("It certainly seems like we can!");
     image_copy_buffer_to_image(image, command_pool, queue, staging_buffer);
-    log.debug("The show must go on!");
     if !image_transition_image_layout(image = image,
                                       command_pool = command_pool,
                                       queue = queue,
@@ -122,7 +107,6 @@ when bc.TOOLKIT == "sdl2" {
       log.error("Error: could not create tranition image layout");
       return false;
     }
-    log.debug("We did it!  We got to the end!");
 
     return true;
   }

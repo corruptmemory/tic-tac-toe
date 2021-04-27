@@ -45,17 +45,14 @@ vk_create_buffer :: proc(device: vk.Device,
     sharingMode = sharing_mode,
   };
 
-  log.debugf("device: %v, &buffer_info: %v, buffer: %v", device, &buffer_info, buffer);
   if vk_fail(vk.create_buffer(device, &buffer_info, nil, buffer)) {
     log.error("Error: failed to create buffer");
     return false;
   }
 
-  log.debug("Here 2");
   mem_requirements: vk.MemoryRequirements;
   vk.get_buffer_memory_requirements(device, buffer^, &mem_requirements);
 
-  log.debug("Here 3");
   memory_type_index, ok := vk_find_memory_type(physical_device, mem_requirements.memoryTypeBits, u32(properties));
   if !ok {
     log.error("Error: failed to find desired memory type");
@@ -68,13 +65,11 @@ vk_create_buffer :: proc(device: vk.Device,
     memoryTypeIndex = memory_type_index,
   };
 
-  log.debug("Here 4");
   if vk_fail(vk.allocate_memory(device, &alloc_info, nil, buffer_memory)) {
     log.error("Error: failed to allocate memory");
     return false;
   }
 
-  log.debug("Here 5");
   if vk_fail(vk.bind_buffer_memory(device, buffer^, buffer_memory^, 0)) {
     log.error("Error: failed to bind");
     return false;

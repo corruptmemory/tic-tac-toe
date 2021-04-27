@@ -100,9 +100,11 @@ Graphics_Context :: struct {
   descriptorPool: vk.DescriptorPool,
   currentFrame: int,
   framebufferResized: bool,
-  texture_image: Image,
-  texture_image_view: vk.ImageView,
+  piece_texture_image: Image,
+  piece_texture_image_view: vk.ImageView,
   texture_sampler: vk.Sampler,
+  board_texture_image: Image,
+  board_texture_image_view: vk.ImageView,
   window: WINDOW_TYPE,
   width: u32,
   height: u32,
@@ -200,9 +202,6 @@ graphics_prepare_instance_data :: proc(ctx: ^Graphics_Context) -> bool {
     log.error("Error: failed to create instance buffer");
     return false;
   }
-
-  log.infof("instace_buffer.buffer: %v", ctx.instance_buffer.buffer);
-  log.infof("instace_buffer.memory: %v", ctx.instance_buffer.memory);
 
   graphics_copy_buffer(ctx, staging_buffer, ctx.instance_buffer.buffer, u64(ctx.instance_buffer.size));
 
@@ -320,7 +319,14 @@ graphics_init_post_window :: proc(ctx: ^Graphics_Context,
   if !graphics_create_depth_resources(ctx) do return false;
   if !graphics_create_framebuffers(ctx) do return false;
   // if !graphics_create_texture_image(ctx) do return false;
-  if !graphics_create_texture_image_view(ctx) do return false;
+  if !graphics_create_texture_image_view(ctx,
+                                         &ctx.piece_texture_image,
+                                         &ctx.piece_texture_image_view,
+                                         vk.ImageViewType._2DArray) { return false; }
+  if !graphics_create_texture_image_view(ctx,
+                                         &ctx.board_texture_image,
+                                         &ctx.board_texture_image_view,
+                                         vk.ImageViewType._2D) { return false; }
   if !graphics_create_texture_sampler(ctx) do return false;
   if !graphics_create_uniform_buffers(ctx) do return false;
   if !graphics_create_descriptor_pool(ctx) do return false;
@@ -419,12 +425,6 @@ graphics_create_sync_objects :: proc(ctx: ^Graphics_Context) -> bool {
   return true;
 }
 
-
-print_result :: proc(r: vk.Result) -> vk.Result {
-  log.infof("result: %v", r);
-  return r;
-}
-
 graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
   layouts := make([]vk.DescriptorSetLayout,len(ctx.swapChainImages));
   for _, i in layouts {
@@ -445,7 +445,7 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
     return false;
   }
 
-  if print_result(vk.allocate_descriptor_sets(ctx.device,&allocInfo,mem.raw_slice_data(ctx.board.descriptor_sets))) != vk.Result.Success {
+  if vk_fail(vk.allocate_descriptor_sets(ctx.device,&allocInfo,mem.raw_slice_data(ctx.board.descriptor_sets))) {
     log.error("Error: failed to allocate descriptor sets");
     return false;
   }
@@ -457,9 +457,15 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
       range = size_of(Uniform_Buffer_Object),
     };
 
-    imageInfo := vk.DescriptorImageInfo {
+    piece_image_info := vk.DescriptorImageInfo {
       imageLayout = vk.ImageLayout.ShaderReadOnlyOptimal,
-      imageView = ctx.texture_image_view,
+      imageView = ctx.piece_texture_image_view,
+      sampler = ctx.texture_sampler,
+    };
+
+    board_image_info := vk.DescriptorImageInfo {
+      imageLayout = vk.ImageLayout.ShaderReadOnlyOptimal,
+      imageView = ctx.board_texture_image_view,
       sampler = ctx.texture_sampler,
     };
 
@@ -480,12 +486,13 @@ graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
         dstArrayElement = 0,
         descriptorType = vk.DescriptorType.CombinedImageSampler,
         descriptorCount = 1,
-        pImageInfo = &imageInfo,
+        pImageInfo = &piece_image_info,
       },
     };
     vk.update_descriptor_sets(ctx.device, u32(len(descriptorWrite)), mem.raw_slice_data(descriptorWrite), 0, nil);
     descriptorWrite[0].dstSet = ctx.board.descriptor_sets[i];
     descriptorWrite[1].dstSet = ctx.board.descriptor_sets[i];
+    descriptorWrite[1].pImageInfo = &board_image_info;
     vk.update_descriptor_sets(ctx.device, u32(len(descriptorWrite)), mem.raw_slice_data(descriptorWrite), 0, nil);
   }
 
@@ -606,9 +613,16 @@ graphics_create_texture_sampler :: proc(ctx: ^Graphics_Context) -> bool {
 }
 
 
-graphics_create_texture_image_view :: proc(ctx: ^Graphics_Context) -> bool {
-  textureImageView, result := image_create_vk_image_view(&ctx.texture_image, ctx.device, vk.Format.R8G8B8A8Srgb, vk.ImageAspectFlagBits.Color);
-  ctx.texture_image_view = textureImageView;
+graphics_create_texture_image_view :: proc(ctx: ^Graphics_Context,
+                                           image: ^Image,
+                                           view: ^vk.ImageView,
+                                           view_type: vk.ImageViewType) -> bool {
+  texture_image_view, result := image_create_vk_image_view(image = image,
+                                                           device = ctx.device,
+                                                           format = vk.Format.R8G8B8A8Srgb,
+                                                           aspect_mask = vk.ImageAspectFlagBits.Color,
+                                                           view_type = view_type);
+  view^ = texture_image_view;
   return result;
 }
 
@@ -1013,9 +1027,7 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context) -> bool {
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 1, 1, &ctx.instance_buffer.buffer, mem.raw_slice_data(offsets));
     vk.cmd_bind_index_buffer(ctx.commandBuffers[i], ctx.piece.index_buffer, 0, vk.IndexType.Uint32);
     // Render instances
-    log.info("before");
     vk.cmd_draw_indexed(ctx.commandBuffers[i], u32(len(ctx.piece.indices)), INSTANCE_COUNT, 0, 0, 0);
-    log.info("after");
 
     vk.cmd_end_render_pass(cb);
 
@@ -1693,8 +1705,6 @@ graphics_create_logical_device :: proc(ctx: ^Graphics_Context) -> bool {
     return false;
   }
 
-  log.debugf("ctx.device: %v", ctx.device);
-
   vk.get_device_queue(ctx.device, ctx.graphicsFamily, 0, &ctx.graphicsQueue);
   vk.get_device_queue(ctx.device, ctx.presentFamily, 0, &ctx.presentQueue);
 
@@ -1741,8 +1751,10 @@ graphics_destroy :: proc(ctx: ^Graphics_Context) {
   if ctx.depthImage != nil do vk.destroy_image(ctx.device, ctx.depthImage, nil);
   if ctx.depthImageMemory != nil do vk.free_memory(ctx.device, ctx.depthImageMemory, nil);
   if ctx.texture_sampler != nil do vk.destroy_sampler(ctx.device, ctx.texture_sampler, nil);
-  if ctx.texture_image_view != nil do vk.destroy_image_view(ctx.device, ctx.texture_image_view, nil);
-  image_destroy(&ctx.texture_image);
+  if ctx.piece_texture_image_view != nil do vk.destroy_image_view(ctx.device, ctx.piece_texture_image_view, nil);
+  image_destroy(&ctx.piece_texture_image);
+  if ctx.board_texture_image_view != nil do vk.destroy_image_view(ctx.device, ctx.board_texture_image_view, nil);
+  image_destroy(&ctx.board_texture_image);
   if ctx.piece.index_buffer != nil do vk.destroy_buffer(ctx.device, ctx.piece.index_buffer,nil);
   if ctx.piece.index_buffer_memory != nil do vk.free_memory(ctx.device, ctx.piece.index_buffer_memory, nil);
   if ctx.board.index_buffer != nil do vk.destroy_buffer(ctx.device, ctx.board.index_buffer,nil);
