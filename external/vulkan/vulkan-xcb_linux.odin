@@ -28,7 +28,7 @@ foreign vulkan_xcb {
         instance : Instance,
         pCreateInfo : ^XcbSurfaceCreateInfoKHR,
         pAllocator : ^AllocationCallbacks,
-        pSurface : ^SurfaceKHR
+        pSurface : ^SurfaceKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceXcbPresentationSupportKHR")
@@ -36,7 +36,7 @@ foreign vulkan_xcb {
         physicalDevice : PhysicalDevice,
         queueFamilyIndex : u32,
         connection : ^xcb.Connection,
-        visual_id : xcb.Visualid
+        visual_id : xcb.Visualid,
     ) -> Bool32 ---;
 
 }

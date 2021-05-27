@@ -2,6 +2,7 @@ package wavefront
 
 import "core:strings"
 import "core:strconv"
+import "core:log"
 
 @private
 Wavefront_Object_Scanner :: struct {
@@ -183,10 +184,14 @@ wavefront_object_scanner_consume_number :: proc(scanner: ^Wavefront_Object_Scann
 }
 
 @private
-wavefront_object_scanner_consume_f32 :: proc(scanner: ^Wavefront_Object_Scanner) -> (f32, bool) {
+wavefront_object_scanner_consume_f32 :: proc(scanner: ^Wavefront_Object_Scanner) -> (r: f32, ok: bool) {
   bs := wavefront_object_scanner_consume_number(scanner);
+  bss := string(bs);
+  log.infof("bs: '%s'", bss);
   if len(bs) > 0 {
-    return strconv.parse_f32(string(bs));
+    r, ok = strconv.parse_f32(bss);
+    log.infof("r: %v, ok: %v", r, ok);
+    return;
   }
   return 0.0, false;
 }

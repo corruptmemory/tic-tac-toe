@@ -29,7 +29,7 @@ foreign vulkan_xlib {
         instance : Instance,
         pCreateInfo : ^XlibSurfaceCreateInfoKHR,
         pAllocator : ^AllocationCallbacks,
-        pSurface : ^SurfaceKHR
+        pSurface : ^SurfaceKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceXlibPresentationSupportKHR")
@@ -37,7 +37,7 @@ foreign vulkan_xlib {
         physicalDevice : PhysicalDevice,
         queueFamilyIndex : u32,
         dpy : ^xlib.Display,
-        visualID : xlib.VisualId
+        visualID : xlib.VisualId,
     ) -> Bool32 ---;
 
 }

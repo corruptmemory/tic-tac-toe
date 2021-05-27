@@ -107,11 +107,11 @@ futex :: proc(uaddr: ^u32,
              val: u32,
              timeout: ^time.TimeSpec,
              uaddr2: ^u32,
-             val3: u32) -> int {
+             val3: u32) -> i32 {
   return os.syscall(SYS_FUTEX, uaddr, futex_op, val, timeout, uaddr2, val3);
 }
 
-wait :: proc(futexp: ^u32, timeout: time.Duration) -> int {
+wait :: proc(futexp: ^u32, timeout: time.Duration) -> i32 {
   ts: time.TimeSpec;
   tsp: ^time.TimeSpec = nil;
 
@@ -147,7 +147,7 @@ wait :: proc(futexp: ^u32, timeout: time.Duration) -> int {
    return s;
 }
 
-wake_n :: proc(futexp: ^u32, to_wake: u32 = 1) -> int {
+wake_n :: proc(futexp: ^u32, to_wake: u32 = 1) -> i32 {
    if _, ok := intrinsics.atomic_cxchg(futexp, 0, 1); ok {
        s := futex(futexp, FUTEX_WAKE_PRIVATE, to_wake, nil, nil, 0);
        if s == -1 {
@@ -159,6 +159,6 @@ wake_n :: proc(futexp: ^u32, to_wake: u32 = 1) -> int {
 }
 
 
-wake_all :: proc(futexp: ^u32) -> int {
+wake_all :: proc(futexp: ^u32) -> i32 {
   return wake_n(futexp, bits.I32_MAX);
 }

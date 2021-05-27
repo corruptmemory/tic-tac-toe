@@ -7898,33 +7898,33 @@ foreign vulkan {
     create_instance :: proc(
         pCreateInfo : ^InstanceCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pInstance : ^Instance
+        pInstance : ^Instance,
     ) -> Result ---;
 
     @(link_name="vkDestroyInstance")
     destroy_instance :: proc(
         instance : Instance,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkEnumeratePhysicalDevices")
     enumerate_physical_devices :: proc(
         instance : Instance,
         pPhysicalDeviceCount : ^u32,
-        pPhysicalDevices : ^PhysicalDevice
+        pPhysicalDevices : ^PhysicalDevice,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceFeatures")
     get_physical_device_features :: proc(
         physicalDevice : PhysicalDevice,
-        pFeatures : ^PhysicalDeviceFeatures
+        pFeatures : ^PhysicalDeviceFeatures,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceFormatProperties")
     get_physical_device_format_properties :: proc(
         physicalDevice : PhysicalDevice,
         format : Format,
-        pFormatProperties : ^FormatProperties
+        pFormatProperties : ^FormatProperties,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceImageFormatProperties")
@@ -7935,38 +7935,38 @@ foreign vulkan {
         tiling : ImageTiling,
         usage : ImageUsageFlags,
         flags : ImageCreateFlags,
-        pImageFormatProperties : ^ImageFormatProperties
+        pImageFormatProperties : ^ImageFormatProperties,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceProperties")
     get_physical_device_properties :: proc(
         physicalDevice : PhysicalDevice,
-        pProperties : ^PhysicalDeviceProperties
+        pProperties : ^PhysicalDeviceProperties,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceQueueFamilyProperties")
     get_physical_device_queue_family_properties :: proc(
         physicalDevice : PhysicalDevice,
         pQueueFamilyPropertyCount : ^u32,
-        pQueueFamilyProperties : ^QueueFamilyProperties
+        pQueueFamilyProperties : ^QueueFamilyProperties,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceMemoryProperties")
     get_physical_device_memory_properties :: proc(
         physicalDevice : PhysicalDevice,
-        pMemoryProperties : ^PhysicalDeviceMemoryProperties
+        pMemoryProperties : ^PhysicalDeviceMemoryProperties,
     ) ---;
 
     @(link_name="vkGetInstanceProcAddr")
     get_instance_proc_addr :: proc(
         instance : Instance,
-        pName : cstring
+        pName : cstring,
     ) -> PFN_VoidFunction ---;
 
     @(link_name="vkGetDeviceProcAddr")
     get_device_proc_addr :: proc(
         device : Device,
-        pName : cstring
+        pName : cstring,
     ) -> PFN_VoidFunction ---;
 
     @(link_name="vkCreateDevice")
@@ -7974,20 +7974,20 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         pCreateInfo : ^DeviceCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pDevice : ^Device
+        pDevice : ^Device,
     ) -> Result ---;
 
     @(link_name="vkDestroyDevice")
     destroy_device :: proc(
         device : Device,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkEnumerateInstanceExtensionProperties")
     enumerate_instance_extension_properties :: proc(
         pLayerName : cstring,
         pPropertyCount : ^u32,
-        pProperties : ^ExtensionProperties
+        pProperties : ^ExtensionProperties,
     ) -> Result ---;
 
     @(link_name="vkEnumerateDeviceExtensionProperties")
@@ -7995,20 +7995,20 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         pLayerName : cstring,
         pPropertyCount : ^u32,
-        pProperties : ^ExtensionProperties
+        pProperties : ^ExtensionProperties,
     ) -> Result ---;
 
     @(link_name="vkEnumerateInstanceLayerProperties")
     enumerate_instance_layer_properties :: proc(
         pPropertyCount : ^u32,
-        pProperties : ^LayerProperties
+        pProperties : ^LayerProperties,
     ) -> Result ---;
 
     @(link_name="vkEnumerateDeviceLayerProperties")
     enumerate_device_layer_properties :: proc(
         physicalDevice : PhysicalDevice,
         pPropertyCount : ^u32,
-        pProperties : ^LayerProperties
+        pProperties : ^LayerProperties,
     ) -> Result ---;
 
     @(link_name="vkGetDeviceQueue")
@@ -8016,7 +8016,7 @@ foreign vulkan {
         device : Device,
         queueFamilyIndex : u32,
         queueIndex : u32,
-        pQueue : ^Queue
+        pQueue : ^Queue,
     ) ---;
 
     @(link_name="vkQueueSubmit")
@@ -8024,7 +8024,7 @@ foreign vulkan {
         queue : Queue,
         submitCount : u32,
         pSubmits : ^SubmitInfo,
-        fence : Fence
+        fence : Fence,
     ) -> Result ---;
 
     @(link_name="vkQueueWaitIdle")
@@ -8038,14 +8038,14 @@ foreign vulkan {
         device : Device,
         pAllocateInfo : ^MemoryAllocateInfo,
         pAllocator : ^AllocationCallbacks,
-        pMemory : ^DeviceMemory
+        pMemory : ^DeviceMemory,
     ) -> Result ---;
 
     @(link_name="vkFreeMemory")
     free_memory :: proc(
         device : Device,
         memory : DeviceMemory,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkMapMemory")
@@ -8055,34 +8055,34 @@ foreign vulkan {
         offset : DeviceSize,
         size : DeviceSize,
         flags : MemoryMapFlags,
-        ppData : ^rawptr
+        ppData : ^rawptr,
     ) -> Result ---;
 
     @(link_name="vkUnmapMemory")
     unmap_memory :: proc(
         device : Device,
-        memory : DeviceMemory
+        memory : DeviceMemory,
     ) ---;
 
     @(link_name="vkFlushMappedMemoryRanges")
     flush_mapped_memory_ranges :: proc(
         device : Device,
         memoryRangeCount : u32,
-        pMemoryRanges : ^MappedMemoryRange
+        pMemoryRanges : ^MappedMemoryRange,
     ) -> Result ---;
 
     @(link_name="vkInvalidateMappedMemoryRanges")
     invalidate_mapped_memory_ranges :: proc(
         device : Device,
         memoryRangeCount : u32,
-        pMemoryRanges : ^MappedMemoryRange
+        pMemoryRanges : ^MappedMemoryRange,
     ) -> Result ---;
 
     @(link_name="vkGetDeviceMemoryCommitment")
     get_device_memory_commitment :: proc(
         device : Device,
         memory : DeviceMemory,
-        pCommittedMemoryInBytes : ^DeviceSize
+        pCommittedMemoryInBytes : ^DeviceSize,
     ) ---;
 
     @(link_name="vkBindBufferMemory")
@@ -8090,7 +8090,7 @@ foreign vulkan {
         device : Device,
         buffer : Buffer,
         memory : DeviceMemory,
-        memoryOffset : DeviceSize
+        memoryOffset : DeviceSize,
     ) -> Result ---;
 
     @(link_name="vkBindImageMemory")
@@ -8098,21 +8098,21 @@ foreign vulkan {
         device : Device,
         image : Image,
         memory : DeviceMemory,
-        memoryOffset : DeviceSize
+        memoryOffset : DeviceSize,
     ) -> Result ---;
 
     @(link_name="vkGetBufferMemoryRequirements")
     get_buffer_memory_requirements :: proc(
         device : Device,
         buffer : Buffer,
-        pMemoryRequirements : ^MemoryRequirements
+        pMemoryRequirements : ^MemoryRequirements,
     ) ---;
 
     @(link_name="vkGetImageMemoryRequirements")
     get_image_memory_requirements :: proc(
         device : Device,
         image : Image,
-        pMemoryRequirements : ^MemoryRequirements
+        pMemoryRequirements : ^MemoryRequirements,
     ) ---;
 
     @(link_name="vkGetImageSparseMemoryRequirements")
@@ -8120,7 +8120,7 @@ foreign vulkan {
         device : Device,
         image : Image,
         pSparseMemoryRequirementCount : ^u32,
-        pSparseMemoryRequirements : ^SparseImageMemoryRequirements
+        pSparseMemoryRequirements : ^SparseImageMemoryRequirements,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceSparseImageFormatProperties")
@@ -8132,7 +8132,7 @@ foreign vulkan {
         usage : ImageUsageFlags,
         tiling : ImageTiling,
         pPropertyCount : ^u32,
-        pProperties : ^SparseImageFormatProperties
+        pProperties : ^SparseImageFormatProperties,
     ) ---;
 
     @(link_name="vkQueueBindSparse")
@@ -8140,7 +8140,7 @@ foreign vulkan {
         queue : Queue,
         bindInfoCount : u32,
         pBindInfo : ^BindSparseInfo,
-        fence : Fence
+        fence : Fence,
     ) -> Result ---;
 
     @(link_name="vkCreateFence")
@@ -8148,27 +8148,27 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^FenceCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pFence : ^Fence
+        pFence : ^Fence,
     ) -> Result ---;
 
     @(link_name="vkDestroyFence")
     destroy_fence :: proc(
         device : Device,
         fence : Fence,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkResetFences")
     reset_fences :: proc(
         device : Device,
         fenceCount : u32,
-        pFences : ^Fence
+        pFences : ^Fence,
     ) -> Result ---;
 
     @(link_name="vkGetFenceStatus")
     get_fence_status :: proc(
         device : Device,
-        fence : Fence
+        fence : Fence,
     ) -> Result ---;
 
     @(link_name="vkWaitForFences")
@@ -8177,7 +8177,7 @@ foreign vulkan {
         fenceCount : u32,
         pFences : ^Fence,
         waitAll : Bool32,
-        timeout : u64
+        timeout : u64,
     ) -> Result ---;
 
     @(link_name="vkCreateSemaphore")
@@ -8185,14 +8185,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^SemaphoreCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pSemaphore : ^Semaphore
+        pSemaphore : ^Semaphore,
     ) -> Result ---;
 
     @(link_name="vkDestroySemaphore")
     destroy_semaphore :: proc(
         device : Device,
         semaphore : Semaphore,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreateEvent")
@@ -8200,32 +8200,32 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^EventCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pEvent : ^Event
+        pEvent : ^Event,
     ) -> Result ---;
 
     @(link_name="vkDestroyEvent")
     destroy_event :: proc(
         device : Device,
         event : Event,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkGetEventStatus")
     get_event_status :: proc(
         device : Device,
-        event : Event
+        event : Event,
     ) -> Result ---;
 
     @(link_name="vkSetEvent")
     set_event :: proc(
         device : Device,
-        event : Event
+        event : Event,
     ) -> Result ---;
 
     @(link_name="vkResetEvent")
     reset_event :: proc(
         device : Device,
-        event : Event
+        event : Event,
     ) -> Result ---;
 
     @(link_name="vkCreateQueryPool")
@@ -8233,14 +8233,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^QueryPoolCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pQueryPool : ^QueryPool
+        pQueryPool : ^QueryPool,
     ) -> Result ---;
 
     @(link_name="vkDestroyQueryPool")
     destroy_query_pool :: proc(
         device : Device,
         queryPool : QueryPool,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkGetQueryPoolResults")
@@ -8252,7 +8252,7 @@ foreign vulkan {
         dataSize : _c.size_t,
         pData : rawptr,
         stride : DeviceSize,
-        flags : QueryResultFlags
+        flags : QueryResultFlags,
     ) -> Result ---;
 
     @(link_name="vkCreateBuffer")
@@ -8260,14 +8260,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^BufferCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pBuffer : ^Buffer
+        pBuffer : ^Buffer,
     ) -> Result ---;
 
     @(link_name="vkDestroyBuffer")
     destroy_buffer :: proc(
         device : Device,
         buffer : Buffer,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreateBufferView")
@@ -8275,14 +8275,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^BufferViewCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pView : ^BufferView
+        pView : ^BufferView,
     ) -> Result ---;
 
     @(link_name="vkDestroyBufferView")
     destroy_buffer_view :: proc(
         device : Device,
         bufferView : BufferView,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreateImage")
@@ -8290,14 +8290,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^ImageCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pImage : ^Image
+        pImage : ^Image,
     ) -> Result ---;
 
     @(link_name="vkDestroyImage")
     destroy_image :: proc(
         device : Device,
         image : Image,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkGetImageSubresourceLayout")
@@ -8305,7 +8305,7 @@ foreign vulkan {
         device : Device,
         image : Image,
         pSubresource : ^ImageSubresource,
-        pLayout : ^SubresourceLayout
+        pLayout : ^SubresourceLayout,
     ) ---;
 
     @(link_name="vkCreateImageView")
@@ -8313,14 +8313,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^ImageViewCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pView : ^ImageView
+        pView : ^ImageView,
     ) -> Result ---;
 
     @(link_name="vkDestroyImageView")
     destroy_image_view :: proc(
         device : Device,
         imageView : ImageView,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreateShaderModule")
@@ -8328,14 +8328,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^ShaderModuleCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pShaderModule : ^ShaderModule
+        pShaderModule : ^ShaderModule,
     ) -> Result ---;
 
     @(link_name="vkDestroyShaderModule")
     destroy_shader_module :: proc(
         device : Device,
         shaderModule : ShaderModule,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreatePipelineCache")
@@ -8343,14 +8343,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^PipelineCacheCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pPipelineCache : ^PipelineCache
+        pPipelineCache : ^PipelineCache,
     ) -> Result ---;
 
     @(link_name="vkDestroyPipelineCache")
     destroy_pipeline_cache :: proc(
         device : Device,
         pipelineCache : PipelineCache,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkGetPipelineCacheData")
@@ -8358,7 +8358,7 @@ foreign vulkan {
         device : Device,
         pipelineCache : PipelineCache,
         pDataSize : ^_c.size_t,
-        pData : rawptr
+        pData : rawptr,
     ) -> Result ---;
 
     @(link_name="vkMergePipelineCaches")
@@ -8366,7 +8366,7 @@ foreign vulkan {
         device : Device,
         dstCache : PipelineCache,
         srcCacheCount : u32,
-        pSrcCaches : ^PipelineCache
+        pSrcCaches : ^PipelineCache,
     ) -> Result ---;
 
     @(link_name="vkCreateGraphicsPipelines")
@@ -8376,7 +8376,7 @@ foreign vulkan {
         createInfoCount : u32,
         pCreateInfos : ^GraphicsPipelineCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pPipelines : ^Pipeline
+        pPipelines : ^Pipeline,
     ) -> Result ---;
 
     @(link_name="vkCreateComputePipelines")
@@ -8386,14 +8386,14 @@ foreign vulkan {
         createInfoCount : u32,
         pCreateInfos : ^ComputePipelineCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pPipelines : ^Pipeline
+        pPipelines : ^Pipeline,
     ) -> Result ---;
 
     @(link_name="vkDestroyPipeline")
     destroy_pipeline :: proc(
         device : Device,
         pipeline : Pipeline,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreatePipelineLayout")
@@ -8401,14 +8401,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^PipelineLayoutCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pPipelineLayout : ^PipelineLayout
+        pPipelineLayout : ^PipelineLayout,
     ) -> Result ---;
 
     @(link_name="vkDestroyPipelineLayout")
     destroy_pipeline_layout :: proc(
         device : Device,
         pipelineLayout : PipelineLayout,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreateSampler")
@@ -8416,14 +8416,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^SamplerCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pSampler : ^Sampler
+        pSampler : ^Sampler,
     ) -> Result ---;
 
     @(link_name="vkDestroySampler")
     destroy_sampler :: proc(
         device : Device,
         sampler : Sampler,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreateDescriptorSetLayout")
@@ -8431,14 +8431,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^DescriptorSetLayoutCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pSetLayout : ^DescriptorSetLayout
+        pSetLayout : ^DescriptorSetLayout,
     ) -> Result ---;
 
     @(link_name="vkDestroyDescriptorSetLayout")
     destroy_descriptor_set_layout :: proc(
         device : Device,
         descriptorSetLayout : DescriptorSetLayout,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreateDescriptorPool")
@@ -8446,28 +8446,28 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^DescriptorPoolCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pDescriptorPool : ^DescriptorPool
+        pDescriptorPool : ^DescriptorPool,
     ) -> Result ---;
 
     @(link_name="vkDestroyDescriptorPool")
     destroy_descriptor_pool :: proc(
         device : Device,
         descriptorPool : DescriptorPool,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkResetDescriptorPool")
     reset_descriptor_pool :: proc(
         device : Device,
         descriptorPool : DescriptorPool,
-        flags : DescriptorPoolResetFlags
+        flags : DescriptorPoolResetFlags,
     ) -> Result ---;
 
     @(link_name="vkAllocateDescriptorSets")
     allocate_descriptor_sets :: proc(
         device : Device,
         pAllocateInfo : ^DescriptorSetAllocateInfo,
-        pDescriptorSets : ^DescriptorSet
+        pDescriptorSets : ^DescriptorSet,
     ) -> Result ---;
 
     @(link_name="vkFreeDescriptorSets")
@@ -8475,7 +8475,7 @@ foreign vulkan {
         device : Device,
         descriptorPool : DescriptorPool,
         descriptorSetCount : u32,
-        pDescriptorSets : ^DescriptorSet
+        pDescriptorSets : ^DescriptorSet,
     ) -> Result ---;
 
     @(link_name="vkUpdateDescriptorSets")
@@ -8484,7 +8484,7 @@ foreign vulkan {
         descriptorWriteCount : u32,
         pDescriptorWrites : ^WriteDescriptorSet,
         descriptorCopyCount : u32,
-        pDescriptorCopies : ^CopyDescriptorSet
+        pDescriptorCopies : ^CopyDescriptorSet,
     ) ---;
 
     @(link_name="vkCreateFramebuffer")
@@ -8492,14 +8492,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^FramebufferCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pFramebuffer : ^Framebuffer
+        pFramebuffer : ^Framebuffer,
     ) -> Result ---;
 
     @(link_name="vkDestroyFramebuffer")
     destroy_framebuffer :: proc(
         device : Device,
         framebuffer : Framebuffer,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreateRenderPass")
@@ -8507,21 +8507,21 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^RenderPassCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pRenderPass : ^RenderPass
+        pRenderPass : ^RenderPass,
     ) -> Result ---;
 
     @(link_name="vkDestroyRenderPass")
     destroy_render_pass :: proc(
         device : Device,
         renderPass : RenderPass,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkGetRenderAreaGranularity")
     get_render_area_granularity :: proc(
         device : Device,
         renderPass : RenderPass,
-        pGranularity : ^Extent2D
+        pGranularity : ^Extent2D,
     ) ---;
 
     @(link_name="vkCreateCommandPool")
@@ -8529,28 +8529,28 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^CommandPoolCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pCommandPool : ^CommandPool
+        pCommandPool : ^CommandPool,
     ) -> Result ---;
 
     @(link_name="vkDestroyCommandPool")
     destroy_command_pool :: proc(
         device : Device,
         commandPool : CommandPool,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkResetCommandPool")
     reset_command_pool :: proc(
         device : Device,
         commandPool : CommandPool,
-        flags : CommandPoolResetFlags
+        flags : CommandPoolResetFlags,
     ) -> Result ---;
 
     @(link_name="vkAllocateCommandBuffers")
     allocate_command_buffers :: proc(
         device : Device,
         pAllocateInfo : ^CommandBufferAllocateInfo,
-        pCommandBuffers : ^CommandBuffer
+        pCommandBuffers : ^CommandBuffer,
     ) -> Result ---;
 
     @(link_name="vkFreeCommandBuffers")
@@ -8558,13 +8558,13 @@ foreign vulkan {
         device : Device,
         commandPool : CommandPool,
         commandBufferCount : u32,
-        pCommandBuffers : ^CommandBuffer
+        pCommandBuffers : ^CommandBuffer,
     ) ---;
 
     @(link_name="vkBeginCommandBuffer")
     begin_command_buffer :: proc(
         commandBuffer : CommandBuffer,
-        pBeginInfo : ^CommandBufferBeginInfo
+        pBeginInfo : ^CommandBufferBeginInfo,
     ) -> Result ---;
 
     @(link_name="vkEndCommandBuffer")
@@ -8573,14 +8573,14 @@ foreign vulkan {
     @(link_name="vkResetCommandBuffer")
     reset_command_buffer :: proc(
         commandBuffer : CommandBuffer,
-        flags : CommandBufferResetFlags
+        flags : CommandBufferResetFlags,
     ) -> Result ---;
 
     @(link_name="vkCmdBindPipeline")
     cmd_bind_pipeline :: proc(
         commandBuffer : CommandBuffer,
         pipelineBindPoint : PipelineBindPoint,
-        pipeline : Pipeline
+        pipeline : Pipeline,
     ) ---;
 
     @(link_name="vkCmdSetViewport")
@@ -8588,7 +8588,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         firstViewport : u32,
         viewportCount : u32,
-        pViewports : ^Viewport
+        pViewports : ^Viewport,
     ) ---;
 
     @(link_name="vkCmdSetScissor")
@@ -8596,13 +8596,13 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         firstScissor : u32,
         scissorCount : u32,
-        pScissors : ^Rect2D
+        pScissors : ^Rect2D,
     ) ---;
 
     @(link_name="vkCmdSetLineWidth")
     cmd_set_line_width :: proc(
         commandBuffer : CommandBuffer,
-        lineWidth : _c.float
+        lineWidth : _c.float,
     ) ---;
 
     @(link_name="vkCmdSetDepthBias")
@@ -8610,41 +8610,41 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         depthBiasConstantFactor : _c.float,
         depthBiasClamp : _c.float,
-        depthBiasSlopeFactor : _c.float
+        depthBiasSlopeFactor : _c.float,
     ) ---;
 
     @(link_name="vkCmdSetBlendConstants")
     cmd_set_blend_constants :: proc(
         commandBuffer : CommandBuffer,
-        blendConstants : [4]_c.float
+        blendConstants : [4]_c.float,
     ) ---;
 
     @(link_name="vkCmdSetDepthBounds")
     cmd_set_depth_bounds :: proc(
         commandBuffer : CommandBuffer,
         minDepthBounds : _c.float,
-        maxDepthBounds : _c.float
+        maxDepthBounds : _c.float,
     ) ---;
 
     @(link_name="vkCmdSetStencilCompareMask")
     cmd_set_stencil_compare_mask :: proc(
         commandBuffer : CommandBuffer,
         faceMask : StencilFaceFlags,
-        compareMask : u32
+        compareMask : u32,
     ) ---;
 
     @(link_name="vkCmdSetStencilWriteMask")
     cmd_set_stencil_write_mask :: proc(
         commandBuffer : CommandBuffer,
         faceMask : StencilFaceFlags,
-        writeMask : u32
+        writeMask : u32,
     ) ---;
 
     @(link_name="vkCmdSetStencilReference")
     cmd_set_stencil_reference :: proc(
         commandBuffer : CommandBuffer,
         faceMask : StencilFaceFlags,
-        reference : u32
+        reference : u32,
     ) ---;
 
     @(link_name="vkCmdBindDescriptorSets")
@@ -8656,7 +8656,7 @@ foreign vulkan {
         descriptorSetCount : u32,
         pDescriptorSets : ^DescriptorSet,
         dynamicOffsetCount : u32,
-        pDynamicOffsets : ^u32
+        pDynamicOffsets : ^u32,
     ) ---;
 
     @(link_name="vkCmdBindIndexBuffer")
@@ -8664,7 +8664,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         buffer : Buffer,
         offset : DeviceSize,
-        indexType : IndexType
+        indexType : IndexType,
     ) ---;
 
     @(link_name="vkCmdBindVertexBuffers")
@@ -8673,7 +8673,7 @@ foreign vulkan {
         firstBinding : u32,
         bindingCount : u32,
         pBuffers : ^Buffer,
-        pOffsets : ^DeviceSize
+        pOffsets : ^DeviceSize,
     ) ---;
 
     @(link_name="vkCmdDraw")
@@ -8682,7 +8682,7 @@ foreign vulkan {
         vertexCount : u32,
         instanceCount : u32,
         firstVertex : u32,
-        firstInstance : u32
+        firstInstance : u32,
     ) ---;
 
     @(link_name="vkCmdDrawIndexed")
@@ -8692,7 +8692,7 @@ foreign vulkan {
         instanceCount : u32,
         firstIndex : u32,
         vertexOffset : i32,
-        firstInstance : u32
+        firstInstance : u32,
     ) ---;
 
     @(link_name="vkCmdDrawIndirect")
@@ -8701,7 +8701,7 @@ foreign vulkan {
         buffer : Buffer,
         offset : DeviceSize,
         drawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkCmdDrawIndexedIndirect")
@@ -8710,7 +8710,7 @@ foreign vulkan {
         buffer : Buffer,
         offset : DeviceSize,
         drawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkCmdDispatch")
@@ -8718,14 +8718,14 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         groupCountX : u32,
         groupCountY : u32,
-        groupCountZ : u32
+        groupCountZ : u32,
     ) ---;
 
     @(link_name="vkCmdDispatchIndirect")
     cmd_dispatch_indirect :: proc(
         commandBuffer : CommandBuffer,
         buffer : Buffer,
-        offset : DeviceSize
+        offset : DeviceSize,
     ) ---;
 
     @(link_name="vkCmdCopyBuffer")
@@ -8734,7 +8734,7 @@ foreign vulkan {
         srcBuffer : Buffer,
         dstBuffer : Buffer,
         regionCount : u32,
-        pRegions : ^BufferCopy
+        pRegions : ^BufferCopy,
     ) ---;
 
     @(link_name="vkCmdCopyImage")
@@ -8745,7 +8745,7 @@ foreign vulkan {
         dstImage : Image,
         dstImageLayout : ImageLayout,
         regionCount : u32,
-        pRegions : ^ImageCopy
+        pRegions : ^ImageCopy,
     ) ---;
 
     @(link_name="vkCmdBlitImage")
@@ -8757,7 +8757,7 @@ foreign vulkan {
         dstImageLayout : ImageLayout,
         regionCount : u32,
         pRegions : ^ImageBlit,
-        filter : Filter
+        filter : Filter,
     ) ---;
 
     @(link_name="vkCmdCopyBufferToImage")
@@ -8767,7 +8767,7 @@ foreign vulkan {
         dstImage : Image,
         dstImageLayout : ImageLayout,
         regionCount : u32,
-        pRegions : ^BufferImageCopy
+        pRegions : ^BufferImageCopy,
     ) ---;
 
     @(link_name="vkCmdCopyImageToBuffer")
@@ -8777,7 +8777,7 @@ foreign vulkan {
         srcImageLayout : ImageLayout,
         dstBuffer : Buffer,
         regionCount : u32,
-        pRegions : ^BufferImageCopy
+        pRegions : ^BufferImageCopy,
     ) ---;
 
     @(link_name="vkCmdUpdateBuffer")
@@ -8786,7 +8786,7 @@ foreign vulkan {
         dstBuffer : Buffer,
         dstOffset : DeviceSize,
         dataSize : DeviceSize,
-        pData : rawptr
+        pData : rawptr,
     ) ---;
 
     @(link_name="vkCmdFillBuffer")
@@ -8795,7 +8795,7 @@ foreign vulkan {
         dstBuffer : Buffer,
         dstOffset : DeviceSize,
         size : DeviceSize,
-        data : u32
+        data : u32,
     ) ---;
 
     @(link_name="vkCmdClearColorImage")
@@ -8805,7 +8805,7 @@ foreign vulkan {
         imageLayout : ImageLayout,
         pColor : ^ClearColorValue,
         rangeCount : u32,
-        pRanges : ^ImageSubresourceRange
+        pRanges : ^ImageSubresourceRange,
     ) ---;
 
     @(link_name="vkCmdClearDepthStencilImage")
@@ -8815,7 +8815,7 @@ foreign vulkan {
         imageLayout : ImageLayout,
         pDepthStencil : ^ClearDepthStencilValue,
         rangeCount : u32,
-        pRanges : ^ImageSubresourceRange
+        pRanges : ^ImageSubresourceRange,
     ) ---;
 
     @(link_name="vkCmdClearAttachments")
@@ -8824,7 +8824,7 @@ foreign vulkan {
         attachmentCount : u32,
         pAttachments : ^ClearAttachment,
         rectCount : u32,
-        pRects : ^ClearRect
+        pRects : ^ClearRect,
     ) ---;
 
     @(link_name="vkCmdResolveImage")
@@ -8835,21 +8835,21 @@ foreign vulkan {
         dstImage : Image,
         dstImageLayout : ImageLayout,
         regionCount : u32,
-        pRegions : ^ImageResolve
+        pRegions : ^ImageResolve,
     ) ---;
 
     @(link_name="vkCmdSetEvent")
     cmd_set_event :: proc(
         commandBuffer : CommandBuffer,
         event : Event,
-        stageMask : PipelineStageFlags
+        stageMask : PipelineStageFlags,
     ) ---;
 
     @(link_name="vkCmdResetEvent")
     cmd_reset_event :: proc(
         commandBuffer : CommandBuffer,
         event : Event,
-        stageMask : PipelineStageFlags
+        stageMask : PipelineStageFlags,
     ) ---;
 
     @(link_name="vkCmdWaitEvents")
@@ -8864,7 +8864,7 @@ foreign vulkan {
         bufferMemoryBarrierCount : u32,
         pBufferMemoryBarriers : ^BufferMemoryBarrier,
         imageMemoryBarrierCount : u32,
-        pImageMemoryBarriers : ^ImageMemoryBarrier
+        pImageMemoryBarriers : ^ImageMemoryBarrier,
     ) ---;
 
     @(link_name="vkCmdPipelineBarrier")
@@ -8878,7 +8878,7 @@ foreign vulkan {
         bufferMemoryBarrierCount : u32,
         pBufferMemoryBarriers : ^BufferMemoryBarrier,
         imageMemoryBarrierCount : u32,
-        pImageMemoryBarriers : ^ImageMemoryBarrier
+        pImageMemoryBarriers : ^ImageMemoryBarrier,
     ) ---;
 
     @(link_name="vkCmdBeginQuery")
@@ -8886,14 +8886,14 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         queryPool : QueryPool,
         query : u32,
-        flags : QueryControlFlags
+        flags : QueryControlFlags,
     ) ---;
 
     @(link_name="vkCmdEndQuery")
     cmd_end_query :: proc(
         commandBuffer : CommandBuffer,
         queryPool : QueryPool,
-        query : u32
+        query : u32,
     ) ---;
 
     @(link_name="vkCmdResetQueryPool")
@@ -8901,7 +8901,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         queryPool : QueryPool,
         firstQuery : u32,
-        queryCount : u32
+        queryCount : u32,
     ) ---;
 
     @(link_name="vkCmdWriteTimestamp")
@@ -8909,7 +8909,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         pipelineStage : PipelineStageFlagBits,
         queryPool : QueryPool,
-        query : u32
+        query : u32,
     ) ---;
 
     @(link_name="vkCmdCopyQueryPoolResults")
@@ -8921,7 +8921,7 @@ foreign vulkan {
         dstBuffer : Buffer,
         dstOffset : DeviceSize,
         stride : DeviceSize,
-        flags : QueryResultFlags
+        flags : QueryResultFlags,
     ) ---;
 
     @(link_name="vkCmdPushConstants")
@@ -8931,20 +8931,20 @@ foreign vulkan {
         stageFlags : ShaderStageFlags,
         offset : u32,
         size : u32,
-        pValues : rawptr
+        pValues : rawptr,
     ) ---;
 
     @(link_name="vkCmdBeginRenderPass")
     cmd_begin_render_pass :: proc(
         commandBuffer : CommandBuffer,
         pRenderPassBegin : ^RenderPassBeginInfo,
-        contents : SubpassContents
+        contents : SubpassContents,
     ) ---;
 
     @(link_name="vkCmdNextSubpass")
     cmd_next_subpass :: proc(
         commandBuffer : CommandBuffer,
-        contents : SubpassContents
+        contents : SubpassContents,
     ) ---;
 
     @(link_name="vkCmdEndRenderPass")
@@ -8954,7 +8954,7 @@ foreign vulkan {
     cmd_execute_commands :: proc(
         commandBuffer : CommandBuffer,
         commandBufferCount : u32,
-        pCommandBuffers : ^CommandBuffer
+        pCommandBuffers : ^CommandBuffer,
     ) ---;
 
     @(link_name="vkEnumerateInstanceVersion")
@@ -8964,14 +8964,14 @@ foreign vulkan {
     bind_buffer_memory2 :: proc(
         device : Device,
         bindInfoCount : u32,
-        pBindInfos : ^BindBufferMemoryInfo
+        pBindInfos : ^BindBufferMemoryInfo,
     ) -> Result ---;
 
     @(link_name="vkBindImageMemory2")
     bind_image_memory2 :: proc(
         device : Device,
         bindInfoCount : u32,
-        pBindInfos : ^BindImageMemoryInfo
+        pBindInfos : ^BindImageMemoryInfo,
     ) -> Result ---;
 
     @(link_name="vkGetDeviceGroupPeerMemoryFeatures")
@@ -8980,13 +8980,13 @@ foreign vulkan {
         heapIndex : u32,
         localDeviceIndex : u32,
         remoteDeviceIndex : u32,
-        pPeerMemoryFeatures : ^PeerMemoryFeatureFlags
+        pPeerMemoryFeatures : ^PeerMemoryFeatureFlags,
     ) ---;
 
     @(link_name="vkCmdSetDeviceMask")
     cmd_set_device_mask :: proc(
         commandBuffer : CommandBuffer,
-        deviceMask : u32
+        deviceMask : u32,
     ) ---;
 
     @(link_name="vkCmdDispatchBase")
@@ -8997,28 +8997,28 @@ foreign vulkan {
         baseGroupZ : u32,
         groupCountX : u32,
         groupCountY : u32,
-        groupCountZ : u32
+        groupCountZ : u32,
     ) ---;
 
     @(link_name="vkEnumeratePhysicalDeviceGroups")
     enumerate_physical_device_groups :: proc(
         instance : Instance,
         pPhysicalDeviceGroupCount : ^u32,
-        pPhysicalDeviceGroupProperties : ^PhysicalDeviceGroupProperties
+        pPhysicalDeviceGroupProperties : ^PhysicalDeviceGroupProperties,
     ) -> Result ---;
 
     @(link_name="vkGetImageMemoryRequirements2")
     get_image_memory_requirements2 :: proc(
         device : Device,
         pInfo : ^ImageMemoryRequirementsInfo2,
-        pMemoryRequirements : ^MemoryRequirements2
+        pMemoryRequirements : ^MemoryRequirements2,
     ) ---;
 
     @(link_name="vkGetBufferMemoryRequirements2")
     get_buffer_memory_requirements2 :: proc(
         device : Device,
         pInfo : ^BufferMemoryRequirementsInfo2,
-        pMemoryRequirements : ^MemoryRequirements2
+        pMemoryRequirements : ^MemoryRequirements2,
     ) ---;
 
     @(link_name="vkGetImageSparseMemoryRequirements2")
@@ -9026,46 +9026,46 @@ foreign vulkan {
         device : Device,
         pInfo : ^ImageSparseMemoryRequirementsInfo2,
         pSparseMemoryRequirementCount : ^u32,
-        pSparseMemoryRequirements : ^SparseImageMemoryRequirements2
+        pSparseMemoryRequirements : ^SparseImageMemoryRequirements2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceFeatures2")
     get_physical_device_features2 :: proc(
         physicalDevice : PhysicalDevice,
-        pFeatures : ^PhysicalDeviceFeatures2
+        pFeatures : ^PhysicalDeviceFeatures2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceProperties2")
     get_physical_device_properties2 :: proc(
         physicalDevice : PhysicalDevice,
-        pProperties : ^PhysicalDeviceProperties2
+        pProperties : ^PhysicalDeviceProperties2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceFormatProperties2")
     get_physical_device_format_properties2 :: proc(
         physicalDevice : PhysicalDevice,
         format : Format,
-        pFormatProperties : ^FormatProperties2
+        pFormatProperties : ^FormatProperties2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceImageFormatProperties2")
     get_physical_device_image_format_properties2 :: proc(
         physicalDevice : PhysicalDevice,
         pImageFormatInfo : ^PhysicalDeviceImageFormatInfo2,
-        pImageFormatProperties : ^ImageFormatProperties2
+        pImageFormatProperties : ^ImageFormatProperties2,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceQueueFamilyProperties2")
     get_physical_device_queue_family_properties2 :: proc(
         physicalDevice : PhysicalDevice,
         pQueueFamilyPropertyCount : ^u32,
-        pQueueFamilyProperties : ^QueueFamilyProperties2
+        pQueueFamilyProperties : ^QueueFamilyProperties2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceMemoryProperties2")
     get_physical_device_memory_properties2 :: proc(
         physicalDevice : PhysicalDevice,
-        pMemoryProperties : ^PhysicalDeviceMemoryProperties2
+        pMemoryProperties : ^PhysicalDeviceMemoryProperties2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceSparseImageFormatProperties2")
@@ -9073,21 +9073,21 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         pFormatInfo : ^PhysicalDeviceSparseImageFormatInfo2,
         pPropertyCount : ^u32,
-        pProperties : ^SparseImageFormatProperties2
+        pProperties : ^SparseImageFormatProperties2,
     ) ---;
 
     @(link_name="vkTrimCommandPool")
     trim_command_pool :: proc(
         device : Device,
         commandPool : CommandPool,
-        flags : CommandPoolTrimFlags
+        flags : CommandPoolTrimFlags,
     ) ---;
 
     @(link_name="vkGetDeviceQueue2")
     get_device_queue2 :: proc(
         device : Device,
         pQueueInfo : ^DeviceQueueInfo2,
-        pQueue : ^Queue
+        pQueue : ^Queue,
     ) ---;
 
     @(link_name="vkCreateSamplerYcbcrConversion")
@@ -9095,14 +9095,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^SamplerYcbcrConversionCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pYcbcrConversion : ^SamplerYcbcrConversion
+        pYcbcrConversion : ^SamplerYcbcrConversion,
     ) -> Result ---;
 
     @(link_name="vkDestroySamplerYcbcrConversion")
     destroy_sampler_ycbcr_conversion :: proc(
         device : Device,
         ycbcrConversion : SamplerYcbcrConversion,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreateDescriptorUpdateTemplate")
@@ -9110,14 +9110,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^DescriptorUpdateTemplateCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pDescriptorUpdateTemplate : ^DescriptorUpdateTemplate
+        pDescriptorUpdateTemplate : ^DescriptorUpdateTemplate,
     ) -> Result ---;
 
     @(link_name="vkDestroyDescriptorUpdateTemplate")
     destroy_descriptor_update_template :: proc(
         device : Device,
         descriptorUpdateTemplate : DescriptorUpdateTemplate,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkUpdateDescriptorSetWithTemplate")
@@ -9125,35 +9125,35 @@ foreign vulkan {
         device : Device,
         descriptorSet : DescriptorSet,
         descriptorUpdateTemplate : DescriptorUpdateTemplate,
-        pData : rawptr
+        pData : rawptr,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceExternalBufferProperties")
     get_physical_device_external_buffer_properties :: proc(
         physicalDevice : PhysicalDevice,
         pExternalBufferInfo : ^PhysicalDeviceExternalBufferInfo,
-        pExternalBufferProperties : ^ExternalBufferProperties
+        pExternalBufferProperties : ^ExternalBufferProperties,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceExternalFenceProperties")
     get_physical_device_external_fence_properties :: proc(
         physicalDevice : PhysicalDevice,
         pExternalFenceInfo : ^PhysicalDeviceExternalFenceInfo,
-        pExternalFenceProperties : ^ExternalFenceProperties
+        pExternalFenceProperties : ^ExternalFenceProperties,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceExternalSemaphoreProperties")
     get_physical_device_external_semaphore_properties :: proc(
         physicalDevice : PhysicalDevice,
         pExternalSemaphoreInfo : ^PhysicalDeviceExternalSemaphoreInfo,
-        pExternalSemaphoreProperties : ^ExternalSemaphoreProperties
+        pExternalSemaphoreProperties : ^ExternalSemaphoreProperties,
     ) ---;
 
     @(link_name="vkGetDescriptorSetLayoutSupport")
     get_descriptor_set_layout_support :: proc(
         device : Device,
         pCreateInfo : ^DescriptorSetLayoutCreateInfo,
-        pSupport : ^DescriptorSetLayoutSupport
+        pSupport : ^DescriptorSetLayoutSupport,
     ) ---;
 
     @(link_name="vkCmdDrawIndirectCount")
@@ -9164,7 +9164,7 @@ foreign vulkan {
         countBuffer : Buffer,
         countBufferOffset : DeviceSize,
         maxDrawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkCmdDrawIndexedIndirectCount")
@@ -9175,7 +9175,7 @@ foreign vulkan {
         countBuffer : Buffer,
         countBufferOffset : DeviceSize,
         maxDrawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkCreateRenderPass2")
@@ -9183,27 +9183,27 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^RenderPassCreateInfo2,
         pAllocator : ^AllocationCallbacks,
-        pRenderPass : ^RenderPass
+        pRenderPass : ^RenderPass,
     ) -> Result ---;
 
     @(link_name="vkCmdBeginRenderPass2")
     cmd_begin_render_pass2 :: proc(
         commandBuffer : CommandBuffer,
         pRenderPassBegin : ^RenderPassBeginInfo,
-        pSubpassBeginInfo : ^SubpassBeginInfo
+        pSubpassBeginInfo : ^SubpassBeginInfo,
     ) ---;
 
     @(link_name="vkCmdNextSubpass2")
     cmd_next_subpass2 :: proc(
         commandBuffer : CommandBuffer,
         pSubpassBeginInfo : ^SubpassBeginInfo,
-        pSubpassEndInfo : ^SubpassEndInfo
+        pSubpassEndInfo : ^SubpassEndInfo,
     ) ---;
 
     @(link_name="vkCmdEndRenderPass2")
     cmd_end_render_pass2 :: proc(
         commandBuffer : CommandBuffer,
-        pSubpassEndInfo : ^SubpassEndInfo
+        pSubpassEndInfo : ^SubpassEndInfo,
     ) ---;
 
     @(link_name="vkResetQueryPool")
@@ -9211,52 +9211,52 @@ foreign vulkan {
         device : Device,
         queryPool : QueryPool,
         firstQuery : u32,
-        queryCount : u32
+        queryCount : u32,
     ) ---;
 
     @(link_name="vkGetSemaphoreCounterValue")
     get_semaphore_counter_value :: proc(
         device : Device,
         semaphore : Semaphore,
-        pValue : ^u64
+        pValue : ^u64,
     ) -> Result ---;
 
     @(link_name="vkWaitSemaphores")
     wait_semaphores :: proc(
         device : Device,
         pWaitInfo : ^SemaphoreWaitInfo,
-        timeout : u64
+        timeout : u64,
     ) -> Result ---;
 
     @(link_name="vkSignalSemaphore")
     signal_semaphore :: proc(
         device : Device,
-        pSignalInfo : ^SemaphoreSignalInfo
+        pSignalInfo : ^SemaphoreSignalInfo,
     ) -> Result ---;
 
     @(link_name="vkGetBufferDeviceAddress")
     get_buffer_device_address :: proc(
         device : Device,
-        pInfo : ^BufferDeviceAddressInfo
+        pInfo : ^BufferDeviceAddressInfo,
     ) -> DeviceAddress ---;
 
     @(link_name="vkGetBufferOpaqueCaptureAddress")
     get_buffer_opaque_capture_address :: proc(
         device : Device,
-        pInfo : ^BufferDeviceAddressInfo
+        pInfo : ^BufferDeviceAddressInfo,
     ) -> u64 ---;
 
     @(link_name="vkGetDeviceMemoryOpaqueCaptureAddress")
     get_device_memory_opaque_capture_address :: proc(
         device : Device,
-        pInfo : ^DeviceMemoryOpaqueCaptureAddressInfo
+        pInfo : ^DeviceMemoryOpaqueCaptureAddressInfo,
     ) -> u64 ---;
 
     @(link_name="vkDestroySurfaceKHR")
     destroy_surface_khr :: proc(
         instance : Instance,
         surface : SurfaceKHR,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceSurfaceSupportKHR")
@@ -9264,14 +9264,14 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         queueFamilyIndex : u32,
         surface : SurfaceKHR,
-        pSupported : ^Bool32
+        pSupported : ^Bool32,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceSurfaceCapabilitiesKHR")
     get_physical_device_surface_capabilities_khr :: proc(
         physicalDevice : PhysicalDevice,
         surface : SurfaceKHR,
-        pSurfaceCapabilities : ^SurfaceCapabilitiesKHR
+        pSurfaceCapabilities : ^SurfaceCapabilitiesKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceSurfaceFormatsKHR")
@@ -9279,7 +9279,7 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         surface : SurfaceKHR,
         pSurfaceFormatCount : ^u32,
-        pSurfaceFormats : ^SurfaceFormatKHR
+        pSurfaceFormats : ^SurfaceFormatKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceSurfacePresentModesKHR")
@@ -9287,7 +9287,7 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         surface : SurfaceKHR,
         pPresentModeCount : ^u32,
-        pPresentModes : ^PresentModeKHR
+        pPresentModes : ^PresentModeKHR,
     ) -> Result ---;
 
     @(link_name="vkCreateSwapchainKHR")
@@ -9295,14 +9295,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^SwapchainCreateInfoKHR,
         pAllocator : ^AllocationCallbacks,
-        pSwapchain : ^SwapchainKHR
+        pSwapchain : ^SwapchainKHR,
     ) -> Result ---;
 
     @(link_name="vkDestroySwapchainKHR")
     destroy_swapchain_khr :: proc(
         device : Device,
         swapchain : SwapchainKHR,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkGetSwapchainImagesKHR")
@@ -9310,7 +9310,7 @@ foreign vulkan {
         device : Device,
         swapchain : SwapchainKHR,
         pSwapchainImageCount : ^u32,
-        pSwapchainImages : ^Image
+        pSwapchainImages : ^Image,
     ) -> Result ---;
 
     @(link_name="vkAcquireNextImageKHR")
@@ -9320,26 +9320,26 @@ foreign vulkan {
         timeout : u64,
         semaphore : Semaphore,
         fence : Fence,
-        pImageIndex : ^u32
+        pImageIndex : ^u32,
     ) -> Result ---;
 
     @(link_name="vkQueuePresentKHR")
     queue_present_khr :: proc(
         queue : Queue,
-        pPresentInfo : ^PresentInfoKHR
+        pPresentInfo : ^PresentInfoKHR,
     ) -> Result ---;
 
     @(link_name="vkGetDeviceGroupPresentCapabilitiesKHR")
     get_device_group_present_capabilities_khr :: proc(
         device : Device,
-        pDeviceGroupPresentCapabilities : ^DeviceGroupPresentCapabilitiesKHR
+        pDeviceGroupPresentCapabilities : ^DeviceGroupPresentCapabilitiesKHR,
     ) -> Result ---;
 
     @(link_name="vkGetDeviceGroupSurfacePresentModesKHR")
     get_device_group_surface_present_modes_khr :: proc(
         device : Device,
         surface : SurfaceKHR,
-        pModes : ^DeviceGroupPresentModeFlagsKHR
+        pModes : ^DeviceGroupPresentModeFlagsKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDevicePresentRectanglesKHR")
@@ -9347,28 +9347,28 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         surface : SurfaceKHR,
         pRectCount : ^u32,
-        pRects : ^Rect2D
+        pRects : ^Rect2D,
     ) -> Result ---;
 
     @(link_name="vkAcquireNextImage2KHR")
     acquire_next_image2_khr :: proc(
         device : Device,
         pAcquireInfo : ^AcquireNextImageInfoKHR,
-        pImageIndex : ^u32
+        pImageIndex : ^u32,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceDisplayPropertiesKHR")
     get_physical_device_display_properties_khr :: proc(
         physicalDevice : PhysicalDevice,
         pPropertyCount : ^u32,
-        pProperties : ^DisplayPropertiesKHR
+        pProperties : ^DisplayPropertiesKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceDisplayPlanePropertiesKHR")
     get_physical_device_display_plane_properties_khr :: proc(
         physicalDevice : PhysicalDevice,
         pPropertyCount : ^u32,
-        pProperties : ^DisplayPlanePropertiesKHR
+        pProperties : ^DisplayPlanePropertiesKHR,
     ) -> Result ---;
 
     @(link_name="vkGetDisplayPlaneSupportedDisplaysKHR")
@@ -9376,7 +9376,7 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         planeIndex : u32,
         pDisplayCount : ^u32,
-        pDisplays : ^DisplayKHR
+        pDisplays : ^DisplayKHR,
     ) -> Result ---;
 
     @(link_name="vkGetDisplayModePropertiesKHR")
@@ -9384,7 +9384,7 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         display : DisplayKHR,
         pPropertyCount : ^u32,
-        pProperties : ^DisplayModePropertiesKHR
+        pProperties : ^DisplayModePropertiesKHR,
     ) -> Result ---;
 
     @(link_name="vkCreateDisplayModeKHR")
@@ -9393,7 +9393,7 @@ foreign vulkan {
         display : DisplayKHR,
         pCreateInfo : ^DisplayModeCreateInfoKHR,
         pAllocator : ^AllocationCallbacks,
-        pMode : ^DisplayModeKHR
+        pMode : ^DisplayModeKHR,
     ) -> Result ---;
 
     @(link_name="vkGetDisplayPlaneCapabilitiesKHR")
@@ -9401,7 +9401,7 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         mode : DisplayModeKHR,
         planeIndex : u32,
-        pCapabilities : ^DisplayPlaneCapabilitiesKHR
+        pCapabilities : ^DisplayPlaneCapabilitiesKHR,
     ) -> Result ---;
 
     @(link_name="vkCreateDisplayPlaneSurfaceKHR")
@@ -9409,7 +9409,7 @@ foreign vulkan {
         instance : Instance,
         pCreateInfo : ^DisplaySurfaceCreateInfoKHR,
         pAllocator : ^AllocationCallbacks,
-        pSurface : ^SurfaceKHR
+        pSurface : ^SurfaceKHR,
     ) -> Result ---;
 
     @(link_name="vkCreateSharedSwapchainsKHR")
@@ -9418,46 +9418,46 @@ foreign vulkan {
         swapchainCount : u32,
         pCreateInfos : ^SwapchainCreateInfoKHR,
         pAllocator : ^AllocationCallbacks,
-        pSwapchains : ^SwapchainKHR
+        pSwapchains : ^SwapchainKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceFeatures2KHR")
     get_physical_device_features2_khr :: proc(
         physicalDevice : PhysicalDevice,
-        pFeatures : ^PhysicalDeviceFeatures2
+        pFeatures : ^PhysicalDeviceFeatures2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceProperties2KHR")
     get_physical_device_properties2_khr :: proc(
         physicalDevice : PhysicalDevice,
-        pProperties : ^PhysicalDeviceProperties2
+        pProperties : ^PhysicalDeviceProperties2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceFormatProperties2KHR")
     get_physical_device_format_properties2_khr :: proc(
         physicalDevice : PhysicalDevice,
         format : Format,
-        pFormatProperties : ^FormatProperties2
+        pFormatProperties : ^FormatProperties2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceImageFormatProperties2KHR")
     get_physical_device_image_format_properties2_khr :: proc(
         physicalDevice : PhysicalDevice,
         pImageFormatInfo : ^PhysicalDeviceImageFormatInfo2,
-        pImageFormatProperties : ^ImageFormatProperties2
+        pImageFormatProperties : ^ImageFormatProperties2,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceQueueFamilyProperties2KHR")
     get_physical_device_queue_family_properties2_khr :: proc(
         physicalDevice : PhysicalDevice,
         pQueueFamilyPropertyCount : ^u32,
-        pQueueFamilyProperties : ^QueueFamilyProperties2
+        pQueueFamilyProperties : ^QueueFamilyProperties2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceMemoryProperties2KHR")
     get_physical_device_memory_properties2_khr :: proc(
         physicalDevice : PhysicalDevice,
-        pMemoryProperties : ^PhysicalDeviceMemoryProperties2
+        pMemoryProperties : ^PhysicalDeviceMemoryProperties2,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceSparseImageFormatProperties2KHR")
@@ -9465,7 +9465,7 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         pFormatInfo : ^PhysicalDeviceSparseImageFormatInfo2,
         pPropertyCount : ^u32,
-        pProperties : ^SparseImageFormatProperties2
+        pProperties : ^SparseImageFormatProperties2,
     ) ---;
 
     @(link_name="vkGetDeviceGroupPeerMemoryFeaturesKHR")
@@ -9474,13 +9474,13 @@ foreign vulkan {
         heapIndex : u32,
         localDeviceIndex : u32,
         remoteDeviceIndex : u32,
-        pPeerMemoryFeatures : ^PeerMemoryFeatureFlags
+        pPeerMemoryFeatures : ^PeerMemoryFeatureFlags,
     ) ---;
 
     @(link_name="vkCmdSetDeviceMaskKHR")
     cmd_set_device_mask_khr :: proc(
         commandBuffer : CommandBuffer,
-        deviceMask : u32
+        deviceMask : u32,
     ) ---;
 
     @(link_name="vkCmdDispatchBaseKHR")
@@ -9491,35 +9491,35 @@ foreign vulkan {
         baseGroupZ : u32,
         groupCountX : u32,
         groupCountY : u32,
-        groupCountZ : u32
+        groupCountZ : u32,
     ) ---;
 
     @(link_name="vkTrimCommandPoolKHR")
     trim_command_pool_khr :: proc(
         device : Device,
         commandPool : CommandPool,
-        flags : CommandPoolTrimFlags
+        flags : CommandPoolTrimFlags,
     ) ---;
 
     @(link_name="vkEnumeratePhysicalDeviceGroupsKHR")
     enumerate_physical_device_groups_khr :: proc(
         instance : Instance,
         pPhysicalDeviceGroupCount : ^u32,
-        pPhysicalDeviceGroupProperties : ^PhysicalDeviceGroupProperties
+        pPhysicalDeviceGroupProperties : ^PhysicalDeviceGroupProperties,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceExternalBufferPropertiesKHR")
     get_physical_device_external_buffer_properties_khr :: proc(
         physicalDevice : PhysicalDevice,
         pExternalBufferInfo : ^PhysicalDeviceExternalBufferInfo,
-        pExternalBufferProperties : ^ExternalBufferProperties
+        pExternalBufferProperties : ^ExternalBufferProperties,
     ) ---;
 
     @(link_name="vkGetMemoryFdKHR")
     get_memory_fd_khr :: proc(
         device : Device,
         pGetFdInfo : ^MemoryGetFdInfoKHR,
-        pFd : ^_c.int
+        pFd : ^_c.int,
     ) -> Result ---;
 
     @(link_name="vkGetMemoryFdPropertiesKHR")
@@ -9527,27 +9527,27 @@ foreign vulkan {
         device : Device,
         handleType : ExternalMemoryHandleTypeFlagBits,
         fd : _c.int,
-        pMemoryFdProperties : ^MemoryFdPropertiesKHR
+        pMemoryFdProperties : ^MemoryFdPropertiesKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceExternalSemaphorePropertiesKHR")
     get_physical_device_external_semaphore_properties_khr :: proc(
         physicalDevice : PhysicalDevice,
         pExternalSemaphoreInfo : ^PhysicalDeviceExternalSemaphoreInfo,
-        pExternalSemaphoreProperties : ^ExternalSemaphoreProperties
+        pExternalSemaphoreProperties : ^ExternalSemaphoreProperties,
     ) ---;
 
     @(link_name="vkImportSemaphoreFdKHR")
     import_semaphore_fd_khr :: proc(
         device : Device,
-        pImportSemaphoreFdInfo : ^ImportSemaphoreFdInfoKHR
+        pImportSemaphoreFdInfo : ^ImportSemaphoreFdInfoKHR,
     ) -> Result ---;
 
     @(link_name="vkGetSemaphoreFdKHR")
     get_semaphore_fd_khr :: proc(
         device : Device,
         pGetFdInfo : ^SemaphoreGetFdInfoKHR,
-        pFd : ^_c.int
+        pFd : ^_c.int,
     ) -> Result ---;
 
     @(link_name="vkCmdPushDescriptorSetKHR")
@@ -9557,7 +9557,7 @@ foreign vulkan {
         layout : PipelineLayout,
         set : u32,
         descriptorWriteCount : u32,
-        pDescriptorWrites : ^WriteDescriptorSet
+        pDescriptorWrites : ^WriteDescriptorSet,
     ) ---;
 
     @(link_name="vkCmdPushDescriptorSetWithTemplateKHR")
@@ -9566,7 +9566,7 @@ foreign vulkan {
         descriptorUpdateTemplate : DescriptorUpdateTemplate,
         layout : PipelineLayout,
         set : u32,
-        pData : rawptr
+        pData : rawptr,
     ) ---;
 
     @(link_name="vkCreateDescriptorUpdateTemplateKHR")
@@ -9574,14 +9574,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^DescriptorUpdateTemplateCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pDescriptorUpdateTemplate : ^DescriptorUpdateTemplate
+        pDescriptorUpdateTemplate : ^DescriptorUpdateTemplate,
     ) -> Result ---;
 
     @(link_name="vkDestroyDescriptorUpdateTemplateKHR")
     destroy_descriptor_update_template_khr :: proc(
         device : Device,
         descriptorUpdateTemplate : DescriptorUpdateTemplate,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkUpdateDescriptorSetWithTemplateKHR")
@@ -9589,7 +9589,7 @@ foreign vulkan {
         device : Device,
         descriptorSet : DescriptorSet,
         descriptorUpdateTemplate : DescriptorUpdateTemplate,
-        pData : rawptr
+        pData : rawptr,
     ) ---;
 
     @(link_name="vkCreateRenderPass2KHR")
@@ -9597,53 +9597,53 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^RenderPassCreateInfo2,
         pAllocator : ^AllocationCallbacks,
-        pRenderPass : ^RenderPass
+        pRenderPass : ^RenderPass,
     ) -> Result ---;
 
     @(link_name="vkCmdBeginRenderPass2KHR")
     cmd_begin_render_pass2_khr :: proc(
         commandBuffer : CommandBuffer,
         pRenderPassBegin : ^RenderPassBeginInfo,
-        pSubpassBeginInfo : ^SubpassBeginInfo
+        pSubpassBeginInfo : ^SubpassBeginInfo,
     ) ---;
 
     @(link_name="vkCmdNextSubpass2KHR")
     cmd_next_subpass2_khr :: proc(
         commandBuffer : CommandBuffer,
         pSubpassBeginInfo : ^SubpassBeginInfo,
-        pSubpassEndInfo : ^SubpassEndInfo
+        pSubpassEndInfo : ^SubpassEndInfo,
     ) ---;
 
     @(link_name="vkCmdEndRenderPass2KHR")
     cmd_end_render_pass2_khr :: proc(
         commandBuffer : CommandBuffer,
-        pSubpassEndInfo : ^SubpassEndInfo
+        pSubpassEndInfo : ^SubpassEndInfo,
     ) ---;
 
     @(link_name="vkGetSwapchainStatusKHR")
     get_swapchain_status_khr :: proc(
         device : Device,
-        swapchain : SwapchainKHR
+        swapchain : SwapchainKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceExternalFencePropertiesKHR")
     get_physical_device_external_fence_properties_khr :: proc(
         physicalDevice : PhysicalDevice,
         pExternalFenceInfo : ^PhysicalDeviceExternalFenceInfo,
-        pExternalFenceProperties : ^ExternalFenceProperties
+        pExternalFenceProperties : ^ExternalFenceProperties,
     ) ---;
 
     @(link_name="vkImportFenceFdKHR")
     import_fence_fd_khr :: proc(
         device : Device,
-        pImportFenceFdInfo : ^ImportFenceFdInfoKHR
+        pImportFenceFdInfo : ^ImportFenceFdInfoKHR,
     ) -> Result ---;
 
     @(link_name="vkGetFenceFdKHR")
     get_fence_fd_khr :: proc(
         device : Device,
         pGetFdInfo : ^FenceGetFdInfoKHR,
-        pFd : ^_c.int
+        pFd : ^_c.int,
     ) -> Result ---;
 
     @(link_name="vkEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCountersKHR")
@@ -9652,20 +9652,20 @@ foreign vulkan {
         queueFamilyIndex : u32,
         pCounterCount : ^u32,
         pCounters : ^PerformanceCounterKHR,
-        pCounterDescriptions : ^PerformanceCounterDescriptionKHR
+        pCounterDescriptions : ^PerformanceCounterDescriptionKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceQueueFamilyPerformanceQueryPassesKHR")
     get_physical_device_queue_family_performance_query_passes_khr :: proc(
         physicalDevice : PhysicalDevice,
         pPerformanceQueryCreateInfo : ^QueryPoolPerformanceCreateInfoKHR,
-        pNumPasses : ^u32
+        pNumPasses : ^u32,
     ) ---;
 
     @(link_name="vkAcquireProfilingLockKHR")
     acquire_profiling_lock_khr :: proc(
         device : Device,
-        pInfo : ^AcquireProfilingLockInfoKHR
+        pInfo : ^AcquireProfilingLockInfoKHR,
     ) -> Result ---;
 
     @(link_name="vkReleaseProfilingLockKHR")
@@ -9675,7 +9675,7 @@ foreign vulkan {
     get_physical_device_surface_capabilities2_khr :: proc(
         physicalDevice : PhysicalDevice,
         pSurfaceInfo : ^PhysicalDeviceSurfaceInfo2KHR,
-        pSurfaceCapabilities : ^SurfaceCapabilities2KHR
+        pSurfaceCapabilities : ^SurfaceCapabilities2KHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceSurfaceFormats2KHR")
@@ -9683,21 +9683,21 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         pSurfaceInfo : ^PhysicalDeviceSurfaceInfo2KHR,
         pSurfaceFormatCount : ^u32,
-        pSurfaceFormats : ^SurfaceFormat2KHR
+        pSurfaceFormats : ^SurfaceFormat2KHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceDisplayProperties2KHR")
     get_physical_device_display_properties2_khr :: proc(
         physicalDevice : PhysicalDevice,
         pPropertyCount : ^u32,
-        pProperties : ^DisplayProperties2KHR
+        pProperties : ^DisplayProperties2KHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceDisplayPlaneProperties2KHR")
     get_physical_device_display_plane_properties2_khr :: proc(
         physicalDevice : PhysicalDevice,
         pPropertyCount : ^u32,
-        pProperties : ^DisplayPlaneProperties2KHR
+        pProperties : ^DisplayPlaneProperties2KHR,
     ) -> Result ---;
 
     @(link_name="vkGetDisplayModeProperties2KHR")
@@ -9705,28 +9705,28 @@ foreign vulkan {
         physicalDevice : PhysicalDevice,
         display : DisplayKHR,
         pPropertyCount : ^u32,
-        pProperties : ^DisplayModeProperties2KHR
+        pProperties : ^DisplayModeProperties2KHR,
     ) -> Result ---;
 
     @(link_name="vkGetDisplayPlaneCapabilities2KHR")
     get_display_plane_capabilities2_khr :: proc(
         physicalDevice : PhysicalDevice,
         pDisplayPlaneInfo : ^DisplayPlaneInfo2KHR,
-        pCapabilities : ^DisplayPlaneCapabilities2KHR
+        pCapabilities : ^DisplayPlaneCapabilities2KHR,
     ) -> Result ---;
 
     @(link_name="vkGetImageMemoryRequirements2KHR")
     get_image_memory_requirements2_khr :: proc(
         device : Device,
         pInfo : ^ImageMemoryRequirementsInfo2,
-        pMemoryRequirements : ^MemoryRequirements2
+        pMemoryRequirements : ^MemoryRequirements2,
     ) ---;
 
     @(link_name="vkGetBufferMemoryRequirements2KHR")
     get_buffer_memory_requirements2_khr :: proc(
         device : Device,
         pInfo : ^BufferMemoryRequirementsInfo2,
-        pMemoryRequirements : ^MemoryRequirements2
+        pMemoryRequirements : ^MemoryRequirements2,
     ) ---;
 
     @(link_name="vkGetImageSparseMemoryRequirements2KHR")
@@ -9734,7 +9734,7 @@ foreign vulkan {
         device : Device,
         pInfo : ^ImageSparseMemoryRequirementsInfo2,
         pSparseMemoryRequirementCount : ^u32,
-        pSparseMemoryRequirements : ^SparseImageMemoryRequirements2
+        pSparseMemoryRequirements : ^SparseImageMemoryRequirements2,
     ) ---;
 
     @(link_name="vkCreateSamplerYcbcrConversionKHR")
@@ -9742,35 +9742,35 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^SamplerYcbcrConversionCreateInfo,
         pAllocator : ^AllocationCallbacks,
-        pYcbcrConversion : ^SamplerYcbcrConversion
+        pYcbcrConversion : ^SamplerYcbcrConversion,
     ) -> Result ---;
 
     @(link_name="vkDestroySamplerYcbcrConversionKHR")
     destroy_sampler_ycbcr_conversion_khr :: proc(
         device : Device,
         ycbcrConversion : SamplerYcbcrConversion,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkBindBufferMemory2KHR")
     bind_buffer_memory2_khr :: proc(
         device : Device,
         bindInfoCount : u32,
-        pBindInfos : ^BindBufferMemoryInfo
+        pBindInfos : ^BindBufferMemoryInfo,
     ) -> Result ---;
 
     @(link_name="vkBindImageMemory2KHR")
     bind_image_memory2_khr :: proc(
         device : Device,
         bindInfoCount : u32,
-        pBindInfos : ^BindImageMemoryInfo
+        pBindInfos : ^BindImageMemoryInfo,
     ) -> Result ---;
 
     @(link_name="vkGetDescriptorSetLayoutSupportKHR")
     get_descriptor_set_layout_support_khr :: proc(
         device : Device,
         pCreateInfo : ^DescriptorSetLayoutCreateInfo,
-        pSupport : ^DescriptorSetLayoutSupport
+        pSupport : ^DescriptorSetLayoutSupport,
     ) ---;
 
     @(link_name="vkCmdDrawIndirectCountKHR")
@@ -9781,7 +9781,7 @@ foreign vulkan {
         countBuffer : Buffer,
         countBufferOffset : DeviceSize,
         maxDrawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkCmdDrawIndexedIndirectCountKHR")
@@ -9792,45 +9792,45 @@ foreign vulkan {
         countBuffer : Buffer,
         countBufferOffset : DeviceSize,
         maxDrawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkGetSemaphoreCounterValueKHR")
     get_semaphore_counter_value_khr :: proc(
         device : Device,
         semaphore : Semaphore,
-        pValue : ^u64
+        pValue : ^u64,
     ) -> Result ---;
 
     @(link_name="vkWaitSemaphoresKHR")
     wait_semaphores_khr :: proc(
         device : Device,
         pWaitInfo : ^SemaphoreWaitInfo,
-        timeout : u64
+        timeout : u64,
     ) -> Result ---;
 
     @(link_name="vkSignalSemaphoreKHR")
     signal_semaphore_khr :: proc(
         device : Device,
-        pSignalInfo : ^SemaphoreSignalInfo
+        pSignalInfo : ^SemaphoreSignalInfo,
     ) -> Result ---;
 
     @(link_name="vkGetBufferDeviceAddressKHR")
     get_buffer_device_address_khr :: proc(
         device : Device,
-        pInfo : ^BufferDeviceAddressInfo
+        pInfo : ^BufferDeviceAddressInfo,
     ) -> DeviceAddress ---;
 
     @(link_name="vkGetBufferOpaqueCaptureAddressKHR")
     get_buffer_opaque_capture_address_khr :: proc(
         device : Device,
-        pInfo : ^BufferDeviceAddressInfo
+        pInfo : ^BufferDeviceAddressInfo,
     ) -> u64 ---;
 
     @(link_name="vkGetDeviceMemoryOpaqueCaptureAddressKHR")
     get_device_memory_opaque_capture_address_khr :: proc(
         device : Device,
-        pInfo : ^DeviceMemoryOpaqueCaptureAddressInfo
+        pInfo : ^DeviceMemoryOpaqueCaptureAddressInfo,
     ) -> u64 ---;
 
     @(link_name="vkGetPipelineExecutablePropertiesKHR")
@@ -9838,7 +9838,7 @@ foreign vulkan {
         device : Device,
         pPipelineInfo : ^PipelineInfoKHR,
         pExecutableCount : ^u32,
-        pProperties : ^PipelineExecutablePropertiesKHR
+        pProperties : ^PipelineExecutablePropertiesKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPipelineExecutableStatisticsKHR")
@@ -9846,7 +9846,7 @@ foreign vulkan {
         device : Device,
         pExecutableInfo : ^PipelineExecutableInfoKHR,
         pStatisticCount : ^u32,
-        pStatistics : ^PipelineExecutableStatisticKHR
+        pStatistics : ^PipelineExecutableStatisticKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPipelineExecutableInternalRepresentationsKHR")
@@ -9854,7 +9854,7 @@ foreign vulkan {
         device : Device,
         pExecutableInfo : ^PipelineExecutableInfoKHR,
         pInternalRepresentationCount : ^u32,
-        pInternalRepresentations : ^PipelineExecutableInternalRepresentationKHR
+        pInternalRepresentations : ^PipelineExecutableInternalRepresentationKHR,
     ) -> Result ---;
 
     @(link_name="vkCreateDebugReportCallbackEXT")
@@ -9862,14 +9862,14 @@ foreign vulkan {
         instance : Instance,
         pCreateInfo : ^DebugReportCallbackCreateInfoEXT,
         pAllocator : ^AllocationCallbacks,
-        pCallback : ^DebugReportCallbackEXT
+        pCallback : ^DebugReportCallbackEXT,
     ) -> Result ---;
 
     @(link_name="vkDestroyDebugReportCallbackEXT")
     destroy_debug_report_callback_ext :: proc(
         instance : Instance,
         callback : DebugReportCallbackEXT,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkDebugReportMessageEXT")
@@ -9881,25 +9881,25 @@ foreign vulkan {
         location : _c.size_t,
         messageCode : i32,
         pLayerPrefix : cstring,
-        pMessage : cstring
+        pMessage : cstring,
     ) ---;
 
     @(link_name="vkDebugMarkerSetObjectTagEXT")
     debug_marker_set_object_tag_ext :: proc(
         device : Device,
-        pTagInfo : ^DebugMarkerObjectTagInfoEXT
+        pTagInfo : ^DebugMarkerObjectTagInfoEXT,
     ) -> Result ---;
 
     @(link_name="vkDebugMarkerSetObjectNameEXT")
     debug_marker_set_object_name_ext :: proc(
         device : Device,
-        pNameInfo : ^DebugMarkerObjectNameInfoEXT
+        pNameInfo : ^DebugMarkerObjectNameInfoEXT,
     ) -> Result ---;
 
     @(link_name="vkCmdDebugMarkerBeginEXT")
     cmd_debug_marker_begin_ext :: proc(
         commandBuffer : CommandBuffer,
-        pMarkerInfo : ^DebugMarkerMarkerInfoEXT
+        pMarkerInfo : ^DebugMarkerMarkerInfoEXT,
     ) ---;
 
     @(link_name="vkCmdDebugMarkerEndEXT")
@@ -9908,7 +9908,7 @@ foreign vulkan {
     @(link_name="vkCmdDebugMarkerInsertEXT")
     cmd_debug_marker_insert_ext :: proc(
         commandBuffer : CommandBuffer,
-        pMarkerInfo : ^DebugMarkerMarkerInfoEXT
+        pMarkerInfo : ^DebugMarkerMarkerInfoEXT,
     ) ---;
 
     @(link_name="vkCmdBindTransformFeedbackBuffersEXT")
@@ -9918,7 +9918,7 @@ foreign vulkan {
         bindingCount : u32,
         pBuffers : ^Buffer,
         pOffsets : ^DeviceSize,
-        pSizes : ^DeviceSize
+        pSizes : ^DeviceSize,
     ) ---;
 
     @(link_name="vkCmdBeginTransformFeedbackEXT")
@@ -9927,7 +9927,7 @@ foreign vulkan {
         firstCounterBuffer : u32,
         counterBufferCount : u32,
         pCounterBuffers : ^Buffer,
-        pCounterBufferOffsets : ^DeviceSize
+        pCounterBufferOffsets : ^DeviceSize,
     ) ---;
 
     @(link_name="vkCmdEndTransformFeedbackEXT")
@@ -9936,7 +9936,7 @@ foreign vulkan {
         firstCounterBuffer : u32,
         counterBufferCount : u32,
         pCounterBuffers : ^Buffer,
-        pCounterBufferOffsets : ^DeviceSize
+        pCounterBufferOffsets : ^DeviceSize,
     ) ---;
 
     @(link_name="vkCmdBeginQueryIndexedEXT")
@@ -9945,7 +9945,7 @@ foreign vulkan {
         queryPool : QueryPool,
         query : u32,
         flags : QueryControlFlags,
-        index : u32
+        index : u32,
     ) ---;
 
     @(link_name="vkCmdEndQueryIndexedEXT")
@@ -9953,7 +9953,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         queryPool : QueryPool,
         query : u32,
-        index : u32
+        index : u32,
     ) ---;
 
     @(link_name="vkCmdDrawIndirectByteCountEXT")
@@ -9964,20 +9964,20 @@ foreign vulkan {
         counterBuffer : Buffer,
         counterBufferOffset : DeviceSize,
         counterOffset : u32,
-        vertexStride : u32
+        vertexStride : u32,
     ) ---;
 
     @(link_name="vkGetImageViewHandleNVX")
     get_image_view_handle_nvx :: proc(
         device : Device,
-        pInfo : ^ImageViewHandleInfoNVX
+        pInfo : ^ImageViewHandleInfoNVX,
     ) -> u32 ---;
 
     @(link_name="vkGetImageViewAddressNVX")
     get_image_view_address_nvx :: proc(
         device : Device,
         imageView : ImageView,
-        pProperties : ^ImageViewAddressPropertiesNVX
+        pProperties : ^ImageViewAddressPropertiesNVX,
     ) -> Result ---;
 
     @(link_name="vkCmdDrawIndirectCountAMD")
@@ -9988,7 +9988,7 @@ foreign vulkan {
         countBuffer : Buffer,
         countBufferOffset : DeviceSize,
         maxDrawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkCmdDrawIndexedIndirectCountAMD")
@@ -9999,7 +9999,7 @@ foreign vulkan {
         countBuffer : Buffer,
         countBufferOffset : DeviceSize,
         maxDrawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkGetShaderInfoAMD")
@@ -10009,7 +10009,7 @@ foreign vulkan {
         shaderStage : ShaderStageFlagBits,
         infoType : ShaderInfoTypeAMD,
         pInfoSize : ^_c.size_t,
-        pInfo : rawptr
+        pInfo : rawptr,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceExternalImageFormatPropertiesNV")
@@ -10021,13 +10021,13 @@ foreign vulkan {
         usage : ImageUsageFlags,
         flags : ImageCreateFlags,
         externalHandleType : ExternalMemoryHandleTypeFlagsNV,
-        pExternalImageFormatProperties : ^ExternalImageFormatPropertiesNV
+        pExternalImageFormatProperties : ^ExternalImageFormatPropertiesNV,
     ) -> Result ---;
 
     @(link_name="vkCmdBeginConditionalRenderingEXT")
     cmd_begin_conditional_rendering_ext :: proc(
         commandBuffer : CommandBuffer,
-        pConditionalRenderingBegin : ^ConditionalRenderingBeginInfoEXT
+        pConditionalRenderingBegin : ^ConditionalRenderingBeginInfoEXT,
     ) ---;
 
     @(link_name="vkCmdEndConditionalRenderingEXT")
@@ -10038,27 +10038,27 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         firstViewport : u32,
         viewportCount : u32,
-        pViewportWScalings : ^ViewportWScalingNV
+        pViewportWScalings : ^ViewportWScalingNV,
     ) ---;
 
     @(link_name="vkReleaseDisplayEXT")
     release_display_ext :: proc(
         physicalDevice : PhysicalDevice,
-        display : DisplayKHR
+        display : DisplayKHR,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceSurfaceCapabilities2EXT")
     get_physical_device_surface_capabilities2_ext :: proc(
         physicalDevice : PhysicalDevice,
         surface : SurfaceKHR,
-        pSurfaceCapabilities : ^SurfaceCapabilities2EXT
+        pSurfaceCapabilities : ^SurfaceCapabilities2EXT,
     ) -> Result ---;
 
     @(link_name="vkDisplayPowerControlEXT")
     display_power_control_ext :: proc(
         device : Device,
         display : DisplayKHR,
-        pDisplayPowerInfo : ^DisplayPowerInfoEXT
+        pDisplayPowerInfo : ^DisplayPowerInfoEXT,
     ) -> Result ---;
 
     @(link_name="vkRegisterDeviceEventEXT")
@@ -10066,7 +10066,7 @@ foreign vulkan {
         device : Device,
         pDeviceEventInfo : ^DeviceEventInfoEXT,
         pAllocator : ^AllocationCallbacks,
-        pFence : ^Fence
+        pFence : ^Fence,
     ) -> Result ---;
 
     @(link_name="vkRegisterDisplayEventEXT")
@@ -10075,7 +10075,7 @@ foreign vulkan {
         display : DisplayKHR,
         pDisplayEventInfo : ^DisplayEventInfoEXT,
         pAllocator : ^AllocationCallbacks,
-        pFence : ^Fence
+        pFence : ^Fence,
     ) -> Result ---;
 
     @(link_name="vkGetSwapchainCounterEXT")
@@ -10083,14 +10083,14 @@ foreign vulkan {
         device : Device,
         swapchain : SwapchainKHR,
         counter : SurfaceCounterFlagBitsEXT,
-        pCounterValue : ^u64
+        pCounterValue : ^u64,
     ) -> Result ---;
 
     @(link_name="vkGetRefreshCycleDurationGOOGLE")
     get_refresh_cycle_duration_google :: proc(
         device : Device,
         swapchain : SwapchainKHR,
-        pDisplayTimingProperties : ^RefreshCycleDurationGOOGLE
+        pDisplayTimingProperties : ^RefreshCycleDurationGOOGLE,
     ) -> Result ---;
 
     @(link_name="vkGetPastPresentationTimingGOOGLE")
@@ -10098,7 +10098,7 @@ foreign vulkan {
         device : Device,
         swapchain : SwapchainKHR,
         pPresentationTimingCount : ^u32,
-        pPresentationTimings : ^PastPresentationTimingGOOGLE
+        pPresentationTimings : ^PastPresentationTimingGOOGLE,
     ) -> Result ---;
 
     @(link_name="vkCmdSetDiscardRectangleEXT")
@@ -10106,7 +10106,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         firstDiscardRectangle : u32,
         discardRectangleCount : u32,
-        pDiscardRectangles : ^Rect2D
+        pDiscardRectangles : ^Rect2D,
     ) ---;
 
     @(link_name="vkSetHdrMetadataEXT")
@@ -10114,25 +10114,25 @@ foreign vulkan {
         device : Device,
         swapchainCount : u32,
         pSwapchains : ^SwapchainKHR,
-        pMetadata : ^HdrMetadataEXT
+        pMetadata : ^HdrMetadataEXT,
     ) ---;
 
     @(link_name="vkSetDebugUtilsObjectNameEXT")
     set_debug_utils_object_name_ext :: proc(
         device : Device,
-        pNameInfo : ^DebugUtilsObjectNameInfoEXT
+        pNameInfo : ^DebugUtilsObjectNameInfoEXT,
     ) -> Result ---;
 
     @(link_name="vkSetDebugUtilsObjectTagEXT")
     set_debug_utils_object_tag_ext :: proc(
         device : Device,
-        pTagInfo : ^DebugUtilsObjectTagInfoEXT
+        pTagInfo : ^DebugUtilsObjectTagInfoEXT,
     ) -> Result ---;
 
     @(link_name="vkQueueBeginDebugUtilsLabelEXT")
     queue_begin_debug_utils_label_ext :: proc(
         queue : Queue,
-        pLabelInfo : ^DebugUtilsLabelEXT
+        pLabelInfo : ^DebugUtilsLabelEXT,
     ) ---;
 
     @(link_name="vkQueueEndDebugUtilsLabelEXT")
@@ -10141,13 +10141,13 @@ foreign vulkan {
     @(link_name="vkQueueInsertDebugUtilsLabelEXT")
     queue_insert_debug_utils_label_ext :: proc(
         queue : Queue,
-        pLabelInfo : ^DebugUtilsLabelEXT
+        pLabelInfo : ^DebugUtilsLabelEXT,
     ) ---;
 
     @(link_name="vkCmdBeginDebugUtilsLabelEXT")
     cmd_begin_debug_utils_label_ext :: proc(
         commandBuffer : CommandBuffer,
-        pLabelInfo : ^DebugUtilsLabelEXT
+        pLabelInfo : ^DebugUtilsLabelEXT,
     ) ---;
 
     @(link_name="vkCmdEndDebugUtilsLabelEXT")
@@ -10156,7 +10156,7 @@ foreign vulkan {
     @(link_name="vkCmdInsertDebugUtilsLabelEXT")
     cmd_insert_debug_utils_label_ext :: proc(
         commandBuffer : CommandBuffer,
-        pLabelInfo : ^DebugUtilsLabelEXT
+        pLabelInfo : ^DebugUtilsLabelEXT,
     ) ---;
 
     @(link_name="vkCreateDebugUtilsMessengerEXT")
@@ -10164,14 +10164,14 @@ foreign vulkan {
         instance : Instance,
         pCreateInfo : ^DebugUtilsMessengerCreateInfoEXT,
         pAllocator : ^AllocationCallbacks,
-        pMessenger : ^DebugUtilsMessengerEXT
+        pMessenger : ^DebugUtilsMessengerEXT,
     ) -> Result ---;
 
     @(link_name="vkDestroyDebugUtilsMessengerEXT")
     destroy_debug_utils_messenger_ext :: proc(
         instance : Instance,
         messenger : DebugUtilsMessengerEXT,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkSubmitDebugUtilsMessageEXT")
@@ -10179,27 +10179,27 @@ foreign vulkan {
         instance : Instance,
         messageSeverity : DebugUtilsMessageSeverityFlagBitsEXT,
         messageTypes : DebugUtilsMessageTypeFlagsEXT,
-        pCallbackData : ^DebugUtilsMessengerCallbackDataEXT
+        pCallbackData : ^DebugUtilsMessengerCallbackDataEXT,
     ) ---;
 
     @(link_name="vkCmdSetSampleLocationsEXT")
     cmd_set_sample_locations_ext :: proc(
         commandBuffer : CommandBuffer,
-        pSampleLocationsInfo : ^SampleLocationsInfoEXT
+        pSampleLocationsInfo : ^SampleLocationsInfoEXT,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceMultisamplePropertiesEXT")
     get_physical_device_multisample_properties_ext :: proc(
         physicalDevice : PhysicalDevice,
         samples : SampleCountFlagBits,
-        pMultisampleProperties : ^MultisamplePropertiesEXT
+        pMultisampleProperties : ^MultisamplePropertiesEXT,
     ) ---;
 
     @(link_name="vkGetImageDrmFormatModifierPropertiesEXT")
     get_image_drm_format_modifier_properties_ext :: proc(
         device : Device,
         image : Image,
-        pProperties : ^ImageDrmFormatModifierPropertiesEXT
+        pProperties : ^ImageDrmFormatModifierPropertiesEXT,
     ) -> Result ---;
 
     @(link_name="vkCreateValidationCacheEXT")
@@ -10207,14 +10207,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^ValidationCacheCreateInfoEXT,
         pAllocator : ^AllocationCallbacks,
-        pValidationCache : ^ValidationCacheEXT
+        pValidationCache : ^ValidationCacheEXT,
     ) -> Result ---;
 
     @(link_name="vkDestroyValidationCacheEXT")
     destroy_validation_cache_ext :: proc(
         device : Device,
         validationCache : ValidationCacheEXT,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkMergeValidationCachesEXT")
@@ -10222,7 +10222,7 @@ foreign vulkan {
         device : Device,
         dstCache : ValidationCacheEXT,
         srcCacheCount : u32,
-        pSrcCaches : ^ValidationCacheEXT
+        pSrcCaches : ^ValidationCacheEXT,
     ) -> Result ---;
 
     @(link_name="vkGetValidationCacheDataEXT")
@@ -10230,14 +10230,14 @@ foreign vulkan {
         device : Device,
         validationCache : ValidationCacheEXT,
         pDataSize : ^_c.size_t,
-        pData : rawptr
+        pData : rawptr,
     ) -> Result ---;
 
     @(link_name="vkCmdBindShadingRateImageNV")
     cmd_bind_shading_rate_image_nv :: proc(
         commandBuffer : CommandBuffer,
         imageView : ImageView,
-        imageLayout : ImageLayout
+        imageLayout : ImageLayout,
     ) ---;
 
     @(link_name="vkCmdSetViewportShadingRatePaletteNV")
@@ -10245,7 +10245,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         firstViewport : u32,
         viewportCount : u32,
-        pShadingRatePalettes : ^ShadingRatePaletteNV
+        pShadingRatePalettes : ^ShadingRatePaletteNV,
     ) ---;
 
     @(link_name="vkCmdSetCoarseSampleOrderNV")
@@ -10253,7 +10253,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         sampleOrderType : CoarseSampleOrderTypeNV,
         customSampleOrderCount : u32,
-        pCustomSampleOrders : ^CoarseSampleOrderCustomNV
+        pCustomSampleOrders : ^CoarseSampleOrderCustomNV,
     ) ---;
 
     @(link_name="vkCreateAccelerationStructureNV")
@@ -10261,42 +10261,42 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^AccelerationStructureCreateInfoNV,
         pAllocator : ^AllocationCallbacks,
-        pAccelerationStructure : ^AccelerationStructureNV
+        pAccelerationStructure : ^AccelerationStructureNV,
     ) -> Result ---;
 
     @(link_name="vkDestroyAccelerationStructureKHR")
     destroy_acceleration_structure_khr :: proc(
         device : Device,
         accelerationStructure : AccelerationStructureKHR,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkDestroyAccelerationStructureNV")
     destroy_acceleration_structure_nv :: proc(
         device : Device,
         accelerationStructure : AccelerationStructureKHR,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkGetAccelerationStructureMemoryRequirementsNV")
     get_acceleration_structure_memory_requirements_nv :: proc(
         device : Device,
         pInfo : ^AccelerationStructureMemoryRequirementsInfoNV,
-        pMemoryRequirements : ^MemoryRequirements2KHR
+        pMemoryRequirements : ^MemoryRequirements2KHR,
     ) ---;
 
     @(link_name="vkBindAccelerationStructureMemoryKHR")
     bind_acceleration_structure_memory_khr :: proc(
         device : Device,
         bindInfoCount : u32,
-        pBindInfos : ^BindAccelerationStructureMemoryInfoKHR
+        pBindInfos : ^BindAccelerationStructureMemoryInfoKHR,
     ) -> Result ---;
 
     @(link_name="vkBindAccelerationStructureMemoryNV")
     bind_acceleration_structure_memory_nv :: proc(
         device : Device,
         bindInfoCount : u32,
-        pBindInfos : ^BindAccelerationStructureMemoryInfoKHR
+        pBindInfos : ^BindAccelerationStructureMemoryInfoKHR,
     ) -> Result ---;
 
     @(link_name="vkCmdBuildAccelerationStructureNV")
@@ -10309,7 +10309,7 @@ foreign vulkan {
         dst : AccelerationStructureKHR,
         src : AccelerationStructureKHR,
         scratch : Buffer,
-        scratchOffset : DeviceSize
+        scratchOffset : DeviceSize,
     ) ---;
 
     @(link_name="vkCmdCopyAccelerationStructureNV")
@@ -10317,7 +10317,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         dst : AccelerationStructureKHR,
         src : AccelerationStructureKHR,
-        mode : CopyAccelerationStructureModeKHR
+        mode : CopyAccelerationStructureModeKHR,
     ) ---;
 
     @(link_name="vkCmdTraceRaysNV")
@@ -10336,7 +10336,7 @@ foreign vulkan {
         callableShaderBindingStride : DeviceSize,
         width : u32,
         height : u32,
-        depth : u32
+        depth : u32,
     ) ---;
 
     @(link_name="vkCreateRayTracingPipelinesNV")
@@ -10346,7 +10346,7 @@ foreign vulkan {
         createInfoCount : u32,
         pCreateInfos : ^RayTracingPipelineCreateInfoNV,
         pAllocator : ^AllocationCallbacks,
-        pPipelines : ^Pipeline
+        pPipelines : ^Pipeline,
     ) -> Result ---;
 
     @(link_name="vkGetRayTracingShaderGroupHandlesKHR")
@@ -10356,7 +10356,7 @@ foreign vulkan {
         firstGroup : u32,
         groupCount : u32,
         dataSize : _c.size_t,
-        pData : rawptr
+        pData : rawptr,
     ) -> Result ---;
 
     @(link_name="vkGetRayTracingShaderGroupHandlesNV")
@@ -10366,7 +10366,7 @@ foreign vulkan {
         firstGroup : u32,
         groupCount : u32,
         dataSize : _c.size_t,
-        pData : rawptr
+        pData : rawptr,
     ) -> Result ---;
 
     @(link_name="vkGetAccelerationStructureHandleNV")
@@ -10374,7 +10374,7 @@ foreign vulkan {
         device : Device,
         accelerationStructure : AccelerationStructureKHR,
         dataSize : _c.size_t,
-        pData : rawptr
+        pData : rawptr,
     ) -> Result ---;
 
     @(link_name="vkCmdWriteAccelerationStructuresPropertiesKHR")
@@ -10384,7 +10384,7 @@ foreign vulkan {
         pAccelerationStructures : ^AccelerationStructureKHR,
         queryType : QueryType,
         queryPool : QueryPool,
-        firstQuery : u32
+        firstQuery : u32,
     ) ---;
 
     @(link_name="vkCmdWriteAccelerationStructuresPropertiesNV")
@@ -10394,14 +10394,14 @@ foreign vulkan {
         pAccelerationStructures : ^AccelerationStructureKHR,
         queryType : QueryType,
         queryPool : QueryPool,
-        firstQuery : u32
+        firstQuery : u32,
     ) ---;
 
     @(link_name="vkCompileDeferredNV")
     compile_deferred_nv :: proc(
         device : Device,
         pipeline : Pipeline,
-        shader : u32
+        shader : u32,
     ) -> Result ---;
 
     @(link_name="vkGetMemoryHostPointerPropertiesEXT")
@@ -10409,7 +10409,7 @@ foreign vulkan {
         device : Device,
         handleType : ExternalMemoryHandleTypeFlagBits,
         pHostPointer : rawptr,
-        pMemoryHostPointerProperties : ^MemoryHostPointerPropertiesEXT
+        pMemoryHostPointerProperties : ^MemoryHostPointerPropertiesEXT,
     ) -> Result ---;
 
     @(link_name="vkCmdWriteBufferMarkerAMD")
@@ -10418,14 +10418,14 @@ foreign vulkan {
         pipelineStage : PipelineStageFlagBits,
         dstBuffer : Buffer,
         dstOffset : DeviceSize,
-        marker : u32
+        marker : u32,
     ) ---;
 
     @(link_name="vkGetPhysicalDeviceCalibrateableTimeDomainsEXT")
     get_physical_device_calibrateable_time_domains_ext :: proc(
         physicalDevice : PhysicalDevice,
         pTimeDomainCount : ^u32,
-        pTimeDomains : ^TimeDomainEXT
+        pTimeDomains : ^TimeDomainEXT,
     ) -> Result ---;
 
     @(link_name="vkGetCalibratedTimestampsEXT")
@@ -10434,14 +10434,14 @@ foreign vulkan {
         timestampCount : u32,
         pTimestampInfos : ^CalibratedTimestampInfoEXT,
         pTimestamps : ^u64,
-        pMaxDeviation : ^u64
+        pMaxDeviation : ^u64,
     ) -> Result ---;
 
     @(link_name="vkCmdDrawMeshTasksNV")
     cmd_draw_mesh_tasks_nv :: proc(
         commandBuffer : CommandBuffer,
         taskCount : u32,
-        firstTask : u32
+        firstTask : u32,
     ) ---;
 
     @(link_name="vkCmdDrawMeshTasksIndirectNV")
@@ -10450,7 +10450,7 @@ foreign vulkan {
         buffer : Buffer,
         offset : DeviceSize,
         drawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkCmdDrawMeshTasksIndirectCountNV")
@@ -10461,7 +10461,7 @@ foreign vulkan {
         countBuffer : Buffer,
         countBufferOffset : DeviceSize,
         maxDrawCount : u32,
-        stride : u32
+        stride : u32,
     ) ---;
 
     @(link_name="vkCmdSetExclusiveScissorNV")
@@ -10469,26 +10469,26 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         firstExclusiveScissor : u32,
         exclusiveScissorCount : u32,
-        pExclusiveScissors : ^Rect2D
+        pExclusiveScissors : ^Rect2D,
     ) ---;
 
     @(link_name="vkCmdSetCheckpointNV")
     cmd_set_checkpoint_nv :: proc(
         commandBuffer : CommandBuffer,
-        pCheckpointMarker : rawptr
+        pCheckpointMarker : rawptr,
     ) ---;
 
     @(link_name="vkGetQueueCheckpointDataNV")
     get_queue_checkpoint_data_nv :: proc(
         queue : Queue,
         pCheckpointDataCount : ^u32,
-        pCheckpointData : ^CheckpointDataNV
+        pCheckpointData : ^CheckpointDataNV,
     ) ---;
 
     @(link_name="vkInitializePerformanceApiINTEL")
     initialize_performance_api_intel :: proc(
         device : Device,
-        pInitializeInfo : ^InitializePerformanceApiInfoINTEL
+        pInitializeInfo : ^InitializePerformanceApiInfoINTEL,
     ) -> Result ---;
 
     @(link_name="vkUninitializePerformanceApiINTEL")
@@ -10497,79 +10497,79 @@ foreign vulkan {
     @(link_name="vkCmdSetPerformanceMarkerINTEL")
     cmd_set_performance_marker_intel :: proc(
         commandBuffer : CommandBuffer,
-        pMarkerInfo : ^PerformanceMarkerInfoINTEL
+        pMarkerInfo : ^PerformanceMarkerInfoINTEL,
     ) -> Result ---;
 
     @(link_name="vkCmdSetPerformanceStreamMarkerINTEL")
     cmd_set_performance_stream_marker_intel :: proc(
         commandBuffer : CommandBuffer,
-        pMarkerInfo : ^PerformanceStreamMarkerInfoINTEL
+        pMarkerInfo : ^PerformanceStreamMarkerInfoINTEL,
     ) -> Result ---;
 
     @(link_name="vkCmdSetPerformanceOverrideINTEL")
     cmd_set_performance_override_intel :: proc(
         commandBuffer : CommandBuffer,
-        pOverrideInfo : ^PerformanceOverrideInfoINTEL
+        pOverrideInfo : ^PerformanceOverrideInfoINTEL,
     ) -> Result ---;
 
     @(link_name="vkAcquirePerformanceConfigurationINTEL")
     acquire_performance_configuration_intel :: proc(
         device : Device,
         pAcquireInfo : ^PerformanceConfigurationAcquireInfoINTEL,
-        pConfiguration : ^PerformanceConfigurationINTEL
+        pConfiguration : ^PerformanceConfigurationINTEL,
     ) -> Result ---;
 
     @(link_name="vkReleasePerformanceConfigurationINTEL")
     release_performance_configuration_intel :: proc(
         device : Device,
-        configuration : PerformanceConfigurationINTEL
+        configuration : PerformanceConfigurationINTEL,
     ) -> Result ---;
 
     @(link_name="vkQueueSetPerformanceConfigurationINTEL")
     queue_set_performance_configuration_intel :: proc(
         queue : Queue,
-        configuration : PerformanceConfigurationINTEL
+        configuration : PerformanceConfigurationINTEL,
     ) -> Result ---;
 
     @(link_name="vkGetPerformanceParameterINTEL")
     get_performance_parameter_intel :: proc(
         device : Device,
         parameter : PerformanceParameterTypeINTEL,
-        pValue : ^PerformanceValueINTEL
+        pValue : ^PerformanceValueINTEL,
     ) -> Result ---;
 
     @(link_name="vkSetLocalDimmingAMD")
     set_local_dimming_amd :: proc(
         device : Device,
         swapChain : SwapchainKHR,
-        localDimmingEnable : Bool32
+        localDimmingEnable : Bool32,
     ) ---;
 
     @(link_name="vkGetBufferDeviceAddressEXT")
     get_buffer_device_address_ext :: proc(
         device : Device,
-        pInfo : ^BufferDeviceAddressInfo
+        pInfo : ^BufferDeviceAddressInfo,
     ) -> DeviceAddress ---;
 
     @(link_name="vkGetPhysicalDeviceToolPropertiesEXT")
     get_physical_device_tool_properties_ext :: proc(
         physicalDevice : PhysicalDevice,
         pToolCount : ^u32,
-        pToolProperties : ^PhysicalDeviceToolPropertiesEXT
+        pToolProperties : ^PhysicalDeviceToolPropertiesEXT,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceCooperativeMatrixPropertiesNV")
     get_physical_device_cooperative_matrix_properties_nv :: proc(
         physicalDevice : PhysicalDevice,
         pPropertyCount : ^u32,
-        pProperties : ^CooperativeMatrixPropertiesNV
+        pProperties : ^CooperativeMatrixPropertiesNV,
     ) -> Result ---;
 
     @(link_name="vkGetPhysicalDeviceSupportedFramebufferMixedSamplesCombinationsNV")
     get_physical_device_supported_framebuffer_mixed_samples_combinations_nv :: proc(
         physicalDevice : PhysicalDevice,
         pCombinationCount : ^u32,
-        pCombinations : ^FramebufferMixedSamplesCombinationNV
+        pCombinations : ^FramebufferMixedSamplesCombinationNV,
     ) -> Result ---;
 
     @(link_name="vkCreateHeadlessSurfaceEXT")
@@ -10577,14 +10577,14 @@ foreign vulkan {
         instance : Instance,
         pCreateInfo : ^HeadlessSurfaceCreateInfoEXT,
         pAllocator : ^AllocationCallbacks,
-        pSurface : ^SurfaceKHR
+        pSurface : ^SurfaceKHR,
     ) -> Result ---;
 
     @(link_name="vkCmdSetLineStippleEXT")
     cmd_set_line_stipple_ext :: proc(
         commandBuffer : CommandBuffer,
         lineStippleFactor : u32,
-        lineStipplePattern : u16
+        lineStipplePattern : u16,
     ) ---;
 
     @(link_name="vkResetQueryPoolEXT")
@@ -10592,27 +10592,27 @@ foreign vulkan {
         device : Device,
         queryPool : QueryPool,
         firstQuery : u32,
-        queryCount : u32
+        queryCount : u32,
     ) ---;
 
     @(link_name="vkGetGeneratedCommandsMemoryRequirementsNV")
     get_generated_commands_memory_requirements_nv :: proc(
         device : Device,
         pInfo : ^GeneratedCommandsMemoryRequirementsInfoNV,
-        pMemoryRequirements : ^MemoryRequirements2
+        pMemoryRequirements : ^MemoryRequirements2,
     ) ---;
 
     @(link_name="vkCmdPreprocessGeneratedCommandsNV")
     cmd_preprocess_generated_commands_nv :: proc(
         commandBuffer : CommandBuffer,
-        pGeneratedCommandsInfo : ^GeneratedCommandsInfoNV
+        pGeneratedCommandsInfo : ^GeneratedCommandsInfoNV,
     ) ---;
 
     @(link_name="vkCmdExecuteGeneratedCommandsNV")
     cmd_execute_generated_commands_nv :: proc(
         commandBuffer : CommandBuffer,
         isPreprocessed : Bool32,
-        pGeneratedCommandsInfo : ^GeneratedCommandsInfoNV
+        pGeneratedCommandsInfo : ^GeneratedCommandsInfoNV,
     ) ---;
 
     @(link_name="vkCmdBindPipelineShaderGroupNV")
@@ -10620,7 +10620,7 @@ foreign vulkan {
         commandBuffer : CommandBuffer,
         pipelineBindPoint : PipelineBindPoint,
         pipeline : Pipeline,
-        groupIndex : u32
+        groupIndex : u32,
     ) ---;
 
     @(link_name="vkCreateIndirectCommandsLayoutNV")
@@ -10628,14 +10628,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^IndirectCommandsLayoutCreateInfoNV,
         pAllocator : ^AllocationCallbacks,
-        pIndirectCommandsLayout : ^IndirectCommandsLayoutNV
+        pIndirectCommandsLayout : ^IndirectCommandsLayoutNV,
     ) -> Result ---;
 
     @(link_name="vkDestroyIndirectCommandsLayoutNV")
     destroy_indirect_commands_layout_nv :: proc(
         device : Device,
         indirectCommandsLayout : IndirectCommandsLayoutNV,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkCreatePrivateDataSlotEXT")
@@ -10643,14 +10643,14 @@ foreign vulkan {
         device : Device,
         pCreateInfo : ^PrivateDataSlotCreateInfoEXT,
         pAllocator : ^AllocationCallbacks,
-        pPrivateDataSlot : ^PrivateDataSlotEXT
+        pPrivateDataSlot : ^PrivateDataSlotEXT,
     ) -> Result ---;
 
     @(link_name="vkDestroyPrivateDataSlotEXT")
     destroy_private_data_slot_ext :: proc(
         device : Device,
         privateDataSlot : PrivateDataSlotEXT,
-        pAllocator : ^AllocationCallbacks
+        pAllocator : ^AllocationCallbacks,
     ) ---;
 
     @(link_name="vkSetPrivateDataEXT")
@@ -10659,7 +10659,7 @@ foreign vulkan {
         objectType : ObjectType,
         objectHandle : u64,
         privateDataSlot : PrivateDataSlotEXT,
-        data : u64
+        data : u64,
     ) -> Result ---;
 
     @(link_name="vkGetPrivateDataEXT")
@@ -10668,7 +10668,7 @@ foreign vulkan {
         objectType : ObjectType,
         objectHandle : u64,
         privateDataSlot : PrivateDataSlotEXT,
-        pData : ^u64
+        pData : ^u64,
     ) ---;
 
 }

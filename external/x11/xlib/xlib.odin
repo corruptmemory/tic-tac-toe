@@ -1130,19 +1130,19 @@ foreign x11_xlib {
     @(link_name="_Xmblen")
     xmblen :: proc(
         str : cstring,
-        len : _c.int
+        len : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XLoadQueryFont")
     load_query_font :: proc(
         display : ^Display,
-        name : cstring
+        name : cstring,
     ) -> ^XFontStruct ---;
 
     @(link_name="XQueryFont")
     query_font :: proc(
         display : ^Display,
-        fontId : Xid
+        fontId : Xid,
     ) -> ^XFontStruct ---;
 
     @(link_name="XGetMotionEvents")
@@ -1151,14 +1151,14 @@ foreign x11_xlib {
         w : Window,
         start : Time,
         stop : Time,
-        neventsReturn : ^_c.int
+        neventsReturn : ^_c.int,
     ) -> ^XTimeCoord ---;
 
     @(link_name="XDeleteModifiermapEntry")
     delete_modifiermap_entry :: proc(
         modmap : ^XModifierKeymap,
         keycodeEntry : KeyCode,
-        modifier : _c.int
+        modifier : _c.int,
     ) -> ^XModifierKeymap ---;
 
     @(link_name="XGetModifierMapping")
@@ -1168,7 +1168,7 @@ foreign x11_xlib {
     insert_modifiermap_entry :: proc(
         modmap : ^XModifierKeymap,
         keycodeEntry : KeyCode,
-        modifier : _c.int
+        modifier : _c.int,
     ) -> ^XModifierKeymap ---;
 
     @(link_name="XNewModifiermap")
@@ -1185,7 +1185,7 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         bitmapPad : _c.int,
-        bytesPerLine : _c.int
+        bytesPerLine : _c.int,
     ) -> ^XImage ---;
 
     @(link_name="XInitImage")
@@ -1200,7 +1200,7 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         planeMask : _c.ulong,
-        format : _c.int
+        format : _c.int,
     ) -> ^XImage ---;
 
     @(link_name="XGetSubImage")
@@ -1215,7 +1215,7 @@ foreign x11_xlib {
         format : _c.int,
         destImage : ^XImage,
         destX : _c.int,
-        destY : _c.int
+        destY : _c.int,
     ) -> ^XImage ---;
 
     @(link_name="XOpenDisplay")
@@ -1227,20 +1227,20 @@ foreign x11_xlib {
     @(link_name="XFetchBytes")
     fetch_bytes :: proc(
         display : ^Display,
-        nbytesReturn : ^_c.int
+        nbytesReturn : ^_c.int,
     ) -> cstring ---;
 
     @(link_name="XFetchBuffer")
     fetch_buffer :: proc(
         display : ^Display,
         nbytesReturn : ^_c.int,
-        buffer : _c.int
+        buffer : _c.int,
     ) -> cstring ---;
 
     @(link_name="XGetAtomName")
     get_atom_name :: proc(
         display : ^Display,
-        atom : Atom
+        atom : Atom,
     ) -> cstring ---;
 
     @(link_name="XGetAtomNames")
@@ -1248,14 +1248,14 @@ foreign x11_xlib {
         dpy : ^Display,
         atoms : ^Atom,
         count : _c.int,
-        namesReturn : ^cstring
+        namesReturn : ^cstring,
     ) -> Status ---;
 
     @(link_name="XGetDefault")
     get_default :: proc(
         display : ^Display,
         program : cstring,
-        option : cstring
+        option : cstring,
     ) -> cstring ---;
 
     @(link_name="XDisplayName")
@@ -1268,7 +1268,7 @@ foreign x11_xlib {
     intern_atom :: proc(
         display : ^Display,
         atomName : cstring,
-        onlyIfExists : Bool
+        onlyIfExists : Bool,
     ) -> Atom ---;
 
     @(link_name="XInternAtoms")
@@ -1277,13 +1277,13 @@ foreign x11_xlib {
         names : ^cstring,
         count : _c.int,
         onlyIfExists : Bool,
-        atomsReturn : ^Atom
+        atomsReturn : ^Atom,
     ) -> Status ---;
 
     @(link_name="XCopyColormapAndFree")
     copy_colormap_and_free :: proc(
         display : ^Display,
-        colormap : Colormap
+        colormap : Colormap,
     ) -> Colormap ---;
 
     @(link_name="XCreateColormap")
@@ -1291,7 +1291,7 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         visual : ^Visual,
-        alloc : _c.int
+        alloc : _c.int,
     ) -> Colormap ---;
 
     @(link_name="XCreatePixmapCursor")
@@ -1302,7 +1302,7 @@ foreign x11_xlib {
         foregroundColor : ^XColor,
         backgroundColor : ^XColor,
         x : _c.uint,
-        y : _c.uint
+        y : _c.uint,
     ) -> Cursor ---;
 
     @(link_name="XCreateGlyphCursor")
@@ -1313,19 +1313,19 @@ foreign x11_xlib {
         sourceChar : _c.uint,
         maskChar : _c.uint,
         foregroundColor : ^XColor,
-        backgroundColor : ^XColor
+        backgroundColor : ^XColor,
     ) -> Cursor ---;
 
     @(link_name="XCreateFontCursor")
     create_font_cursor :: proc(
         display : ^Display,
-        shape : _c.uint
+        shape : _c.uint,
     ) -> Cursor ---;
 
     @(link_name="XLoadFont")
     load_font :: proc(
         display : ^Display,
-        name : cstring
+        name : cstring,
     ) -> Font ---;
 
     @(link_name="XCreateGC")
@@ -1333,7 +1333,7 @@ foreign x11_xlib {
         display : ^Display,
         d : Drawable,
         valuemask : _c.ulong,
-        values : ^XgcValues
+        values : ^XgcValues,
     ) -> Gc ---;
 
     @(link_name="XGContextFromGC")
@@ -1342,7 +1342,7 @@ foreign x11_xlib {
     @(link_name="XFlushGC")
     flush_gc :: proc(
         display : ^Display,
-        gc : Gc
+        gc : Gc,
     ) ---;
 
     @(link_name="XCreatePixmap")
@@ -1351,7 +1351,7 @@ foreign x11_xlib {
         d : Drawable,
         width : _c.uint,
         height : _c.uint,
-        depth : _c.uint
+        depth : _c.uint,
     ) -> Pixmap ---;
 
     @(link_name="XCreateBitmapFromData")
@@ -1360,7 +1360,7 @@ foreign x11_xlib {
         d : Drawable,
         data : cstring,
         width : _c.uint,
-        height : _c.uint
+        height : _c.uint,
     ) -> Pixmap ---;
 
     @(link_name="XCreatePixmapFromBitmapData")
@@ -1372,7 +1372,7 @@ foreign x11_xlib {
         height : _c.uint,
         fg : _c.ulong,
         bg : _c.ulong,
-        depth : _c.uint
+        depth : _c.uint,
     ) -> Pixmap ---;
 
     @(link_name="XCreateSimpleWindow")
@@ -1385,13 +1385,13 @@ foreign x11_xlib {
         height : _c.uint,
         borderWidth : _c.uint,
         border : _c.ulong,
-        background : _c.ulong
+        background : _c.ulong,
     ) -> Window ---;
 
     @(link_name="XGetSelectionOwner")
     get_selection_owner :: proc(
         display : ^Display,
-        selection : Atom
+        selection : Atom,
     ) -> Window ---;
 
     @(link_name="XCreateWindow")
@@ -1407,14 +1407,14 @@ foreign x11_xlib {
         class : _c.uint,
         visual : ^Visual,
         valuemask : _c.ulong,
-        attributes : ^XSetWindowAttributes
+        attributes : ^XSetWindowAttributes,
     ) -> Window ---;
 
     @(link_name="XListInstalledColormaps")
     list_installed_colormaps :: proc(
         display : ^Display,
         w : Window,
-        numReturn : ^_c.int
+        numReturn : ^_c.int,
     ) -> ^Colormap ---;
 
     @(link_name="XListFonts")
@@ -1422,7 +1422,7 @@ foreign x11_xlib {
         display : ^Display,
         pattern : cstring,
         maxnames : _c.int,
-        actualCountReturn : ^_c.int
+        actualCountReturn : ^_c.int,
     ) -> ^cstring ---;
 
     @(link_name="XListFontsWithInfo")
@@ -1431,46 +1431,46 @@ foreign x11_xlib {
         pattern : cstring,
         maxnames : _c.int,
         countReturn : ^_c.int,
-        infoReturn : ^^XFontStruct
+        infoReturn : ^^XFontStruct,
     ) -> ^cstring ---;
 
     @(link_name="XGetFontPath")
     get_font_path :: proc(
         display : ^Display,
-        npathsReturn : ^_c.int
+        npathsReturn : ^_c.int,
     ) -> ^cstring ---;
 
     @(link_name="XListExtensions")
     list_extensions :: proc(
         display : ^Display,
-        nextensionsReturn : ^_c.int
+        nextensionsReturn : ^_c.int,
     ) -> ^cstring ---;
 
     @(link_name="XListProperties")
     list_properties :: proc(
         display : ^Display,
         w : Window,
-        numPropReturn : ^_c.int
+        numPropReturn : ^_c.int,
     ) -> ^Atom ---;
 
     @(link_name="XListHosts")
     list_hosts :: proc(
         display : ^Display,
         nhostsReturn : ^_c.int,
-        stateReturn : ^Bool
+        stateReturn : ^Bool,
     ) -> ^XHostAddress ---;
 
     @(link_name="XKeycodeToKeysym")
     keycode_to_keysym :: proc(
         display : ^Display,
         keycode : KeyCode,
-        index : _c.int
+        index : _c.int,
     ) -> _c.uint ---;
 
     @(link_name="XLookupKeysym")
     lookup_keysym :: proc(
         keyEvent : ^XKeyEvent,
-        index : _c.int
+        index : _c.int,
     ) -> _c.uint ---;
 
     @(link_name="XGetKeyboardMapping")
@@ -1478,7 +1478,7 @@ foreign x11_xlib {
         display : ^Display,
         firstKeycode : KeyCode,
         keycodeCount : _c.int,
-        keysymsPerKeycodeReturn : ^_c.int
+        keysymsPerKeycodeReturn : ^_c.int,
     ) -> ^_c.uint ---;
 
     @(link_name="XStringToKeysym")
@@ -1514,7 +1514,7 @@ foreign x11_xlib {
     @(link_name="XInitExtension")
     init_extension :: proc(
         display : ^Display,
-        name : cstring
+        name : cstring,
     ) -> ^XExtCodes ---;
 
     @(link_name="XAddExtension")
@@ -1523,7 +1523,7 @@ foreign x11_xlib {
     @(link_name="XFindOnExtensionList")
     find_on_extension_list :: proc(
         structure : ^^XExtData,
-        number : _c.int
+        number : _c.int,
     ) -> ^XExtData ---;
 
     @(link_name="XEHeadOfExtensionList")
@@ -1532,7 +1532,7 @@ foreign x11_xlib {
     @(link_name="XRootWindow")
     root_window :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> Window ---;
 
     @(link_name="XDefaultRootWindow")
@@ -1544,7 +1544,7 @@ foreign x11_xlib {
     @(link_name="XDefaultVisual")
     default_visual :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> ^Visual ---;
 
     @(link_name="XDefaultVisualOfScreen")
@@ -1553,7 +1553,7 @@ foreign x11_xlib {
     @(link_name="XDefaultGC")
     default_gc :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> Gc ---;
 
     @(link_name="XDefaultGCOfScreen")
@@ -1562,13 +1562,13 @@ foreign x11_xlib {
     @(link_name="XBlackPixel")
     black_pixel :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> _c.ulong ---;
 
     @(link_name="XWhitePixel")
     white_pixel :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> _c.ulong ---;
 
     @(link_name="XAllPlanes")
@@ -1595,7 +1595,7 @@ foreign x11_xlib {
     @(link_name="XDefaultColormap")
     default_colormap :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> Colormap ---;
 
     @(link_name="XDefaultColormapOfScreen")
@@ -1607,7 +1607,7 @@ foreign x11_xlib {
     @(link_name="XScreenOfDisplay")
     screen_of_display :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> ^Screen ---;
 
     @(link_name="XDefaultScreenOfDisplay")
@@ -1628,14 +1628,14 @@ foreign x11_xlib {
     @(link_name="XListPixmapFormats")
     list_pixmap_formats :: proc(
         display : ^Display,
-        countReturn : ^_c.int
+        countReturn : ^_c.int,
     ) -> ^XPixmapFormatValues ---;
 
     @(link_name="XListDepths")
     list_depths :: proc(
         display : ^Display,
         screenNumber : _c.int,
-        countReturn : ^_c.int
+        countReturn : ^_c.int,
     ) -> ^_c.int ---;
 
     @(link_name="XReconfigureWMWindow")
@@ -1644,7 +1644,7 @@ foreign x11_xlib {
         w : Window,
         screenNumber : _c.int,
         mask : _c.uint,
-        changes : ^XWindowChanges
+        changes : ^XWindowChanges,
     ) -> Status ---;
 
     @(link_name="XGetWMProtocols")
@@ -1652,7 +1652,7 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         protocolsReturn : ^^Atom,
-        countReturn : ^_c.int
+        countReturn : ^_c.int,
     ) -> Status ---;
 
     @(link_name="XSetWMProtocols")
@@ -1660,21 +1660,21 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         protocols : ^Atom,
-        count : _c.int
+        count : _c.int,
     ) -> Status ---;
 
     @(link_name="XIconifyWindow")
     iconify_window :: proc(
         display : ^Display,
         w : Window,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> Status ---;
 
     @(link_name="XWithdrawWindow")
     withdraw_window :: proc(
         display : ^Display,
         w : Window,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> Status ---;
 
     @(link_name="XGetCommand")
@@ -1682,7 +1682,7 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         argvReturn : ^^cstring,
-        argcReturn : ^_c.int
+        argcReturn : ^_c.int,
     ) -> Status ---;
 
     @(link_name="XGetWMColormapWindows")
@@ -1690,7 +1690,7 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         windowsReturn : ^^Window,
-        countReturn : ^_c.int
+        countReturn : ^_c.int,
     ) -> Status ---;
 
     @(link_name="XSetWMColormapWindows")
@@ -1698,7 +1698,7 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         colormapWindows : ^Window,
-        count : _c.int
+        count : _c.int,
     ) -> Status ---;
 
     @(link_name="XFreeStringList")
@@ -1708,7 +1708,7 @@ foreign x11_xlib {
     set_transient_for_hint :: proc(
         display : ^Display,
         w : Window,
-        propWindow : Window
+        propWindow : Window,
     ) -> _c.int ---;
 
     @(link_name="XActivateScreenSaver")
@@ -1717,33 +1717,33 @@ foreign x11_xlib {
     @(link_name="XAddHost")
     add_host :: proc(
         display : ^Display,
-        host : ^XHostAddress
+        host : ^XHostAddress,
     ) -> _c.int ---;
 
     @(link_name="XAddHosts")
     add_hosts :: proc(
         display : ^Display,
         hosts : ^XHostAddress,
-        numHosts : _c.int
+        numHosts : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XAddToExtensionList")
     add_to_extension_list :: proc(
         structure : ^^Xextdata,
-        extData : ^XExtData
+        extData : ^XExtData,
     ) -> _c.int ---;
 
     @(link_name="XAddToSaveSet")
     add_to_save_set :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XAllocColor")
     alloc_color :: proc(
         display : ^Display,
         colormap : Colormap,
-        screenInOut : ^XColor
+        screenInOut : ^XColor,
     ) -> Status ---;
 
     @(link_name="XAllocColorCells")
@@ -1754,7 +1754,7 @@ foreign x11_xlib {
         planeMasksReturn : ^_c.ulong,
         nplanes : _c.uint,
         pixelsReturn : ^_c.ulong,
-        npixels : _c.uint
+        npixels : _c.uint,
     ) -> Status ---;
 
     @(link_name="XAllocColorPlanes")
@@ -1769,7 +1769,7 @@ foreign x11_xlib {
         nblues : _c.int,
         rmaskReturn : ^_c.ulong,
         gmaskReturn : ^_c.ulong,
-        bmaskReturn : ^_c.ulong
+        bmaskReturn : ^_c.ulong,
     ) -> Status ---;
 
     @(link_name="XAllocNamedColor")
@@ -1778,14 +1778,14 @@ foreign x11_xlib {
         colormap : Colormap,
         colorName : cstring,
         screenDefReturn : ^XColor,
-        exactDefReturn : ^XColor
+        exactDefReturn : ^XColor,
     ) -> Status ---;
 
     @(link_name="XAllowEvents")
     allow_events :: proc(
         display : ^Display,
         eventMode : _c.int,
-        time : Time
+        time : Time,
     ) -> _c.int ---;
 
     @(link_name="XAutoRepeatOff")
@@ -1797,7 +1797,7 @@ foreign x11_xlib {
     @(link_name="XBell")
     bell :: proc(
         display : ^Display,
-        percent : _c.int
+        percent : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XBitmapBitOrder")
@@ -1817,7 +1817,7 @@ foreign x11_xlib {
         display : ^Display,
         eventMask : _c.uint,
         cursor : Cursor,
-        time : Time
+        time : Time,
     ) -> _c.int ---;
 
     @(link_name="XChangeGC")
@@ -1825,14 +1825,14 @@ foreign x11_xlib {
         display : ^Display,
         gc : Gc,
         valuemask : _c.ulong,
-        values : ^XgcValues
+        values : ^XgcValues,
     ) -> _c.int ---;
 
     @(link_name="XChangeKeyboardControl")
     change_keyboard_control :: proc(
         display : ^Display,
         valueMask : _c.ulong,
-        values : ^XKeyboardControl
+        values : ^XKeyboardControl,
     ) -> _c.int ---;
 
     @(link_name="XChangeKeyboardMapping")
@@ -1841,7 +1841,7 @@ foreign x11_xlib {
         firstKeycode : _c.int,
         keysymsPerKeycode : _c.int,
         keysyms : ^_c.uint,
-        numCodes : _c.int
+        numCodes : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XChangePointerControl")
@@ -1851,7 +1851,7 @@ foreign x11_xlib {
         doThreshold : Bool,
         accelNumerator : _c.int,
         accelDenominator : _c.int,
-        threshold : _c.int
+        threshold : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XChangeProperty")
@@ -1863,14 +1863,14 @@ foreign x11_xlib {
         format : _c.int,
         mode : _c.int,
         data : ^_c.uchar,
-        nelements : _c.int
+        nelements : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XChangeSaveSet")
     change_save_set :: proc(
         display : ^Display,
         w : Window,
-        changeMode : _c.int
+        changeMode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XChangeWindowAttributes")
@@ -1878,21 +1878,21 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         valuemask : _c.ulong,
-        attributes : ^XSetWindowAttributes
+        attributes : ^XSetWindowAttributes,
     ) -> _c.int ---;
 
     @(link_name="XCheckMaskEvent")
     check_mask_event :: proc(
         display : ^Display,
         eventMask : _c.long,
-        eventReturn : ^XEvent
+        eventReturn : ^XEvent,
     ) -> Bool ---;
 
     @(link_name="XCheckTypedEvent")
     check_typed_event :: proc(
         display : ^Display,
         eventType : _c.int,
-        eventReturn : ^XEvent
+        eventReturn : ^XEvent,
     ) -> Bool ---;
 
     @(link_name="XCheckTypedWindowEvent")
@@ -1900,7 +1900,7 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         eventType : _c.int,
-        eventReturn : ^XEvent
+        eventReturn : ^XEvent,
     ) -> Bool ---;
 
     @(link_name="XCheckWindowEvent")
@@ -1908,26 +1908,26 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         eventMask : _c.long,
-        eventReturn : ^XEvent
+        eventReturn : ^XEvent,
     ) -> Bool ---;
 
     @(link_name="XCirculateSubwindows")
     circulate_subwindows :: proc(
         display : ^Display,
         w : Window,
-        direction : _c.int
+        direction : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XCirculateSubwindowsDown")
     circulate_subwindows_down :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XCirculateSubwindowsUp")
     circulate_subwindows_up :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XClearArea")
@@ -1938,13 +1938,13 @@ foreign x11_xlib {
         y : _c.int,
         width : _c.uint,
         height : _c.uint,
-        exposures : Bool
+        exposures : Bool,
     ) -> _c.int ---;
 
     @(link_name="XClearWindow")
     clear_window :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XCloseDisplay")
@@ -1955,7 +1955,7 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         valueMask : _c.uint,
-        values : ^XWindowChanges
+        values : ^XWindowChanges,
     ) -> _c.int ---;
 
     @(link_name="XConnectionNumber")
@@ -1968,7 +1968,7 @@ foreign x11_xlib {
         target : Atom,
         property : Atom,
         requestor : Window,
-        time : Time
+        time : Time,
     ) -> _c.int ---;
 
     @(link_name="XCopyArea")
@@ -1982,7 +1982,7 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         destX : _c.int,
-        destY : _c.int
+        destY : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XCopyGC")
@@ -1990,7 +1990,7 @@ foreign x11_xlib {
         display : ^Display,
         src : Gc,
         valuemask : _c.ulong,
-        dest : Gc
+        dest : Gc,
     ) -> _c.int ---;
 
     @(link_name="XCopyPlane")
@@ -2005,13 +2005,13 @@ foreign x11_xlib {
         height : _c.uint,
         destX : _c.int,
         destY : _c.int,
-        plane : _c.ulong
+        plane : _c.ulong,
     ) -> _c.int ---;
 
     @(link_name="XDefaultDepth")
     default_depth :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDefaultDepthOfScreen")
@@ -2024,26 +2024,26 @@ foreign x11_xlib {
     define_cursor :: proc(
         display : ^Display,
         w : Window,
-        cursor : Cursor
+        cursor : Cursor,
     ) -> _c.int ---;
 
     @(link_name="XDeleteProperty")
     delete_property :: proc(
         display : ^Display,
         w : Window,
-        property : Atom
+        property : Atom,
     ) -> _c.int ---;
 
     @(link_name="XDestroyWindow")
     destroy_window :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XDestroySubwindows")
     destroy_subwindows :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XDoesBackingStore")
@@ -2058,44 +2058,44 @@ foreign x11_xlib {
     @(link_name="XDisplayCells")
     display_cells :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDisplayHeight")
     display_height :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDisplayHeightMM")
     display_height_mm :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDisplayKeycodes")
     display_keycodes :: proc(
         display : ^Display,
         minKeycodesReturn : ^_c.int,
-        maxKeycodesReturn : ^_c.int
+        maxKeycodesReturn : ^_c.int,
     ) -> _c.int ---;
 
     @(link_name="XDisplayPlanes")
     display_planes :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDisplayWidth")
     display_width :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDisplayWidthMM")
     display_width_mm :: proc(
         display : ^Display,
-        screenNumber : _c.int
+        screenNumber : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawArc")
@@ -2108,7 +2108,7 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         angle1 : _c.int,
-        angle2 : _c.int
+        angle2 : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawArcs")
@@ -2117,7 +2117,7 @@ foreign x11_xlib {
         d : Drawable,
         gc : Gc,
         arcs : ^XArc,
-        narcs : _c.int
+        narcs : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawImageString")
@@ -2128,7 +2128,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         string : cstring,
-        length : _c.int
+        length : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawImageString16")
@@ -2139,7 +2139,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         string : ^XChar2B,
-        length : _c.int
+        length : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawLine")
@@ -2150,7 +2150,7 @@ foreign x11_xlib {
         x1 : _c.int,
         y1 : _c.int,
         x2 : _c.int,
-        y2 : _c.int
+        y2 : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawLines")
@@ -2160,7 +2160,7 @@ foreign x11_xlib {
         gc : Gc,
         points : ^XPoint,
         npoints : _c.int,
-        mode : _c.int
+        mode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawPoint")
@@ -2169,7 +2169,7 @@ foreign x11_xlib {
         d : Drawable,
         gc : Gc,
         x : _c.int,
-        y : _c.int
+        y : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawPoints")
@@ -2179,7 +2179,7 @@ foreign x11_xlib {
         gc : Gc,
         points : ^XPoint,
         npoints : _c.int,
-        mode : _c.int
+        mode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawRectangle")
@@ -2190,7 +2190,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         width : _c.uint,
-        height : _c.uint
+        height : _c.uint,
     ) -> _c.int ---;
 
     @(link_name="XDrawRectangles")
@@ -2199,7 +2199,7 @@ foreign x11_xlib {
         d : Drawable,
         gc : Gc,
         rectangles : ^XRectangle,
-        nrectangles : _c.int
+        nrectangles : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawSegments")
@@ -2208,7 +2208,7 @@ foreign x11_xlib {
         d : Drawable,
         gc : Gc,
         segments : ^XSegment,
-        nsegments : _c.int
+        nsegments : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawString")
@@ -2219,7 +2219,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         string : cstring,
-        length : _c.int
+        length : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawString16")
@@ -2230,7 +2230,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         string : ^XChar2B,
-        length : _c.int
+        length : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawText")
@@ -2241,7 +2241,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         items : ^XTextItem,
-        nitems : _c.int
+        nitems : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XDrawText16")
@@ -2252,7 +2252,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         items : ^XTextItem16,
-        nitems : _c.int
+        nitems : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XEnableAccessControl")
@@ -2261,14 +2261,14 @@ foreign x11_xlib {
     @(link_name="XEventsQueued")
     events_queued :: proc(
         display : ^Display,
-        mode : _c.int
+        mode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XFetchName")
     fetch_name :: proc(
         display : ^Display,
         w : Window,
-        windowNameReturn : ^cstring
+        windowNameReturn : ^cstring,
     ) -> Status ---;
 
     @(link_name="XFillArc")
@@ -2281,7 +2281,7 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         angle1 : _c.int,
-        angle2 : _c.int
+        angle2 : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XFillArcs")
@@ -2290,7 +2290,7 @@ foreign x11_xlib {
         d : Drawable,
         gc : Gc,
         arcs : ^XArc,
-        narcs : _c.int
+        narcs : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XFillPolygon")
@@ -2301,7 +2301,7 @@ foreign x11_xlib {
         points : ^XPoint,
         npoints : _c.int,
         shape : _c.int,
-        mode : _c.int
+        mode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XFillRectangle")
@@ -2312,7 +2312,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         width : _c.uint,
-        height : _c.uint
+        height : _c.uint,
     ) -> _c.int ---;
 
     @(link_name="XFillRectangles")
@@ -2321,7 +2321,7 @@ foreign x11_xlib {
         d : Drawable,
         gc : Gc,
         rectangles : ^XRectangle,
-        nrectangles : _c.int
+        nrectangles : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XFlush")
@@ -2330,7 +2330,7 @@ foreign x11_xlib {
     @(link_name="XForceScreenSaver")
     force_screen_saver :: proc(
         display : ^Display,
-        mode : _c.int
+        mode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XFree")
@@ -2339,7 +2339,7 @@ foreign x11_xlib {
     @(link_name="XFreeColormap")
     free_colormap :: proc(
         display : ^Display,
-        colormap : Colormap
+        colormap : Colormap,
     ) -> _c.int ---;
 
     @(link_name="XFreeColors")
@@ -2348,13 +2348,13 @@ foreign x11_xlib {
         colormap : Colormap,
         pixels : ^_c.ulong,
         npixels : _c.int,
-        planes : _c.ulong
+        planes : _c.ulong,
     ) -> _c.int ---;
 
     @(link_name="XFreeCursor")
     free_cursor :: proc(
         display : ^Display,
-        cursor : Cursor
+        cursor : Cursor,
     ) -> _c.int ---;
 
     @(link_name="XFreeExtensionList")
@@ -2363,14 +2363,14 @@ foreign x11_xlib {
     @(link_name="XFreeFont")
     free_font :: proc(
         display : ^Display,
-        fontStruct : ^XFontStruct
+        fontStruct : ^XFontStruct,
     ) -> _c.int ---;
 
     @(link_name="XFreeFontInfo")
     free_font_info :: proc(
         names : ^cstring,
         freeInfo : ^XFontStruct,
-        actualCount : _c.int
+        actualCount : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XFreeFontNames")
@@ -2382,7 +2382,7 @@ foreign x11_xlib {
     @(link_name="XFreeGC")
     free_gc :: proc(
         display : ^Display,
-        gc : Gc
+        gc : Gc,
     ) -> _c.int ---;
 
     @(link_name="XFreeModifiermap")
@@ -2391,7 +2391,7 @@ foreign x11_xlib {
     @(link_name="XFreePixmap")
     free_pixmap :: proc(
         display : ^Display,
-        pixmap : Pixmap
+        pixmap : Pixmap,
     ) -> _c.int ---;
 
     @(link_name="XGeometry")
@@ -2408,7 +2408,7 @@ foreign x11_xlib {
         x_return : ^_c.int,
         y_return : ^_c.int,
         widthReturn : ^_c.int,
-        heightReturn : ^_c.int
+        heightReturn : ^_c.int,
     ) -> _c.int ---;
 
     @(link_name="XGetErrorDatabaseText")
@@ -2418,7 +2418,7 @@ foreign x11_xlib {
         message : cstring,
         defaultString : cstring,
         bufferReturn : cstring,
-        length : _c.int
+        length : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XGetErrorText")
@@ -2426,14 +2426,14 @@ foreign x11_xlib {
         display : ^Display,
         code : _c.int,
         bufferReturn : cstring,
-        length : _c.int
+        length : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XGetFontProperty")
     get_font_property :: proc(
         fontStruct : ^XFontStruct,
         atom : Atom,
-        valueReturn : ^_c.ulong
+        valueReturn : ^_c.ulong,
     ) -> Bool ---;
 
     @(link_name="XGetGCValues")
@@ -2441,7 +2441,7 @@ foreign x11_xlib {
         display : ^Display,
         gc : Gc,
         valuemask : _c.ulong,
-        valuesReturn : ^XgcValues
+        valuesReturn : ^XgcValues,
     ) -> Status ---;
 
     @(link_name="XGetGeometry")
@@ -2454,27 +2454,27 @@ foreign x11_xlib {
         widthReturn : ^_c.uint,
         heightReturn : ^_c.uint,
         borderWidthReturn : ^_c.uint,
-        depthReturn : ^_c.uint
+        depthReturn : ^_c.uint,
     ) -> Status ---;
 
     @(link_name="XGetIconName")
     get_icon_name :: proc(
         display : ^Display,
         w : Window,
-        iconNameReturn : ^cstring
+        iconNameReturn : ^cstring,
     ) -> Status ---;
 
     @(link_name="XGetInputFocus")
     get_input_focus :: proc(
         display : ^Display,
         focusReturn : ^Window,
-        revertToReturn : ^_c.int
+        revertToReturn : ^_c.int,
     ) -> _c.int ---;
 
     @(link_name="XGetKeyboardControl")
     get_keyboard_control :: proc(
         display : ^Display,
-        valuesReturn : ^XKeyboardState
+        valuesReturn : ^XKeyboardState,
     ) -> _c.int ---;
 
     @(link_name="XGetPointerControl")
@@ -2482,14 +2482,14 @@ foreign x11_xlib {
         display : ^Display,
         accelNumeratorReturn : ^_c.int,
         accelDenominatorReturn : ^_c.int,
-        thresholdReturn : ^_c.int
+        thresholdReturn : ^_c.int,
     ) -> _c.int ---;
 
     @(link_name="XGetPointerMapping")
     get_pointer_mapping :: proc(
         display : ^Display,
         mapReturn : ^_c.uchar,
-        nmap : _c.int
+        nmap : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XGetScreenSaver")
@@ -2498,14 +2498,14 @@ foreign x11_xlib {
         timeoutReturn : ^_c.int,
         intervalReturn : ^_c.int,
         preferBlankingReturn : ^_c.int,
-        allowExposuresReturn : ^_c.int
+        allowExposuresReturn : ^_c.int,
     ) -> _c.int ---;
 
     @(link_name="XGetTransientForHint")
     get_transient_for_hint :: proc(
         display : ^Display,
         w : Window,
-        propWindowReturn : ^Window
+        propWindowReturn : ^Window,
     ) -> Status ---;
 
     @(link_name="XGetWindowProperty")
@@ -2521,14 +2521,14 @@ foreign x11_xlib {
         actualFormatReturn : ^_c.int,
         nitemsReturn : ^_c.ulong,
         bytesAfterReturn : ^_c.ulong,
-        propReturn : ^^_c.uchar
+        propReturn : ^^_c.uchar,
     ) -> _c.int ---;
 
     @(link_name="XGetWindowAttributes")
     get_window_attributes :: proc(
         display : ^Display,
         w : Window,
-        windowAttributesReturn : ^XWindowAttributes
+        windowAttributesReturn : ^XWindowAttributes,
     ) -> Status ---;
 
     @(link_name="XGrabButton")
@@ -2542,7 +2542,7 @@ foreign x11_xlib {
         pointerMode : _c.int,
         keyboardMode : _c.int,
         confineTo : Window,
-        cursor : Cursor
+        cursor : Cursor,
     ) -> _c.int ---;
 
     @(link_name="XGrabKey")
@@ -2553,7 +2553,7 @@ foreign x11_xlib {
         grabWindow : Window,
         ownerEvents : Bool,
         pointerMode : _c.int,
-        keyboardMode : _c.int
+        keyboardMode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XGrabKeyboard")
@@ -2563,7 +2563,7 @@ foreign x11_xlib {
         ownerEvents : Bool,
         pointerMode : _c.int,
         keyboardMode : _c.int,
-        time : Time
+        time : Time,
     ) -> _c.int ---;
 
     @(link_name="XGrabPointer")
@@ -2576,7 +2576,7 @@ foreign x11_xlib {
         keyboardMode : _c.int,
         confineTo : Window,
         cursor : Cursor,
-        time : Time
+        time : Time,
     ) -> _c.int ---;
 
     @(link_name="XGrabServer")
@@ -2594,19 +2594,19 @@ foreign x11_xlib {
     @(link_name="XInstallColormap")
     install_colormap :: proc(
         display : ^Display,
-        colormap : Colormap
+        colormap : Colormap,
     ) -> _c.int ---;
 
     @(link_name="XKeysymToKeycode")
     keysym_to_keycode :: proc(
         display : ^Display,
-        keysym : _c.uint
+        keysym : _c.uint,
     ) -> KeyCode ---;
 
     @(link_name="XKillClient")
     kill_client :: proc(
         display : ^Display,
-        resource : Xid
+        resource : Xid,
     ) -> _c.int ---;
 
     @(link_name="XLookupColor")
@@ -2615,38 +2615,38 @@ foreign x11_xlib {
         colormap : Colormap,
         colorName : cstring,
         exactDefReturn : ^XColor,
-        screenDefReturn : ^XColor
+        screenDefReturn : ^XColor,
     ) -> Status ---;
 
     @(link_name="XLowerWindow")
     lower_window :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XMapRaised")
     map_raised :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XMapSubwindows")
     map_subwindows :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XMapWindow")
     map_window :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XMaskEvent")
     mask_event :: proc(
         display : ^Display,
         eventMask : _c.long,
-        eventReturn : ^XEvent
+        eventReturn : ^XEvent,
     ) -> _c.int ---;
 
     @(link_name="XMaxCmapsOfScreen")
@@ -2662,7 +2662,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         width : _c.uint,
-        height : _c.uint
+        height : _c.uint,
     ) -> _c.int ---;
 
     @(link_name="XMoveWindow")
@@ -2670,13 +2670,13 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         x : _c.int,
-        y : _c.int
+        y : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XNextEvent")
     next_event :: proc(
         display : ^Display,
-        eventReturn : ^XEvent
+        eventReturn : ^XEvent,
     ) -> _c.int ---;
 
     @(link_name="XNoOp")
@@ -2687,7 +2687,7 @@ foreign x11_xlib {
         display : ^Display,
         colormap : Colormap,
         spec : cstring,
-        exactDefReturn : ^XColor
+        exactDefReturn : ^XColor,
     ) -> Status ---;
 
     @(link_name="XParseGeometry")
@@ -2696,13 +2696,13 @@ foreign x11_xlib {
         x_return : ^_c.int,
         y_return : ^_c.int,
         widthReturn : ^_c.uint,
-        heightReturn : ^_c.uint
+        heightReturn : ^_c.uint,
     ) -> _c.int ---;
 
     @(link_name="XPeekEvent")
     peek_event :: proc(
         display : ^Display,
-        eventReturn : ^XEvent
+        eventReturn : ^XEvent,
     ) -> _c.int ---;
 
     @(link_name="XPending")
@@ -2720,7 +2720,7 @@ foreign x11_xlib {
     @(link_name="XPutBackEvent")
     put_back_event :: proc(
         display : ^Display,
-        event : ^XEvent
+        event : ^XEvent,
     ) -> _c.int ---;
 
     @(link_name="XPutImage")
@@ -2734,7 +2734,7 @@ foreign x11_xlib {
         destX : _c.int,
         destY : _c.int,
         width : _c.uint,
-        height : _c.uint
+        height : _c.uint,
     ) -> _c.int ---;
 
     @(link_name="XQLength")
@@ -2747,7 +2747,7 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         widthReturn : ^_c.uint,
-        heightReturn : ^_c.uint
+        heightReturn : ^_c.uint,
     ) -> Status ---;
 
     @(link_name="XQueryBestSize")
@@ -2758,7 +2758,7 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         widthReturn : ^_c.uint,
-        heightReturn : ^_c.uint
+        heightReturn : ^_c.uint,
     ) -> Status ---;
 
     @(link_name="XQueryBestStipple")
@@ -2768,7 +2768,7 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         widthReturn : ^_c.uint,
-        heightReturn : ^_c.uint
+        heightReturn : ^_c.uint,
     ) -> Status ---;
 
     @(link_name="XQueryBestTile")
@@ -2778,14 +2778,14 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         widthReturn : ^_c.uint,
-        heightReturn : ^_c.uint
+        heightReturn : ^_c.uint,
     ) -> Status ---;
 
     @(link_name="XQueryColor")
     query_color :: proc(
         display : ^Display,
         colormap : Colormap,
-        defInOut : ^XColor
+        defInOut : ^XColor,
     ) -> _c.int ---;
 
     @(link_name="XQueryColors")
@@ -2793,7 +2793,7 @@ foreign x11_xlib {
         display : ^Display,
         colormap : Colormap,
         defsInOut : ^XColor,
-        ncolors : _c.int
+        ncolors : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XQueryExtension")
@@ -2802,13 +2802,13 @@ foreign x11_xlib {
         name : cstring,
         majorOpcodeReturn : ^_c.int,
         firstEventReturn : ^_c.int,
-        firstErrorReturn : ^_c.int
+        firstErrorReturn : ^_c.int,
     ) -> Bool ---;
 
     @(link_name="XQueryKeymap")
     query_keymap :: proc(
         display : ^Display,
-        keysReturn : [32]_c.char
+        keysReturn : [32]_c.char,
     ) -> _c.int ---;
 
     @(link_name="XQueryPointer")
@@ -2821,7 +2821,7 @@ foreign x11_xlib {
         rootY_return : ^_c.int,
         winX_return : ^_c.int,
         winY_return : ^_c.int,
-        maskReturn : ^_c.uint
+        maskReturn : ^_c.uint,
     ) -> Bool ---;
 
     @(link_name="XQueryTextExtents")
@@ -2833,7 +2833,7 @@ foreign x11_xlib {
         directionReturn : ^_c.int,
         fontAscentReturn : ^_c.int,
         fontDescentReturn : ^_c.int,
-        overallReturn : ^XCharStruct
+        overallReturn : ^XCharStruct,
     ) -> _c.int ---;
 
     @(link_name="XQueryTextExtents16")
@@ -2845,7 +2845,7 @@ foreign x11_xlib {
         directionReturn : ^_c.int,
         fontAscentReturn : ^_c.int,
         fontDescentReturn : ^_c.int,
-        overallReturn : ^XCharStruct
+        overallReturn : ^XCharStruct,
     ) -> _c.int ---;
 
     @(link_name="XQueryTree")
@@ -2855,13 +2855,13 @@ foreign x11_xlib {
         rootReturn : ^Window,
         parentReturn : ^Window,
         childrenReturn : ^^Window,
-        nchildrenReturn : ^_c.uint
+        nchildrenReturn : ^_c.uint,
     ) -> Status ---;
 
     @(link_name="XRaiseWindow")
     raise_window :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XReadBitmapFile")
@@ -2873,7 +2873,7 @@ foreign x11_xlib {
         heightReturn : ^_c.uint,
         bitmapReturn : ^Pixmap,
         x_hotReturn : ^_c.int,
-        y_hotReturn : ^_c.int
+        y_hotReturn : ^_c.int,
     ) -> _c.int ---;
 
     @(link_name="XReadBitmapFileData")
@@ -2883,7 +2883,7 @@ foreign x11_xlib {
         heightReturn : ^_c.uint,
         dataReturn : ^^_c.uchar,
         x_hotReturn : ^_c.int,
-        y_hotReturn : ^_c.int
+        y_hotReturn : ^_c.int,
     ) -> _c.int ---;
 
     @(link_name="XRebindKeysym")
@@ -2893,7 +2893,7 @@ foreign x11_xlib {
         list : ^_c.uint,
         modCount : _c.int,
         string : ^_c.uchar,
-        bytesString : _c.int
+        bytesString : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XRecolorCursor")
@@ -2901,7 +2901,7 @@ foreign x11_xlib {
         display : ^Display,
         cursor : Cursor,
         foregroundColor : ^XColor,
-        backgroundColor : ^XColor
+        backgroundColor : ^XColor,
     ) -> _c.int ---;
 
     @(link_name="XRefreshKeyboardMapping")
@@ -2910,20 +2910,20 @@ foreign x11_xlib {
     @(link_name="XRemoveFromSaveSet")
     remove_from_save_set :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XRemoveHost")
     remove_host :: proc(
         display : ^Display,
-        host : ^XHostAddress
+        host : ^XHostAddress,
     ) -> _c.int ---;
 
     @(link_name="XRemoveHosts")
     remove_hosts :: proc(
         display : ^Display,
         hosts : ^XHostAddress,
-        numHosts : _c.int
+        numHosts : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XReparentWindow")
@@ -2932,7 +2932,7 @@ foreign x11_xlib {
         w : Window,
         parent : Window,
         x : _c.int,
-        y : _c.int
+        y : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XResetScreenSaver")
@@ -2943,20 +2943,20 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         width : _c.uint,
-        height : _c.uint
+        height : _c.uint,
     ) -> _c.int ---;
 
     @(link_name="XRestackWindows")
     restack_windows :: proc(
         display : ^Display,
         windows : ^Window,
-        nwindows : _c.int
+        nwindows : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XRotateBuffers")
     rotate_buffers :: proc(
         display : ^Display,
-        rotate : _c.int
+        rotate : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XRotateWindowProperties")
@@ -2965,7 +2965,7 @@ foreign x11_xlib {
         w : Window,
         properties : ^Atom,
         numProp : _c.int,
-        npositions : _c.int
+        npositions : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XScreenCount")
@@ -2975,7 +2975,7 @@ foreign x11_xlib {
     select_input :: proc(
         display : ^Display,
         w : Window,
-        eventMask : _c.long
+        eventMask : _c.long,
     ) -> _c.int ---;
 
     @(link_name="XSendEvent")
@@ -2984,34 +2984,34 @@ foreign x11_xlib {
         w : Window,
         propagate : Bool,
         eventMask : _c.long,
-        eventSend : ^XEvent
+        eventSend : ^XEvent,
     ) -> Status ---;
 
     @(link_name="XSetAccessControl")
     set_access_control :: proc(
         display : ^Display,
-        mode : _c.int
+        mode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetArcMode")
     set_arc_mode :: proc(
         display : ^Display,
         gc : Gc,
-        arcMode : _c.int
+        arcMode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetBackground")
     set_background :: proc(
         display : ^Display,
         gc : Gc,
-        background : _c.ulong
+        background : _c.ulong,
     ) -> _c.int ---;
 
     @(link_name="XSetClipMask")
     set_clip_mask :: proc(
         display : ^Display,
         gc : Gc,
-        pixmap : Pixmap
+        pixmap : Pixmap,
     ) -> _c.int ---;
 
     @(link_name="XSetClipOrigin")
@@ -3019,7 +3019,7 @@ foreign x11_xlib {
         display : ^Display,
         gc : Gc,
         clipX_origin : _c.int,
-        clipY_origin : _c.int
+        clipY_origin : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetClipRectangles")
@@ -3030,13 +3030,13 @@ foreign x11_xlib {
         clipY_origin : _c.int,
         rectangles : ^XRectangle,
         n : _c.int,
-        ordering : _c.int
+        ordering : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetCloseDownMode")
     set_close_down_mode :: proc(
         display : ^Display,
-        closeMode : _c.int
+        closeMode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetCommand")
@@ -3044,7 +3044,7 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         argv : ^cstring,
-        argc : _c.int
+        argc : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetDashes")
@@ -3053,63 +3053,63 @@ foreign x11_xlib {
         gc : Gc,
         dashOffset : _c.int,
         dashList : cstring,
-        n : _c.int
+        n : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetFillRule")
     set_fill_rule :: proc(
         display : ^Display,
         gc : Gc,
-        fillRule : _c.int
+        fillRule : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetFillStyle")
     set_fill_style :: proc(
         display : ^Display,
         gc : Gc,
-        fillStyle : _c.int
+        fillStyle : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetFont")
     set_font :: proc(
         display : ^Display,
         gc : Gc,
-        font : Font
+        font : Font,
     ) -> _c.int ---;
 
     @(link_name="XSetFontPath")
     set_font_path :: proc(
         display : ^Display,
         directories : ^cstring,
-        ndirs : _c.int
+        ndirs : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetForeground")
     set_foreground :: proc(
         display : ^Display,
         gc : Gc,
-        foreground : _c.ulong
+        foreground : _c.ulong,
     ) -> _c.int ---;
 
     @(link_name="XSetFunction")
     set_function :: proc(
         display : ^Display,
         gc : Gc,
-        function : _c.int
+        function : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetGraphicsExposures")
     set_graphics_exposures :: proc(
         display : ^Display,
         gc : Gc,
-        graphicsExposures : Bool
+        graphicsExposures : Bool,
     ) -> _c.int ---;
 
     @(link_name="XSetIconName")
     set_icon_name :: proc(
         display : ^Display,
         w : Window,
-        iconName : cstring
+        iconName : cstring,
     ) -> _c.int ---;
 
     @(link_name="XSetInputFocus")
@@ -3117,7 +3117,7 @@ foreign x11_xlib {
         display : ^Display,
         focus : Window,
         revertTo : _c.int,
-        time : Time
+        time : Time,
     ) -> _c.int ---;
 
     @(link_name="XSetLineAttributes")
@@ -3127,27 +3127,27 @@ foreign x11_xlib {
         lineWidth : _c.uint,
         lineStyle : _c.int,
         capStyle : _c.int,
-        joinStyle : _c.int
+        joinStyle : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetModifierMapping")
     set_modifier_mapping :: proc(
         display : ^Display,
-        modmap : ^XModifierKeymap
+        modmap : ^XModifierKeymap,
     ) -> _c.int ---;
 
     @(link_name="XSetPlaneMask")
     set_plane_mask :: proc(
         display : ^Display,
         gc : Gc,
-        planeMask : _c.ulong
+        planeMask : _c.ulong,
     ) -> _c.int ---;
 
     @(link_name="XSetPointerMapping")
     set_pointer_mapping :: proc(
         display : ^Display,
         _map : ^_c.uchar,
-        nmap : _c.int
+        nmap : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetScreenSaver")
@@ -3156,7 +3156,7 @@ foreign x11_xlib {
         timeout : _c.int,
         interval : _c.int,
         preferBlanking : _c.int,
-        allowExposures : _c.int
+        allowExposures : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetSelectionOwner")
@@ -3164,7 +3164,7 @@ foreign x11_xlib {
         display : ^Display,
         selection : Atom,
         owner : Window,
-        time : Time
+        time : Time,
     ) -> _c.int ---;
 
     @(link_name="XSetState")
@@ -3174,21 +3174,21 @@ foreign x11_xlib {
         foreground : _c.ulong,
         background : _c.ulong,
         function : _c.int,
-        planeMask : _c.ulong
+        planeMask : _c.ulong,
     ) -> _c.int ---;
 
     @(link_name="XSetStipple")
     set_stipple :: proc(
         display : ^Display,
         gc : Gc,
-        stipple : Pixmap
+        stipple : Pixmap,
     ) -> _c.int ---;
 
     @(link_name="XSetSubwindowMode")
     set_subwindow_mode :: proc(
         display : ^Display,
         gc : Gc,
-        subwindowMode : _c.int
+        subwindowMode : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetTSOrigin")
@@ -3196,56 +3196,56 @@ foreign x11_xlib {
         display : ^Display,
         gc : Gc,
         tsX_origin : _c.int,
-        tsY_origin : _c.int
+        tsY_origin : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSetTile")
     set_tile :: proc(
         display : ^Display,
         gc : Gc,
-        tile : Pixmap
+        tile : Pixmap,
     ) -> _c.int ---;
 
     @(link_name="XSetWindowBackground")
     set_window_background :: proc(
         display : ^Display,
         w : Window,
-        backgroundPixel : _c.ulong
+        backgroundPixel : _c.ulong,
     ) -> _c.int ---;
 
     @(link_name="XSetWindowBackgroundPixmap")
     set_window_background_pixmap :: proc(
         display : ^Display,
         w : Window,
-        backgroundPixmap : Pixmap
+        backgroundPixmap : Pixmap,
     ) -> _c.int ---;
 
     @(link_name="XSetWindowBorder")
     set_window_border :: proc(
         display : ^Display,
         w : Window,
-        borderPixel : _c.ulong
+        borderPixel : _c.ulong,
     ) -> _c.int ---;
 
     @(link_name="XSetWindowBorderPixmap")
     set_window_border_pixmap :: proc(
         display : ^Display,
         w : Window,
-        borderPixmap : Pixmap
+        borderPixmap : Pixmap,
     ) -> _c.int ---;
 
     @(link_name="XSetWindowBorderWidth")
     set_window_border_width :: proc(
         display : ^Display,
         w : Window,
-        width : _c.uint
+        width : _c.uint,
     ) -> _c.int ---;
 
     @(link_name="XSetWindowColormap")
     set_window_colormap :: proc(
         display : ^Display,
         w : Window,
-        colormap : Colormap
+        colormap : Colormap,
     ) -> _c.int ---;
 
     @(link_name="XStoreBuffer")
@@ -3253,21 +3253,21 @@ foreign x11_xlib {
         display : ^Display,
         bytes : cstring,
         nbytes : _c.int,
-        buffer : _c.int
+        buffer : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XStoreBytes")
     store_bytes :: proc(
         display : ^Display,
         bytes : cstring,
-        nbytes : _c.int
+        nbytes : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XStoreColor")
     store_color :: proc(
         display : ^Display,
         colormap : Colormap,
-        color : ^XColor
+        color : ^XColor,
     ) -> _c.int ---;
 
     @(link_name="XStoreColors")
@@ -3275,14 +3275,14 @@ foreign x11_xlib {
         display : ^Display,
         colormap : Colormap,
         color : ^XColor,
-        ncolors : _c.int
+        ncolors : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XStoreName")
     store_name :: proc(
         display : ^Display,
         w : Window,
-        windowName : cstring
+        windowName : cstring,
     ) -> _c.int ---;
 
     @(link_name="XStoreNamedColor")
@@ -3291,13 +3291,13 @@ foreign x11_xlib {
         colormap : Colormap,
         color : cstring,
         pixel : _c.ulong,
-        flags : _c.int
+        flags : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSync")
     sync :: proc(
         display : ^Display,
-        discard : Bool
+        discard : Bool,
     ) -> _c.int ---;
 
     @(link_name="XTextExtents")
@@ -3308,7 +3308,7 @@ foreign x11_xlib {
         directionReturn : ^_c.int,
         fontAscentReturn : ^_c.int,
         fontDescentReturn : ^_c.int,
-        overallReturn : ^XCharStruct
+        overallReturn : ^XCharStruct,
     ) -> _c.int ---;
 
     @(link_name="XTextExtents16")
@@ -3319,21 +3319,21 @@ foreign x11_xlib {
         directionReturn : ^_c.int,
         fontAscentReturn : ^_c.int,
         fontDescentReturn : ^_c.int,
-        overallReturn : ^XCharStruct
+        overallReturn : ^XCharStruct,
     ) -> _c.int ---;
 
     @(link_name="XTextWidth")
     text_width :: proc(
         fontStruct : ^XFontStruct,
         string : cstring,
-        count : _c.int
+        count : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XTextWidth16")
     text_width16 :: proc(
         fontStruct : ^XFontStruct,
         string : ^XChar2B,
-        count : _c.int
+        count : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XTranslateCoordinates")
@@ -3345,13 +3345,13 @@ foreign x11_xlib {
         srcY : _c.int,
         destX_return : ^_c.int,
         destY_return : ^_c.int,
-        childReturn : ^Window
+        childReturn : ^Window,
     ) -> Bool ---;
 
     @(link_name="XUndefineCursor")
     undefine_cursor :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XUngrabButton")
@@ -3359,7 +3359,7 @@ foreign x11_xlib {
         display : ^Display,
         button : _c.uint,
         modifiers : _c.uint,
-        grabWindow : Window
+        grabWindow : Window,
     ) -> _c.int ---;
 
     @(link_name="XUngrabKey")
@@ -3367,19 +3367,19 @@ foreign x11_xlib {
         display : ^Display,
         keycode : _c.int,
         modifiers : _c.uint,
-        grabWindow : Window
+        grabWindow : Window,
     ) -> _c.int ---;
 
     @(link_name="XUngrabKeyboard")
     ungrab_keyboard :: proc(
         display : ^Display,
-        time : Time
+        time : Time,
     ) -> _c.int ---;
 
     @(link_name="XUngrabPointer")
     ungrab_pointer :: proc(
         display : ^Display,
-        time : Time
+        time : Time,
     ) -> _c.int ---;
 
     @(link_name="XUngrabServer")
@@ -3388,25 +3388,25 @@ foreign x11_xlib {
     @(link_name="XUninstallColormap")
     uninstall_colormap :: proc(
         display : ^Display,
-        colormap : Colormap
+        colormap : Colormap,
     ) -> _c.int ---;
 
     @(link_name="XUnloadFont")
     unload_font :: proc(
         display : ^Display,
-        font : Font
+        font : Font,
     ) -> _c.int ---;
 
     @(link_name="XUnmapSubwindows")
     unmap_subwindows :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XUnmapWindow")
     unmap_window :: proc(
         display : ^Display,
-        w : Window
+        w : Window,
     ) -> _c.int ---;
 
     @(link_name="XVendorRelease")
@@ -3422,7 +3422,7 @@ foreign x11_xlib {
         srcWidth : _c.uint,
         srcHeight : _c.uint,
         destX : _c.int,
-        destY : _c.int
+        destY : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XWidthMMOfScreen")
@@ -3436,7 +3436,7 @@ foreign x11_xlib {
         display : ^Display,
         w : Window,
         eventMask : _c.long,
-        eventReturn : ^XEvent
+        eventReturn : ^XEvent,
     ) -> _c.int ---;
 
     @(link_name="XWriteBitmapFile")
@@ -3447,7 +3447,7 @@ foreign x11_xlib {
         width : _c.uint,
         height : _c.uint,
         x_hot : _c.int,
-        y_hot : _c.int
+        y_hot : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XSupportsLocale")
@@ -3461,7 +3461,7 @@ foreign x11_xlib {
         display : ^Display,
         rdb : ^Xrmhashbucketrec,
         resName : cstring,
-        resClass : cstring
+        resClass : cstring,
     ) -> Xom ---;
 
     @(link_name="XCloseOM")
@@ -3485,20 +3485,20 @@ foreign x11_xlib {
         baseFontNameList : cstring,
         missingCharsetList : ^^cstring,
         missingCharsetCount : ^_c.int,
-        defString : ^cstring
+        defString : ^cstring,
     ) -> XFontSet ---;
 
     @(link_name="XFreeFontSet")
     free_font_set :: proc(
         display : ^Display,
-        fontSet : XFontSet
+        fontSet : XFontSet,
     ) ---;
 
     @(link_name="XFontsOfFontSet")
     fonts_of_font_set :: proc(
         fontSet : XFontSet,
         fontStructList : ^^^XFontStruct,
-        fontNameList : ^^cstring
+        fontNameList : ^^cstring,
     ) -> _c.int ---;
 
     @(link_name="XBaseFontNameListOfFontSet")
@@ -3523,21 +3523,21 @@ foreign x11_xlib {
     mb_text_escapement :: proc(
         fontSet : XFontSet,
         text : cstring,
-        bytesText : _c.int
+        bytesText : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XwcTextEscapement")
     wc_text_escapement :: proc(
         fontSet : XFontSet,
         text : ^WcharT,
-        numWchars : _c.int
+        numWchars : _c.int,
     ) -> _c.int ---;
 
     @(link_name="Xutf8TextEscapement")
     utf8_text_escapement :: proc(
         fontSet : XFontSet,
         text : cstring,
-        bytesText : _c.int
+        bytesText : _c.int,
     ) -> _c.int ---;
 
     @(link_name="XmbTextExtents")
@@ -3546,7 +3546,7 @@ foreign x11_xlib {
         text : cstring,
         bytesText : _c.int,
         overallInkReturn : ^XRectangle,
-        overallLogicalReturn : ^XRectangle
+        overallLogicalReturn : ^XRectangle,
     ) -> _c.int ---;
 
     @(link_name="XwcTextExtents")
@@ -3555,7 +3555,7 @@ foreign x11_xlib {
         text : ^WcharT,
         numWchars : _c.int,
         overallInkReturn : ^XRectangle,
-        overallLogicalReturn : ^XRectangle
+        overallLogicalReturn : ^XRectangle,
     ) -> _c.int ---;
 
     @(link_name="Xutf8TextExtents")
@@ -3564,7 +3564,7 @@ foreign x11_xlib {
         text : cstring,
         bytesText : _c.int,
         overallInkReturn : ^XRectangle,
-        overallLogicalReturn : ^XRectangle
+        overallLogicalReturn : ^XRectangle,
     ) -> _c.int ---;
 
     @(link_name="XmbTextPerCharExtents")
@@ -3577,7 +3577,7 @@ foreign x11_xlib {
         bufferSize : _c.int,
         numChars : ^_c.int,
         overallInkReturn : ^XRectangle,
-        overallLogicalReturn : ^XRectangle
+        overallLogicalReturn : ^XRectangle,
     ) -> Status ---;
 
     @(link_name="XwcTextPerCharExtents")
@@ -3590,7 +3590,7 @@ foreign x11_xlib {
         bufferSize : _c.int,
         numChars : ^_c.int,
         overallInkReturn : ^XRectangle,
-        overallLogicalReturn : ^XRectangle
+        overallLogicalReturn : ^XRectangle,
     ) -> Status ---;
 
     @(link_name="Xutf8TextPerCharExtents")
@@ -3603,7 +3603,7 @@ foreign x11_xlib {
         bufferSize : _c.int,
         numChars : ^_c.int,
         overallInkReturn : ^XRectangle,
-        overallLogicalReturn : ^XRectangle
+        overallLogicalReturn : ^XRectangle,
     ) -> Status ---;
 
     @(link_name="XmbDrawText")
@@ -3614,7 +3614,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         textItems : ^XmbTextItem,
-        nitems : _c.int
+        nitems : _c.int,
     ) ---;
 
     @(link_name="XwcDrawText")
@@ -3625,7 +3625,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         textItems : ^XwcTextItem,
-        nitems : _c.int
+        nitems : _c.int,
     ) ---;
 
     @(link_name="Xutf8DrawText")
@@ -3636,7 +3636,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         textItems : ^XmbTextItem,
-        nitems : _c.int
+        nitems : _c.int,
     ) ---;
 
     @(link_name="XmbDrawString")
@@ -3648,7 +3648,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         text : cstring,
-        bytesText : _c.int
+        bytesText : _c.int,
     ) ---;
 
     @(link_name="XwcDrawString")
@@ -3660,7 +3660,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         text : ^WcharT,
-        numWchars : _c.int
+        numWchars : _c.int,
     ) ---;
 
     @(link_name="Xutf8DrawString")
@@ -3672,7 +3672,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         text : cstring,
-        bytesText : _c.int
+        bytesText : _c.int,
     ) ---;
 
     @(link_name="XmbDrawImageString")
@@ -3684,7 +3684,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         text : cstring,
-        bytesText : _c.int
+        bytesText : _c.int,
     ) ---;
 
     @(link_name="XwcDrawImageString")
@@ -3696,7 +3696,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         text : ^WcharT,
-        numWchars : _c.int
+        numWchars : _c.int,
     ) ---;
 
     @(link_name="Xutf8DrawImageString")
@@ -3708,7 +3708,7 @@ foreign x11_xlib {
         x : _c.int,
         y : _c.int,
         text : cstring,
-        bytesText : _c.int
+        bytesText : _c.int,
     ) ---;
 
     @(link_name="XOpenIM")
@@ -3716,7 +3716,7 @@ foreign x11_xlib {
         dpy : ^Display,
         rdb : ^Xrmhashbucketrec,
         resName : cstring,
-        resClass : cstring
+        resClass : cstring,
     ) -> Xim ---;
 
     @(link_name="XCloseIM")
@@ -3752,7 +3752,7 @@ foreign x11_xlib {
     @(link_name="XFilterEvent")
     filter_event :: proc(
         event : ^XEvent,
-        window : Window
+        window : Window,
     ) -> Bool ---;
 
     @(link_name="XmbLookupString")
@@ -3762,7 +3762,7 @@ foreign x11_xlib {
         bufferReturn : cstring,
         bytesBuffer : _c.int,
         keysymReturn : ^_c.uint,
-        statusReturn : ^Status
+        statusReturn : ^Status,
     ) -> _c.int ---;
 
     @(link_name="XwcLookupString")
@@ -3772,7 +3772,7 @@ foreign x11_xlib {
         bufferReturn : ^WcharT,
         wcharsBuffer : _c.int,
         keysymReturn : ^_c.uint,
-        statusReturn : ^Status
+        statusReturn : ^Status,
     ) -> _c.int ---;
 
     @(link_name="Xutf8LookupString")
@@ -3782,7 +3782,7 @@ foreign x11_xlib {
         bufferReturn : cstring,
         bytesBuffer : _c.int,
         keysymReturn : ^_c.uint,
-        statusReturn : ^Status
+        statusReturn : ^Status,
     ) -> _c.int ---;
 
     @(link_name="XRegisterIMInstantiateCallback")
@@ -3792,7 +3792,7 @@ foreign x11_xlib {
         resName : cstring,
         resClass : cstring,
         callback : XidProc,
-        clientData : XPointer
+        clientData : XPointer,
     ) -> Bool ---;
 
     @(link_name="XUnregisterIMInstantiateCallback")
@@ -3802,34 +3802,34 @@ foreign x11_xlib {
         resName : cstring,
         resClass : cstring,
         callback : XidProc,
-        clientData : XPointer
+        clientData : XPointer,
     ) -> Bool ---;
 
     @(link_name="XInternalConnectionNumbers")
     internal_connection_numbers :: proc(
         dpy : ^Display,
         fdReturn : ^^_c.int,
-        countReturn : ^_c.int
+        countReturn : ^_c.int,
     ) -> Status ---;
 
     @(link_name="XProcessInternalConnection")
     process_internal_connection :: proc(
         dpy : ^Display,
-        fd : _c.int
+        fd : _c.int,
     ) ---;
 
     @(link_name="XAddConnectionWatch")
     add_connection_watch :: proc(
         dpy : ^Display,
         callback : XConnectionWatchProc,
-        clientData : XPointer
+        clientData : XPointer,
     ) -> Status ---;
 
     @(link_name="XRemoveConnectionWatch")
     remove_connection_watch :: proc(
         dpy : ^Display,
         callback : XConnectionWatchProc,
-        clientData : XPointer
+        clientData : XPointer,
     ) ---;
 
     @(link_name="XSetAuthorization")
@@ -3837,32 +3837,32 @@ foreign x11_xlib {
         name : cstring,
         namelen : _c.int,
         data : cstring,
-        datalen : _c.int
+        datalen : _c.int,
     ) ---;
 
     @(link_name="_Xmbtowc")
     xmbtowc :: proc(
         wstr : ^WcharT,
         str : cstring,
-        len : _c.int
+        len : _c.int,
     ) -> _c.int ---;
 
     @(link_name="_Xwctomb")
     xwctomb :: proc(
         str : cstring,
-        wc : WcharT
+        wc : WcharT,
     ) -> _c.int ---;
 
     @(link_name="XGetEventData")
     get_event_data :: proc(
         dpy : ^Display,
-        cookie : ^XGenericEventCookie
+        cookie : ^XGenericEventCookie,
     ) -> Bool ---;
 
     @(link_name="XFreeEventData")
     free_event_data :: proc(
         dpy : ^Display,
-        cookie : ^XGenericEventCookie
+        cookie : ^XGenericEventCookie,
     ) ---;
 
 }

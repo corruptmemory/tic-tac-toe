@@ -840,7 +840,7 @@ graphics_transition_image_layout :: proc(ctx: ^Graphics_Context, image: vk.Image
     0,
     0, nil,
     0, nil,
-    1, &barrier
+    1, &barrier,
   );
 
   graphics_end_single_time_commands(ctx, &commandBuffer);

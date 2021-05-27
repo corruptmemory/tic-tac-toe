@@ -3408,13 +3408,13 @@ foreign x11_xcb {
     @(link_name="xcb_poll_for_special_event")
     poll_for_special_event :: proc(
         c : ^Connection,
-        se : ^SpecialEvent
+        se : ^SpecialEvent,
     ) -> ^GenericEvent ---;
 
     @(link_name="xcb_wait_for_special_event")
     wait_for_special_event :: proc(
         c : ^Connection,
-        se : ^SpecialEvent
+        se : ^SpecialEvent,
     ) -> ^GenericEvent ---;
 
     @(link_name="xcb_register_for_special_xge")
@@ -3422,43 +3422,43 @@ foreign x11_xcb {
         c : ^Connection,
         ext : ^Extension,
         eid : u32,
-        stamp : ^u32
+        stamp : ^u32,
     ) -> ^SpecialEvent ---;
 
     @(link_name="xcb_unregister_for_special_event")
     unregister_for_special_event :: proc(
         c : ^Connection,
-        se : ^SpecialEvent
+        se : ^SpecialEvent,
     ) ---;
 
     @(link_name="xcb_request_check")
     request_check :: proc(
         c : ^Connection,
-        cookie : VoidCookie
+        cookie : VoidCookie,
     ) -> ^GenericError ---;
 
     @(link_name="xcb_discard_reply")
     discard_reply :: proc(
         c : ^Connection,
-        sequence : _c.uint
+        sequence : _c.uint,
     ) ---;
 
     @(link_name="xcb_discard_reply64")
     discard_reply64 :: proc(
         c : ^Connection,
-        sequence : u64
+        sequence : u64,
     ) ---;
 
     @(link_name="xcb_get_extension_data")
     get_extension_data :: proc(
         c : ^Connection,
-        ext : ^Extension
+        ext : ^Extension,
     ) -> ^QueryExtensionReply ---;
 
     @(link_name="xcb_prefetch_extension_data")
     prefetch_extension_data :: proc(
         c : ^Connection,
-        ext : ^Extension
+        ext : ^Extension,
     ) ---;
 
     @(link_name="xcb_get_setup")
@@ -3473,7 +3473,7 @@ foreign x11_xcb {
     @(link_name="xcb_connect_to_fd")
     connect_to_fd :: proc(
         fd : _c.int,
-        authInfo : ^AuthInfo
+        authInfo : ^AuthInfo,
     ) -> ^Connection ---;
 
     @(link_name="xcb_disconnect")
@@ -3484,20 +3484,20 @@ foreign x11_xcb {
         name : cstring,
         host : ^cstring,
         display : ^_c.int,
-        screen : ^_c.int
+        screen : ^_c.int,
     ) -> _c.int ---;
 
     @(link_name="xcb_connect")
     connect :: proc(
         displayname : cstring,
-        screenp : ^_c.int
+        screenp : ^_c.int,
     ) -> ^Connection ---;
 
     @(link_name="xcb_connect_to_display_with_auth_info")
     connect_to_display_with_auth_info :: proc(
         display : cstring,
         auth : ^AuthInfo,
-        screen : ^_c.int
+        screen : ^_c.int,
     ) -> ^Connection ---;
 
     @(link_name="xcb_generate_id")
@@ -3780,20 +3780,20 @@ foreign x11_xcb {
     create_window_value_list_serialize :: proc(
         buffer : ^rawptr,
         valueMask : u32,
-        aux : ^CreateWindowValueList
+        aux : ^CreateWindowValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_create_window_value_list_unpack")
     create_window_value_list_unpack :: proc(
         buffer : rawptr,
         valueMask : u32,
-        aux : ^CreateWindowValueList
+        aux : ^CreateWindowValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_create_window_value_list_sizeof")
     create_window_value_list_sizeof :: proc(
         buffer : rawptr,
-        valueMask : u32
+        valueMask : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_create_window_sizeof")
@@ -3813,7 +3813,7 @@ foreign x11_xcb {
         class : u16,
         visual : Visualid,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_window")
@@ -3830,7 +3830,7 @@ foreign x11_xcb {
         class : u16,
         visual : Visualid,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_window_aux_checked")
@@ -3847,7 +3847,7 @@ foreign x11_xcb {
         class : u16,
         visual : Visualid,
         valueMask : u32,
-        valueList : ^CreateWindowValueList
+        valueList : ^CreateWindowValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_window_aux")
@@ -3864,7 +3864,7 @@ foreign x11_xcb {
         class : u16,
         visual : Visualid,
         valueMask : u32,
-        valueList : ^CreateWindowValueList
+        valueList : ^CreateWindowValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_window_value_list")
@@ -3874,20 +3874,20 @@ foreign x11_xcb {
     change_window_attributes_value_list_serialize :: proc(
         buffer : ^rawptr,
         valueMask : u32,
-        aux : ^ChangeWindowAttributesValueList
+        aux : ^ChangeWindowAttributesValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_change_window_attributes_value_list_unpack")
     change_window_attributes_value_list_unpack :: proc(
         buffer : rawptr,
         valueMask : u32,
-        aux : ^ChangeWindowAttributesValueList
+        aux : ^ChangeWindowAttributesValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_change_window_attributes_value_list_sizeof")
     change_window_attributes_value_list_sizeof :: proc(
         buffer : rawptr,
-        valueMask : u32
+        valueMask : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_change_window_attributes_sizeof")
@@ -3898,7 +3898,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_window_attributes")
@@ -3906,7 +3906,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_window_attributes_aux_checked")
@@ -3914,7 +3914,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         valueMask : u32,
-        valueList : ^ChangeWindowAttributesValueList
+        valueList : ^ChangeWindowAttributesValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_window_attributes_aux")
@@ -3922,7 +3922,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         valueMask : u32,
-        valueList : ^ChangeWindowAttributesValueList
+        valueList : ^ChangeWindowAttributesValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_window_attributes_value_list")
@@ -3931,58 +3931,58 @@ foreign x11_xcb {
     @(link_name="xcb_get_window_attributes")
     get_window_attributes :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> GetWindowAttributesCookie ---;
 
     @(link_name="xcb_get_window_attributes_unchecked")
     get_window_attributes_unchecked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> GetWindowAttributesCookie ---;
 
     @(link_name="xcb_get_window_attributes_reply")
     get_window_attributes_reply :: proc(
         c : ^Connection,
         cookie : GetWindowAttributesCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetWindowAttributesReply ---;
 
     @(link_name="xcb_destroy_window_checked")
     destroy_window_checked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_destroy_window")
     destroy_window :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_destroy_subwindows_checked")
     destroy_subwindows_checked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_destroy_subwindows")
     destroy_subwindows :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_save_set_checked")
     change_save_set_checked :: proc(
         c : ^Connection,
         mode : u8,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_save_set")
     change_save_set :: proc(
         c : ^Connection,
         mode : u8,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_reparent_window_checked")
@@ -3991,7 +3991,7 @@ foreign x11_xcb {
         window : Window,
         parent : Window,
         x : i16,
-        y : i16
+        y : i16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_reparent_window")
@@ -4000,75 +4000,75 @@ foreign x11_xcb {
         window : Window,
         parent : Window,
         x : i16,
-        y : i16
+        y : i16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_map_window_checked")
     map_window_checked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_map_window")
     map_window :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_map_subwindows_checked")
     map_subwindows_checked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_map_subwindows")
     map_subwindows :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_unmap_window_checked")
     unmap_window_checked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_unmap_window")
     unmap_window :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_unmap_subwindows_checked")
     unmap_subwindows_checked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_unmap_subwindows")
     unmap_subwindows :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_configure_window_value_list_serialize")
     configure_window_value_list_serialize :: proc(
         buffer : ^rawptr,
         valueMask : u16,
-        aux : ^ConfigureWindowValueList
+        aux : ^ConfigureWindowValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_configure_window_value_list_unpack")
     configure_window_value_list_unpack :: proc(
         buffer : rawptr,
         valueMask : u16,
-        aux : ^ConfigureWindowValueList
+        aux : ^ConfigureWindowValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_configure_window_value_list_sizeof")
     configure_window_value_list_sizeof :: proc(
         buffer : rawptr,
-        valueMask : u16
+        valueMask : u16,
     ) -> _c.int ---;
 
     @(link_name="xcb_configure_window_sizeof")
@@ -4079,7 +4079,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         valueMask : u16,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_configure_window")
@@ -4087,7 +4087,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         valueMask : u16,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_configure_window_aux_checked")
@@ -4095,7 +4095,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         valueMask : u16,
-        valueList : ^ConfigureWindowValueList
+        valueList : ^ConfigureWindowValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_configure_window_aux")
@@ -4103,7 +4103,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         valueMask : u16,
-        valueList : ^ConfigureWindowValueList
+        valueList : ^ConfigureWindowValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_configure_window_value_list")
@@ -4113,33 +4113,33 @@ foreign x11_xcb {
     circulate_window_checked :: proc(
         c : ^Connection,
         direction : u8,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_circulate_window")
     circulate_window :: proc(
         c : ^Connection,
         direction : u8,
-        window : Window
+        window : Window,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_get_geometry")
     get_geometry :: proc(
         c : ^Connection,
-        drawable : Drawable
+        drawable : Drawable,
     ) -> GetGeometryCookie ---;
 
     @(link_name="xcb_get_geometry_unchecked")
     get_geometry_unchecked :: proc(
         c : ^Connection,
-        drawable : Drawable
+        drawable : Drawable,
     ) -> GetGeometryCookie ---;
 
     @(link_name="xcb_get_geometry_reply")
     get_geometry_reply :: proc(
         c : ^Connection,
         cookie : GetGeometryCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetGeometryReply ---;
 
     @(link_name="xcb_query_tree_sizeof")
@@ -4148,13 +4148,13 @@ foreign x11_xcb {
     @(link_name="xcb_query_tree")
     query_tree :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> QueryTreeCookie ---;
 
     @(link_name="xcb_query_tree_unchecked")
     query_tree_unchecked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> QueryTreeCookie ---;
 
     @(link_name="xcb_query_tree_children")
@@ -4170,7 +4170,7 @@ foreign x11_xcb {
     query_tree_reply :: proc(
         c : ^Connection,
         cookie : QueryTreeCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^QueryTreeReply ---;
 
     @(link_name="xcb_intern_atom_sizeof")
@@ -4181,7 +4181,7 @@ foreign x11_xcb {
         c : ^Connection,
         onlyIfExists : u8,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> InternAtomCookie ---;
 
     @(link_name="xcb_intern_atom_unchecked")
@@ -4189,14 +4189,14 @@ foreign x11_xcb {
         c : ^Connection,
         onlyIfExists : u8,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> InternAtomCookie ---;
 
     @(link_name="xcb_intern_atom_reply")
     intern_atom_reply :: proc(
         c : ^Connection,
         cookie : InternAtomCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^InternAtomReply ---;
 
     @(link_name="xcb_get_atom_name_sizeof")
@@ -4205,13 +4205,13 @@ foreign x11_xcb {
     @(link_name="xcb_get_atom_name")
     get_atom_name :: proc(
         c : ^Connection,
-        atom : Atom
+        atom : Atom,
     ) -> GetAtomNameCookie ---;
 
     @(link_name="xcb_get_atom_name_unchecked")
     get_atom_name_unchecked :: proc(
         c : ^Connection,
-        atom : Atom
+        atom : Atom,
     ) -> GetAtomNameCookie ---;
 
     @(link_name="xcb_get_atom_name_name")
@@ -4227,7 +4227,7 @@ foreign x11_xcb {
     get_atom_name_reply :: proc(
         c : ^Connection,
         cookie : GetAtomNameCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetAtomNameReply ---;
 
     @(link_name="xcb_change_property_sizeof")
@@ -4242,7 +4242,7 @@ foreign x11_xcb {
         type : Atom,
         format : u8,
         dataLen : u32,
-        data : rawptr
+        data : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_property")
@@ -4254,7 +4254,7 @@ foreign x11_xcb {
         type : Atom,
         format : u8,
         dataLen : u32,
-        data : rawptr
+        data : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_property_data")
@@ -4270,14 +4270,14 @@ foreign x11_xcb {
     delete_property_checked :: proc(
         c : ^Connection,
         window : Window,
-        property : Atom
+        property : Atom,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_delete_property")
     delete_property :: proc(
         c : ^Connection,
         window : Window,
-        property : Atom
+        property : Atom,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_get_property_sizeof")
@@ -4291,7 +4291,7 @@ foreign x11_xcb {
         property : Atom,
         type : Atom,
         longOffset : u32,
-        longLength : u32
+        longLength : u32,
     ) -> GetPropertyCookie ---;
 
     @(link_name="xcb_get_property_unchecked")
@@ -4302,7 +4302,7 @@ foreign x11_xcb {
         property : Atom,
         type : Atom,
         longOffset : u32,
-        longLength : u32
+        longLength : u32,
     ) -> GetPropertyCookie ---;
 
     @(link_name="xcb_get_property_value")
@@ -4318,7 +4318,7 @@ foreign x11_xcb {
     get_property_reply :: proc(
         c : ^Connection,
         cookie : GetPropertyCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetPropertyReply ---;
 
     @(link_name="xcb_list_properties_sizeof")
@@ -4327,13 +4327,13 @@ foreign x11_xcb {
     @(link_name="xcb_list_properties")
     list_properties :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> ListPropertiesCookie ---;
 
     @(link_name="xcb_list_properties_unchecked")
     list_properties_unchecked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> ListPropertiesCookie ---;
 
     @(link_name="xcb_list_properties_atoms")
@@ -4349,7 +4349,7 @@ foreign x11_xcb {
     list_properties_reply :: proc(
         c : ^Connection,
         cookie : ListPropertiesCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^ListPropertiesReply ---;
 
     @(link_name="xcb_set_selection_owner_checked")
@@ -4357,7 +4357,7 @@ foreign x11_xcb {
         c : ^Connection,
         owner : Window,
         selection : Atom,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_selection_owner")
@@ -4365,26 +4365,26 @@ foreign x11_xcb {
         c : ^Connection,
         owner : Window,
         selection : Atom,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_get_selection_owner")
     get_selection_owner :: proc(
         c : ^Connection,
-        selection : Atom
+        selection : Atom,
     ) -> GetSelectionOwnerCookie ---;
 
     @(link_name="xcb_get_selection_owner_unchecked")
     get_selection_owner_unchecked :: proc(
         c : ^Connection,
-        selection : Atom
+        selection : Atom,
     ) -> GetSelectionOwnerCookie ---;
 
     @(link_name="xcb_get_selection_owner_reply")
     get_selection_owner_reply :: proc(
         c : ^Connection,
         cookie : GetSelectionOwnerCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetSelectionOwnerReply ---;
 
     @(link_name="xcb_convert_selection_checked")
@@ -4394,7 +4394,7 @@ foreign x11_xcb {
         selection : Atom,
         target : Atom,
         property : Atom,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_convert_selection")
@@ -4404,7 +4404,7 @@ foreign x11_xcb {
         selection : Atom,
         target : Atom,
         property : Atom,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_send_event_checked")
@@ -4413,7 +4413,7 @@ foreign x11_xcb {
         propagate : u8,
         destination : Window,
         eventMask : u32,
-        event : cstring
+        event : cstring,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_send_event")
@@ -4422,7 +4422,7 @@ foreign x11_xcb {
         propagate : u8,
         destination : Window,
         eventMask : u32,
-        event : cstring
+        event : cstring,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_grab_pointer")
@@ -4435,7 +4435,7 @@ foreign x11_xcb {
         keyboardMode : u8,
         confineTo : Window,
         cursor : Cursor,
-        time : Timestamp
+        time : Timestamp,
     ) -> GrabPointerCookie ---;
 
     @(link_name="xcb_grab_pointer_unchecked")
@@ -4448,26 +4448,26 @@ foreign x11_xcb {
         keyboardMode : u8,
         confineTo : Window,
         cursor : Cursor,
-        time : Timestamp
+        time : Timestamp,
     ) -> GrabPointerCookie ---;
 
     @(link_name="xcb_grab_pointer_reply")
     grab_pointer_reply :: proc(
         c : ^Connection,
         cookie : GrabPointerCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GrabPointerReply ---;
 
     @(link_name="xcb_ungrab_pointer_checked")
     ungrab_pointer_checked :: proc(
         c : ^Connection,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_ungrab_pointer")
     ungrab_pointer :: proc(
         c : ^Connection,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_grab_button_checked")
@@ -4481,7 +4481,7 @@ foreign x11_xcb {
         confineTo : Window,
         cursor : Cursor,
         button : u8,
-        modifiers : u16
+        modifiers : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_grab_button")
@@ -4495,7 +4495,7 @@ foreign x11_xcb {
         confineTo : Window,
         cursor : Cursor,
         button : u8,
-        modifiers : u16
+        modifiers : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_ungrab_button_checked")
@@ -4503,7 +4503,7 @@ foreign x11_xcb {
         c : ^Connection,
         button : u8,
         grabWindow : Window,
-        modifiers : u16
+        modifiers : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_ungrab_button")
@@ -4511,7 +4511,7 @@ foreign x11_xcb {
         c : ^Connection,
         button : u8,
         grabWindow : Window,
-        modifiers : u16
+        modifiers : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_active_pointer_grab_checked")
@@ -4519,7 +4519,7 @@ foreign x11_xcb {
         c : ^Connection,
         cursor : Cursor,
         time : Timestamp,
-        eventMask : u16
+        eventMask : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_active_pointer_grab")
@@ -4527,7 +4527,7 @@ foreign x11_xcb {
         c : ^Connection,
         cursor : Cursor,
         time : Timestamp,
-        eventMask : u16
+        eventMask : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_grab_keyboard")
@@ -4537,7 +4537,7 @@ foreign x11_xcb {
         grabWindow : Window,
         time : Timestamp,
         pointerMode : u8,
-        keyboardMode : u8
+        keyboardMode : u8,
     ) -> GrabKeyboardCookie ---;
 
     @(link_name="xcb_grab_keyboard_unchecked")
@@ -4547,26 +4547,26 @@ foreign x11_xcb {
         grabWindow : Window,
         time : Timestamp,
         pointerMode : u8,
-        keyboardMode : u8
+        keyboardMode : u8,
     ) -> GrabKeyboardCookie ---;
 
     @(link_name="xcb_grab_keyboard_reply")
     grab_keyboard_reply :: proc(
         c : ^Connection,
         cookie : GrabKeyboardCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GrabKeyboardReply ---;
 
     @(link_name="xcb_ungrab_keyboard_checked")
     ungrab_keyboard_checked :: proc(
         c : ^Connection,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_ungrab_keyboard")
     ungrab_keyboard :: proc(
         c : ^Connection,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_grab_key_checked")
@@ -4577,7 +4577,7 @@ foreign x11_xcb {
         modifiers : u16,
         key : Keycode,
         pointerMode : u8,
-        keyboardMode : u8
+        keyboardMode : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_grab_key")
@@ -4588,7 +4588,7 @@ foreign x11_xcb {
         modifiers : u16,
         key : Keycode,
         pointerMode : u8,
-        keyboardMode : u8
+        keyboardMode : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_ungrab_key_checked")
@@ -4596,7 +4596,7 @@ foreign x11_xcb {
         c : ^Connection,
         key : Keycode,
         grabWindow : Window,
-        modifiers : u16
+        modifiers : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_ungrab_key")
@@ -4604,21 +4604,21 @@ foreign x11_xcb {
         c : ^Connection,
         key : Keycode,
         grabWindow : Window,
-        modifiers : u16
+        modifiers : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_allow_events_checked")
     allow_events_checked :: proc(
         c : ^Connection,
         mode : u8,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_allow_events")
     allow_events :: proc(
         c : ^Connection,
         mode : u8,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_grab_server_checked")
@@ -4636,20 +4636,20 @@ foreign x11_xcb {
     @(link_name="xcb_query_pointer")
     query_pointer :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> QueryPointerCookie ---;
 
     @(link_name="xcb_query_pointer_unchecked")
     query_pointer_unchecked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> QueryPointerCookie ---;
 
     @(link_name="xcb_query_pointer_reply")
     query_pointer_reply :: proc(
         c : ^Connection,
         cookie : QueryPointerCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^QueryPointerReply ---;
 
     @(link_name="xcb_timecoord_next")
@@ -4666,7 +4666,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         start : Timestamp,
-        stop : Timestamp
+        stop : Timestamp,
     ) -> GetMotionEventsCookie ---;
 
     @(link_name="xcb_get_motion_events_unchecked")
@@ -4674,7 +4674,7 @@ foreign x11_xcb {
         c : ^Connection,
         window : Window,
         start : Timestamp,
-        stop : Timestamp
+        stop : Timestamp,
     ) -> GetMotionEventsCookie ---;
 
     @(link_name="xcb_get_motion_events_events")
@@ -4690,7 +4690,7 @@ foreign x11_xcb {
     get_motion_events_reply :: proc(
         c : ^Connection,
         cookie : GetMotionEventsCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetMotionEventsReply ---;
 
     @(link_name="xcb_translate_coordinates")
@@ -4699,7 +4699,7 @@ foreign x11_xcb {
         srcWindow : Window,
         dstWindow : Window,
         srcX : i16,
-        srcY : i16
+        srcY : i16,
     ) -> TranslateCoordinatesCookie ---;
 
     @(link_name="xcb_translate_coordinates_unchecked")
@@ -4708,14 +4708,14 @@ foreign x11_xcb {
         srcWindow : Window,
         dstWindow : Window,
         srcX : i16,
-        srcY : i16
+        srcY : i16,
     ) -> TranslateCoordinatesCookie ---;
 
     @(link_name="xcb_translate_coordinates_reply")
     translate_coordinates_reply :: proc(
         c : ^Connection,
         cookie : TranslateCoordinatesCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^TranslateCoordinatesReply ---;
 
     @(link_name="xcb_warp_pointer_checked")
@@ -4728,7 +4728,7 @@ foreign x11_xcb {
         srcWidth : u16,
         srcHeight : u16,
         dstX : i16,
-        dstY : i16
+        dstY : i16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_warp_pointer")
@@ -4741,7 +4741,7 @@ foreign x11_xcb {
         srcWidth : u16,
         srcHeight : u16,
         dstX : i16,
-        dstY : i16
+        dstY : i16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_input_focus_checked")
@@ -4749,7 +4749,7 @@ foreign x11_xcb {
         c : ^Connection,
         revertTo : u8,
         focus : Window,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_input_focus")
@@ -4757,7 +4757,7 @@ foreign x11_xcb {
         c : ^Connection,
         revertTo : u8,
         focus : Window,
-        time : Timestamp
+        time : Timestamp,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_get_input_focus")
@@ -4770,7 +4770,7 @@ foreign x11_xcb {
     get_input_focus_reply :: proc(
         c : ^Connection,
         cookie : GetInputFocusCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetInputFocusReply ---;
 
     @(link_name="xcb_query_keymap")
@@ -4783,7 +4783,7 @@ foreign x11_xcb {
     query_keymap_reply :: proc(
         c : ^Connection,
         cookie : QueryKeymapCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^QueryKeymapReply ---;
 
     @(link_name="xcb_open_font_sizeof")
@@ -4794,7 +4794,7 @@ foreign x11_xcb {
         c : ^Connection,
         fid : Font,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_open_font")
@@ -4802,7 +4802,7 @@ foreign x11_xcb {
         c : ^Connection,
         fid : Font,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_open_font_name")
@@ -4817,13 +4817,13 @@ foreign x11_xcb {
     @(link_name="xcb_close_font_checked")
     close_font_checked :: proc(
         c : ^Connection,
-        font : Font
+        font : Font,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_close_font")
     close_font :: proc(
         c : ^Connection,
-        font : Font
+        font : Font,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_fontprop_next")
@@ -4844,13 +4844,13 @@ foreign x11_xcb {
     @(link_name="xcb_query_font")
     query_font :: proc(
         c : ^Connection,
-        font : Fontable
+        font : Fontable,
     ) -> QueryFontCookie ---;
 
     @(link_name="xcb_query_font_unchecked")
     query_font_unchecked :: proc(
         c : ^Connection,
-        font : Fontable
+        font : Fontable,
     ) -> QueryFontCookie ---;
 
     @(link_name="xcb_query_font_properties")
@@ -4875,13 +4875,13 @@ foreign x11_xcb {
     query_font_reply :: proc(
         c : ^Connection,
         cookie : QueryFontCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^QueryFontReply ---;
 
     @(link_name="xcb_query_text_extents_sizeof")
     query_text_extents_sizeof :: proc(
         buffer : rawptr,
-        stringLen : u32
+        stringLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_query_text_extents")
@@ -4889,7 +4889,7 @@ foreign x11_xcb {
         c : ^Connection,
         font : Fontable,
         stringLen : u32,
-        string : ^Char2B
+        string : ^Char2B,
     ) -> QueryTextExtentsCookie ---;
 
     @(link_name="xcb_query_text_extents_unchecked")
@@ -4897,14 +4897,14 @@ foreign x11_xcb {
         c : ^Connection,
         font : Fontable,
         stringLen : u32,
-        string : ^Char2B
+        string : ^Char2B,
     ) -> QueryTextExtentsCookie ---;
 
     @(link_name="xcb_query_text_extents_reply")
     query_text_extents_reply :: proc(
         c : ^Connection,
         cookie : QueryTextExtentsCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^QueryTextExtentsReply ---;
 
     @(link_name="xcb_str_sizeof")
@@ -4933,7 +4933,7 @@ foreign x11_xcb {
         c : ^Connection,
         maxNames : u16,
         patternLen : u16,
-        pattern : cstring
+        pattern : cstring,
     ) -> ListFontsCookie ---;
 
     @(link_name="xcb_list_fonts_unchecked")
@@ -4941,7 +4941,7 @@ foreign x11_xcb {
         c : ^Connection,
         maxNames : u16,
         patternLen : u16,
-        pattern : cstring
+        pattern : cstring,
     ) -> ListFontsCookie ---;
 
     @(link_name="xcb_list_fonts_names_length")
@@ -4954,7 +4954,7 @@ foreign x11_xcb {
     list_fonts_reply :: proc(
         c : ^Connection,
         cookie : ListFontsCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^ListFontsReply ---;
 
     @(link_name="xcb_list_fonts_with_info_sizeof")
@@ -4965,7 +4965,7 @@ foreign x11_xcb {
         c : ^Connection,
         maxNames : u16,
         patternLen : u16,
-        pattern : cstring
+        pattern : cstring,
     ) -> ListFontsWithInfoCookie ---;
 
     @(link_name="xcb_list_fonts_with_info_unchecked")
@@ -4973,7 +4973,7 @@ foreign x11_xcb {
         c : ^Connection,
         maxNames : u16,
         patternLen : u16,
-        pattern : cstring
+        pattern : cstring,
     ) -> ListFontsWithInfoCookie ---;
 
     @(link_name="xcb_list_fonts_with_info_properties")
@@ -4998,7 +4998,7 @@ foreign x11_xcb {
     list_fonts_with_info_reply :: proc(
         c : ^Connection,
         cookie : ListFontsWithInfoCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^ListFontsWithInfoReply ---;
 
     @(link_name="xcb_set_font_path_sizeof")
@@ -5008,14 +5008,14 @@ foreign x11_xcb {
     set_font_path_checked :: proc(
         c : ^Connection,
         fontQty : u16,
-        font : ^Str
+        font : ^Str,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_font_path")
     set_font_path :: proc(
         c : ^Connection,
         fontQty : u16,
-        font : ^Str
+        font : ^Str,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_font_path_font_length")
@@ -5043,7 +5043,7 @@ foreign x11_xcb {
     get_font_path_reply :: proc(
         c : ^Connection,
         cookie : GetFontPathCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetFontPathReply ---;
 
     @(link_name="xcb_create_pixmap_checked")
@@ -5053,7 +5053,7 @@ foreign x11_xcb {
         pid : Pixmap,
         drawable : Drawable,
         width : u16,
-        height : u16
+        height : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_pixmap")
@@ -5063,39 +5063,39 @@ foreign x11_xcb {
         pid : Pixmap,
         drawable : Drawable,
         width : u16,
-        height : u16
+        height : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_free_pixmap_checked")
     free_pixmap_checked :: proc(
         c : ^Connection,
-        pixmap : Pixmap
+        pixmap : Pixmap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_free_pixmap")
     free_pixmap :: proc(
         c : ^Connection,
-        pixmap : Pixmap
+        pixmap : Pixmap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_gc_value_list_serialize")
     create_gc_value_list_serialize :: proc(
         buffer : ^rawptr,
         valueMask : u32,
-        aux : ^CreateGcValueList
+        aux : ^CreateGcValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_create_gc_value_list_unpack")
     create_gc_value_list_unpack :: proc(
         buffer : rawptr,
         valueMask : u32,
-        aux : ^CreateGcValueList
+        aux : ^CreateGcValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_create_gc_value_list_sizeof")
     create_gc_value_list_sizeof :: proc(
         buffer : rawptr,
-        valueMask : u32
+        valueMask : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_create_gc_sizeof")
@@ -5107,7 +5107,7 @@ foreign x11_xcb {
         cid : Gcontext,
         drawable : Drawable,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_gc")
@@ -5116,7 +5116,7 @@ foreign x11_xcb {
         cid : Gcontext,
         drawable : Drawable,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_gc_aux_checked")
@@ -5125,7 +5125,7 @@ foreign x11_xcb {
         cid : Gcontext,
         drawable : Drawable,
         valueMask : u32,
-        valueList : ^CreateGcValueList
+        valueList : ^CreateGcValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_gc_aux")
@@ -5134,7 +5134,7 @@ foreign x11_xcb {
         cid : Gcontext,
         drawable : Drawable,
         valueMask : u32,
-        valueList : ^CreateGcValueList
+        valueList : ^CreateGcValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_gc_value_list")
@@ -5144,20 +5144,20 @@ foreign x11_xcb {
     change_gc_value_list_serialize :: proc(
         buffer : ^rawptr,
         valueMask : u32,
-        aux : ^ChangeGcValueList
+        aux : ^ChangeGcValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_change_gc_value_list_unpack")
     change_gc_value_list_unpack :: proc(
         buffer : rawptr,
         valueMask : u32,
-        aux : ^ChangeGcValueList
+        aux : ^ChangeGcValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_change_gc_value_list_sizeof")
     change_gc_value_list_sizeof :: proc(
         buffer : rawptr,
-        valueMask : u32
+        valueMask : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_change_gc_sizeof")
@@ -5168,7 +5168,7 @@ foreign x11_xcb {
         c : ^Connection,
         gc : Gcontext,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_gc")
@@ -5176,7 +5176,7 @@ foreign x11_xcb {
         c : ^Connection,
         gc : Gcontext,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_gc_aux_checked")
@@ -5184,7 +5184,7 @@ foreign x11_xcb {
         c : ^Connection,
         gc : Gcontext,
         valueMask : u32,
-        valueList : ^ChangeGcValueList
+        valueList : ^ChangeGcValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_gc_aux")
@@ -5192,7 +5192,7 @@ foreign x11_xcb {
         c : ^Connection,
         gc : Gcontext,
         valueMask : u32,
-        valueList : ^ChangeGcValueList
+        valueList : ^ChangeGcValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_gc_value_list")
@@ -5203,7 +5203,7 @@ foreign x11_xcb {
         c : ^Connection,
         srcGc : Gcontext,
         dstGc : Gcontext,
-        valueMask : u32
+        valueMask : u32,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_copy_gc")
@@ -5211,7 +5211,7 @@ foreign x11_xcb {
         c : ^Connection,
         srcGc : Gcontext,
         dstGc : Gcontext,
-        valueMask : u32
+        valueMask : u32,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_dashes_sizeof")
@@ -5223,7 +5223,7 @@ foreign x11_xcb {
         gc : Gcontext,
         dashOffset : u16,
         dashesLen : u16,
-        dashes : ^u8
+        dashes : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_dashes")
@@ -5232,7 +5232,7 @@ foreign x11_xcb {
         gc : Gcontext,
         dashOffset : u16,
         dashesLen : u16,
-        dashes : ^u8
+        dashes : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_dashes_dashes")
@@ -5247,7 +5247,7 @@ foreign x11_xcb {
     @(link_name="xcb_set_clip_rectangles_sizeof")
     set_clip_rectangles_sizeof :: proc(
         buffer : rawptr,
-        rectanglesLen : u32
+        rectanglesLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_set_clip_rectangles_checked")
@@ -5258,7 +5258,7 @@ foreign x11_xcb {
         clipX_origin : i16,
         clipY_origin : i16,
         rectanglesLen : u32,
-        rectangles : ^Rectangle
+        rectangles : ^Rectangle,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_clip_rectangles")
@@ -5269,7 +5269,7 @@ foreign x11_xcb {
         clipX_origin : i16,
         clipY_origin : i16,
         rectanglesLen : u32,
-        rectangles : ^Rectangle
+        rectangles : ^Rectangle,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_clip_rectangles_rectangles")
@@ -5284,13 +5284,13 @@ foreign x11_xcb {
     @(link_name="xcb_free_gc_checked")
     free_gc_checked :: proc(
         c : ^Connection,
-        gc : Gcontext
+        gc : Gcontext,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_free_gc")
     free_gc :: proc(
         c : ^Connection,
-        gc : Gcontext
+        gc : Gcontext,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_clear_area_checked")
@@ -5301,7 +5301,7 @@ foreign x11_xcb {
         x : i16,
         y : i16,
         width : u16,
-        height : u16
+        height : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_clear_area")
@@ -5312,7 +5312,7 @@ foreign x11_xcb {
         x : i16,
         y : i16,
         width : u16,
-        height : u16
+        height : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_copy_area_checked")
@@ -5326,7 +5326,7 @@ foreign x11_xcb {
         dstX : i16,
         dstY : i16,
         width : u16,
-        height : u16
+        height : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_copy_area")
@@ -5340,7 +5340,7 @@ foreign x11_xcb {
         dstX : i16,
         dstY : i16,
         width : u16,
-        height : u16
+        height : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_copy_plane_checked")
@@ -5355,7 +5355,7 @@ foreign x11_xcb {
         dstY : i16,
         width : u16,
         height : u16,
-        bitPlane : u32
+        bitPlane : u32,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_copy_plane")
@@ -5370,13 +5370,13 @@ foreign x11_xcb {
         dstY : i16,
         width : u16,
         height : u16,
-        bitPlane : u32
+        bitPlane : u32,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_point_sizeof")
     poly_point_sizeof :: proc(
         buffer : rawptr,
-        pointsLen : u32
+        pointsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_poly_point_checked")
@@ -5386,7 +5386,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         pointsLen : u32,
-        points : ^Point
+        points : ^Point,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_point")
@@ -5396,7 +5396,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         pointsLen : u32,
-        points : ^Point
+        points : ^Point,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_point_points")
@@ -5411,7 +5411,7 @@ foreign x11_xcb {
     @(link_name="xcb_poly_line_sizeof")
     poly_line_sizeof :: proc(
         buffer : rawptr,
-        pointsLen : u32
+        pointsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_poly_line_checked")
@@ -5421,7 +5421,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         pointsLen : u32,
-        points : ^Point
+        points : ^Point,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_line")
@@ -5431,7 +5431,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         pointsLen : u32,
-        points : ^Point
+        points : ^Point,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_line_points")
@@ -5452,7 +5452,7 @@ foreign x11_xcb {
     @(link_name="xcb_poly_segment_sizeof")
     poly_segment_sizeof :: proc(
         buffer : rawptr,
-        segmentsLen : u32
+        segmentsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_poly_segment_checked")
@@ -5461,7 +5461,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         segmentsLen : u32,
-        segments : ^Segment
+        segments : ^Segment,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_segment")
@@ -5470,7 +5470,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         segmentsLen : u32,
-        segments : ^Segment
+        segments : ^Segment,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_segment_segments")
@@ -5485,7 +5485,7 @@ foreign x11_xcb {
     @(link_name="xcb_poly_rectangle_sizeof")
     poly_rectangle_sizeof :: proc(
         buffer : rawptr,
-        rectanglesLen : u32
+        rectanglesLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_poly_rectangle_checked")
@@ -5494,7 +5494,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         rectanglesLen : u32,
-        rectangles : ^Rectangle
+        rectangles : ^Rectangle,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_rectangle")
@@ -5503,7 +5503,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         rectanglesLen : u32,
-        rectangles : ^Rectangle
+        rectangles : ^Rectangle,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_rectangle_rectangles")
@@ -5518,7 +5518,7 @@ foreign x11_xcb {
     @(link_name="xcb_poly_arc_sizeof")
     poly_arc_sizeof :: proc(
         buffer : rawptr,
-        arcsLen : u32
+        arcsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_poly_arc_checked")
@@ -5527,7 +5527,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         arcsLen : u32,
-        arcs : ^Arc
+        arcs : ^Arc,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_arc")
@@ -5536,7 +5536,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         arcsLen : u32,
-        arcs : ^Arc
+        arcs : ^Arc,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_arc_arcs")
@@ -5551,7 +5551,7 @@ foreign x11_xcb {
     @(link_name="xcb_fill_poly_sizeof")
     fill_poly_sizeof :: proc(
         buffer : rawptr,
-        pointsLen : u32
+        pointsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_fill_poly_checked")
@@ -5562,7 +5562,7 @@ foreign x11_xcb {
         shape : u8,
         coordinateMode : u8,
         pointsLen : u32,
-        points : ^Point
+        points : ^Point,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_fill_poly")
@@ -5573,7 +5573,7 @@ foreign x11_xcb {
         shape : u8,
         coordinateMode : u8,
         pointsLen : u32,
-        points : ^Point
+        points : ^Point,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_fill_poly_points")
@@ -5588,7 +5588,7 @@ foreign x11_xcb {
     @(link_name="xcb_poly_fill_rectangle_sizeof")
     poly_fill_rectangle_sizeof :: proc(
         buffer : rawptr,
-        rectanglesLen : u32
+        rectanglesLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_poly_fill_rectangle_checked")
@@ -5597,7 +5597,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         rectanglesLen : u32,
-        rectangles : ^Rectangle
+        rectangles : ^Rectangle,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_fill_rectangle")
@@ -5606,7 +5606,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         rectanglesLen : u32,
-        rectangles : ^Rectangle
+        rectangles : ^Rectangle,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_fill_rectangle_rectangles")
@@ -5621,7 +5621,7 @@ foreign x11_xcb {
     @(link_name="xcb_poly_fill_arc_sizeof")
     poly_fill_arc_sizeof :: proc(
         buffer : rawptr,
-        arcsLen : u32
+        arcsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_poly_fill_arc_checked")
@@ -5630,7 +5630,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         arcsLen : u32,
-        arcs : ^Arc
+        arcs : ^Arc,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_fill_arc")
@@ -5639,7 +5639,7 @@ foreign x11_xcb {
         drawable : Drawable,
         gc : Gcontext,
         arcsLen : u32,
-        arcs : ^Arc
+        arcs : ^Arc,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_fill_arc_arcs")
@@ -5654,7 +5654,7 @@ foreign x11_xcb {
     @(link_name="xcb_put_image_sizeof")
     put_image_sizeof :: proc(
         buffer : rawptr,
-        dataLen : u32
+        dataLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_put_image_checked")
@@ -5670,7 +5670,7 @@ foreign x11_xcb {
         leftPad : u8,
         depth : u8,
         dataLen : u32,
-        data : ^u8
+        data : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_put_image")
@@ -5686,7 +5686,7 @@ foreign x11_xcb {
         leftPad : u8,
         depth : u8,
         dataLen : u32,
-        data : ^u8
+        data : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_put_image_data")
@@ -5710,7 +5710,7 @@ foreign x11_xcb {
         y : i16,
         width : u16,
         height : u16,
-        planeMask : u32
+        planeMask : u32,
     ) -> GetImageCookie ---;
 
     @(link_name="xcb_get_image_unchecked")
@@ -5722,7 +5722,7 @@ foreign x11_xcb {
         y : i16,
         width : u16,
         height : u16,
-        planeMask : u32
+        planeMask : u32,
     ) -> GetImageCookie ---;
 
     @(link_name="xcb_get_image_data")
@@ -5738,13 +5738,13 @@ foreign x11_xcb {
     get_image_reply :: proc(
         c : ^Connection,
         cookie : GetImageCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetImageReply ---;
 
     @(link_name="xcb_poly_text_8_sizeof")
     poly_text_8_sizeof :: proc(
         buffer : rawptr,
-        itemsLen : u32
+        itemsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_poly_text_8_checked")
@@ -5755,7 +5755,7 @@ foreign x11_xcb {
         x : i16,
         y : i16,
         itemsLen : u32,
-        items : ^u8
+        items : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_text_8")
@@ -5766,7 +5766,7 @@ foreign x11_xcb {
         x : i16,
         y : i16,
         itemsLen : u32,
-        items : ^u8
+        items : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_text_8_items")
@@ -5781,7 +5781,7 @@ foreign x11_xcb {
     @(link_name="xcb_poly_text_16_sizeof")
     poly_text_16_sizeof :: proc(
         buffer : rawptr,
-        itemsLen : u32
+        itemsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_poly_text_16_checked")
@@ -5792,7 +5792,7 @@ foreign x11_xcb {
         x : i16,
         y : i16,
         itemsLen : u32,
-        items : ^u8
+        items : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_text_16")
@@ -5803,7 +5803,7 @@ foreign x11_xcb {
         x : i16,
         y : i16,
         itemsLen : u32,
-        items : ^u8
+        items : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_poly_text_16_items")
@@ -5826,7 +5826,7 @@ foreign x11_xcb {
         gc : Gcontext,
         x : i16,
         y : i16,
-        string : cstring
+        string : cstring,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_image_text_8")
@@ -5837,7 +5837,7 @@ foreign x11_xcb {
         gc : Gcontext,
         x : i16,
         y : i16,
-        string : cstring
+        string : cstring,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_image_text_8_string")
@@ -5860,7 +5860,7 @@ foreign x11_xcb {
         gc : Gcontext,
         x : i16,
         y : i16,
-        string : ^Char2B
+        string : ^Char2B,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_image_text_16")
@@ -5871,7 +5871,7 @@ foreign x11_xcb {
         gc : Gcontext,
         x : i16,
         y : i16,
-        string : ^Char2B
+        string : ^Char2B,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_image_text_16_string")
@@ -5889,7 +5889,7 @@ foreign x11_xcb {
         alloc : u8,
         mid : Colormap,
         window : Window,
-        visual : Visualid
+        visual : Visualid,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_colormap")
@@ -5898,57 +5898,57 @@ foreign x11_xcb {
         alloc : u8,
         mid : Colormap,
         window : Window,
-        visual : Visualid
+        visual : Visualid,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_free_colormap_checked")
     free_colormap_checked :: proc(
         c : ^Connection,
-        cmap : Colormap
+        cmap : Colormap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_free_colormap")
     free_colormap :: proc(
         c : ^Connection,
-        cmap : Colormap
+        cmap : Colormap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_copy_colormap_and_free_checked")
     copy_colormap_and_free_checked :: proc(
         c : ^Connection,
         mid : Colormap,
-        srcCmap : Colormap
+        srcCmap : Colormap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_copy_colormap_and_free")
     copy_colormap_and_free :: proc(
         c : ^Connection,
         mid : Colormap,
-        srcCmap : Colormap
+        srcCmap : Colormap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_install_colormap_checked")
     install_colormap_checked :: proc(
         c : ^Connection,
-        cmap : Colormap
+        cmap : Colormap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_install_colormap")
     install_colormap :: proc(
         c : ^Connection,
-        cmap : Colormap
+        cmap : Colormap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_uninstall_colormap_checked")
     uninstall_colormap_checked :: proc(
         c : ^Connection,
-        cmap : Colormap
+        cmap : Colormap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_uninstall_colormap")
     uninstall_colormap :: proc(
         c : ^Connection,
-        cmap : Colormap
+        cmap : Colormap,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_list_installed_colormaps_sizeof")
@@ -5957,13 +5957,13 @@ foreign x11_xcb {
     @(link_name="xcb_list_installed_colormaps")
     list_installed_colormaps :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> ListInstalledColormapsCookie ---;
 
     @(link_name="xcb_list_installed_colormaps_unchecked")
     list_installed_colormaps_unchecked :: proc(
         c : ^Connection,
-        window : Window
+        window : Window,
     ) -> ListInstalledColormapsCookie ---;
 
     @(link_name="xcb_list_installed_colormaps_cmaps")
@@ -5979,7 +5979,7 @@ foreign x11_xcb {
     list_installed_colormaps_reply :: proc(
         c : ^Connection,
         cookie : ListInstalledColormapsCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^ListInstalledColormapsReply ---;
 
     @(link_name="xcb_alloc_color")
@@ -5988,7 +5988,7 @@ foreign x11_xcb {
         cmap : Colormap,
         red : u16,
         green : u16,
-        blue : u16
+        blue : u16,
     ) -> AllocColorCookie ---;
 
     @(link_name="xcb_alloc_color_unchecked")
@@ -5997,14 +5997,14 @@ foreign x11_xcb {
         cmap : Colormap,
         red : u16,
         green : u16,
-        blue : u16
+        blue : u16,
     ) -> AllocColorCookie ---;
 
     @(link_name="xcb_alloc_color_reply")
     alloc_color_reply :: proc(
         c : ^Connection,
         cookie : AllocColorCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^AllocColorReply ---;
 
     @(link_name="xcb_alloc_named_color_sizeof")
@@ -6015,7 +6015,7 @@ foreign x11_xcb {
         c : ^Connection,
         cmap : Colormap,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> AllocNamedColorCookie ---;
 
     @(link_name="xcb_alloc_named_color_unchecked")
@@ -6023,14 +6023,14 @@ foreign x11_xcb {
         c : ^Connection,
         cmap : Colormap,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> AllocNamedColorCookie ---;
 
     @(link_name="xcb_alloc_named_color_reply")
     alloc_named_color_reply :: proc(
         c : ^Connection,
         cookie : AllocNamedColorCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^AllocNamedColorReply ---;
 
     @(link_name="xcb_alloc_color_cells_sizeof")
@@ -6042,7 +6042,7 @@ foreign x11_xcb {
         contiguous : u8,
         cmap : Colormap,
         colors : u16,
-        planes : u16
+        planes : u16,
     ) -> AllocColorCellsCookie ---;
 
     @(link_name="xcb_alloc_color_cells_unchecked")
@@ -6051,7 +6051,7 @@ foreign x11_xcb {
         contiguous : u8,
         cmap : Colormap,
         colors : u16,
-        planes : u16
+        planes : u16,
     ) -> AllocColorCellsCookie ---;
 
     @(link_name="xcb_alloc_color_cells_pixels")
@@ -6076,7 +6076,7 @@ foreign x11_xcb {
     alloc_color_cells_reply :: proc(
         c : ^Connection,
         cookie : AllocColorCellsCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^AllocColorCellsReply ---;
 
     @(link_name="xcb_alloc_color_planes_sizeof")
@@ -6090,7 +6090,7 @@ foreign x11_xcb {
         colors : u16,
         reds : u16,
         greens : u16,
-        blues : u16
+        blues : u16,
     ) -> AllocColorPlanesCookie ---;
 
     @(link_name="xcb_alloc_color_planes_unchecked")
@@ -6101,7 +6101,7 @@ foreign x11_xcb {
         colors : u16,
         reds : u16,
         greens : u16,
-        blues : u16
+        blues : u16,
     ) -> AllocColorPlanesCookie ---;
 
     @(link_name="xcb_alloc_color_planes_pixels")
@@ -6117,13 +6117,13 @@ foreign x11_xcb {
     alloc_color_planes_reply :: proc(
         c : ^Connection,
         cookie : AllocColorPlanesCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^AllocColorPlanesReply ---;
 
     @(link_name="xcb_free_colors_sizeof")
     free_colors_sizeof :: proc(
         buffer : rawptr,
-        pixelsLen : u32
+        pixelsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_free_colors_checked")
@@ -6132,7 +6132,7 @@ foreign x11_xcb {
         cmap : Colormap,
         planeMask : u32,
         pixelsLen : u32,
-        pixels : ^u32
+        pixels : ^u32,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_free_colors")
@@ -6141,7 +6141,7 @@ foreign x11_xcb {
         cmap : Colormap,
         planeMask : u32,
         pixelsLen : u32,
-        pixels : ^u32
+        pixels : ^u32,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_free_colors_pixels")
@@ -6162,7 +6162,7 @@ foreign x11_xcb {
     @(link_name="xcb_store_colors_sizeof")
     store_colors_sizeof :: proc(
         buffer : rawptr,
-        itemsLen : u32
+        itemsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_store_colors_checked")
@@ -6170,7 +6170,7 @@ foreign x11_xcb {
         c : ^Connection,
         cmap : Colormap,
         itemsLen : u32,
-        items : ^Coloritem
+        items : ^Coloritem,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_store_colors")
@@ -6178,7 +6178,7 @@ foreign x11_xcb {
         c : ^Connection,
         cmap : Colormap,
         itemsLen : u32,
-        items : ^Coloritem
+        items : ^Coloritem,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_store_colors_items")
@@ -6200,7 +6200,7 @@ foreign x11_xcb {
         cmap : Colormap,
         pixel : u32,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_store_named_color")
@@ -6210,7 +6210,7 @@ foreign x11_xcb {
         cmap : Colormap,
         pixel : u32,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_store_named_color_name")
@@ -6231,7 +6231,7 @@ foreign x11_xcb {
     @(link_name="xcb_query_colors_sizeof")
     query_colors_sizeof :: proc(
         buffer : rawptr,
-        pixelsLen : u32
+        pixelsLen : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_query_colors")
@@ -6239,7 +6239,7 @@ foreign x11_xcb {
         c : ^Connection,
         cmap : Colormap,
         pixelsLen : u32,
-        pixels : ^u32
+        pixels : ^u32,
     ) -> QueryColorsCookie ---;
 
     @(link_name="xcb_query_colors_unchecked")
@@ -6247,7 +6247,7 @@ foreign x11_xcb {
         c : ^Connection,
         cmap : Colormap,
         pixelsLen : u32,
-        pixels : ^u32
+        pixels : ^u32,
     ) -> QueryColorsCookie ---;
 
     @(link_name="xcb_query_colors_colors")
@@ -6263,7 +6263,7 @@ foreign x11_xcb {
     query_colors_reply :: proc(
         c : ^Connection,
         cookie : QueryColorsCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^QueryColorsReply ---;
 
     @(link_name="xcb_lookup_color_sizeof")
@@ -6274,7 +6274,7 @@ foreign x11_xcb {
         c : ^Connection,
         cmap : Colormap,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> LookupColorCookie ---;
 
     @(link_name="xcb_lookup_color_unchecked")
@@ -6282,14 +6282,14 @@ foreign x11_xcb {
         c : ^Connection,
         cmap : Colormap,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> LookupColorCookie ---;
 
     @(link_name="xcb_lookup_color_reply")
     lookup_color_reply :: proc(
         c : ^Connection,
         cookie : LookupColorCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^LookupColorReply ---;
 
     @(link_name="xcb_create_cursor_checked")
@@ -6305,7 +6305,7 @@ foreign x11_xcb {
         backGreen : u16,
         backBlue : u16,
         x : u16,
-        y : u16
+        y : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_cursor")
@@ -6321,7 +6321,7 @@ foreign x11_xcb {
         backGreen : u16,
         backBlue : u16,
         x : u16,
-        y : u16
+        y : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_glyph_cursor_checked")
@@ -6337,7 +6337,7 @@ foreign x11_xcb {
         foreBlue : u16,
         backRed : u16,
         backGreen : u16,
-        backBlue : u16
+        backBlue : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_create_glyph_cursor")
@@ -6353,19 +6353,19 @@ foreign x11_xcb {
         foreBlue : u16,
         backRed : u16,
         backGreen : u16,
-        backBlue : u16
+        backBlue : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_free_cursor_checked")
     free_cursor_checked :: proc(
         c : ^Connection,
-        cursor : Cursor
+        cursor : Cursor,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_free_cursor")
     free_cursor :: proc(
         c : ^Connection,
-        cursor : Cursor
+        cursor : Cursor,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_recolor_cursor_checked")
@@ -6377,7 +6377,7 @@ foreign x11_xcb {
         foreBlue : u16,
         backRed : u16,
         backGreen : u16,
-        backBlue : u16
+        backBlue : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_recolor_cursor")
@@ -6389,7 +6389,7 @@ foreign x11_xcb {
         foreBlue : u16,
         backRed : u16,
         backGreen : u16,
-        backBlue : u16
+        backBlue : u16,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_query_best_size")
@@ -6398,7 +6398,7 @@ foreign x11_xcb {
         class : u8,
         drawable : Drawable,
         width : u16,
-        height : u16
+        height : u16,
     ) -> QueryBestSizeCookie ---;
 
     @(link_name="xcb_query_best_size_unchecked")
@@ -6407,14 +6407,14 @@ foreign x11_xcb {
         class : u8,
         drawable : Drawable,
         width : u16,
-        height : u16
+        height : u16,
     ) -> QueryBestSizeCookie ---;
 
     @(link_name="xcb_query_best_size_reply")
     query_best_size_reply :: proc(
         c : ^Connection,
         cookie : QueryBestSizeCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^QueryBestSizeReply ---;
 
     @(link_name="xcb_query_extension_sizeof")
@@ -6424,21 +6424,21 @@ foreign x11_xcb {
     query_extension :: proc(
         c : ^Connection,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> QueryExtensionCookie ---;
 
     @(link_name="xcb_query_extension_unchecked")
     query_extension_unchecked :: proc(
         c : ^Connection,
         nameLen : u16,
-        name : cstring
+        name : cstring,
     ) -> QueryExtensionCookie ---;
 
     @(link_name="xcb_query_extension_reply")
     query_extension_reply :: proc(
         c : ^Connection,
         cookie : QueryExtensionCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^QueryExtensionReply ---;
 
     @(link_name="xcb_list_extensions_sizeof")
@@ -6460,7 +6460,7 @@ foreign x11_xcb {
     list_extensions_reply :: proc(
         c : ^Connection,
         cookie : ListExtensionsCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^ListExtensionsReply ---;
 
     @(link_name="xcb_change_keyboard_mapping_sizeof")
@@ -6472,7 +6472,7 @@ foreign x11_xcb {
         keycodeCount : u8,
         firstKeycode : Keycode,
         keysymsPerKeycode : u8,
-        keysyms : ^Keysym
+        keysyms : ^Keysym,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_keyboard_mapping")
@@ -6481,7 +6481,7 @@ foreign x11_xcb {
         keycodeCount : u8,
         firstKeycode : Keycode,
         keysymsPerKeycode : u8,
-        keysyms : ^Keysym
+        keysyms : ^Keysym,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_keyboard_mapping_keysyms")
@@ -6500,14 +6500,14 @@ foreign x11_xcb {
     get_keyboard_mapping :: proc(
         c : ^Connection,
         firstKeycode : Keycode,
-        count : u8
+        count : u8,
     ) -> GetKeyboardMappingCookie ---;
 
     @(link_name="xcb_get_keyboard_mapping_unchecked")
     get_keyboard_mapping_unchecked :: proc(
         c : ^Connection,
         firstKeycode : Keycode,
-        count : u8
+        count : u8,
     ) -> GetKeyboardMappingCookie ---;
 
     @(link_name="xcb_get_keyboard_mapping_keysyms")
@@ -6523,27 +6523,27 @@ foreign x11_xcb {
     get_keyboard_mapping_reply :: proc(
         c : ^Connection,
         cookie : GetKeyboardMappingCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetKeyboardMappingReply ---;
 
     @(link_name="xcb_change_keyboard_control_value_list_serialize")
     change_keyboard_control_value_list_serialize :: proc(
         buffer : ^rawptr,
         valueMask : u32,
-        aux : ^ChangeKeyboardControlValueList
+        aux : ^ChangeKeyboardControlValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_change_keyboard_control_value_list_unpack")
     change_keyboard_control_value_list_unpack :: proc(
         buffer : rawptr,
         valueMask : u32,
-        aux : ^ChangeKeyboardControlValueList
+        aux : ^ChangeKeyboardControlValueList,
     ) -> _c.int ---;
 
     @(link_name="xcb_change_keyboard_control_value_list_sizeof")
     change_keyboard_control_value_list_sizeof :: proc(
         buffer : rawptr,
-        valueMask : u32
+        valueMask : u32,
     ) -> _c.int ---;
 
     @(link_name="xcb_change_keyboard_control_sizeof")
@@ -6553,28 +6553,28 @@ foreign x11_xcb {
     change_keyboard_control_checked :: proc(
         c : ^Connection,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_keyboard_control")
     change_keyboard_control :: proc(
         c : ^Connection,
         valueMask : u32,
-        valueList : rawptr
+        valueList : rawptr,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_keyboard_control_aux_checked")
     change_keyboard_control_aux_checked :: proc(
         c : ^Connection,
         valueMask : u32,
-        valueList : ^ChangeKeyboardControlValueList
+        valueList : ^ChangeKeyboardControlValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_keyboard_control_aux")
     change_keyboard_control_aux :: proc(
         c : ^Connection,
         valueMask : u32,
-        valueList : ^ChangeKeyboardControlValueList
+        valueList : ^ChangeKeyboardControlValueList,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_keyboard_control_value_list")
@@ -6590,19 +6590,19 @@ foreign x11_xcb {
     get_keyboard_control_reply :: proc(
         c : ^Connection,
         cookie : GetKeyboardControlCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetKeyboardControlReply ---;
 
     @(link_name="xcb_bell_checked")
     bell_checked :: proc(
         c : ^Connection,
-        percent : i8
+        percent : i8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_bell")
     bell :: proc(
         c : ^Connection,
-        percent : i8
+        percent : i8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_pointer_control_checked")
@@ -6612,7 +6612,7 @@ foreign x11_xcb {
         accelerationDenominator : i16,
         threshold : i16,
         doAcceleration : u8,
-        doThreshold : u8
+        doThreshold : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_pointer_control")
@@ -6622,7 +6622,7 @@ foreign x11_xcb {
         accelerationDenominator : i16,
         threshold : i16,
         doAcceleration : u8,
-        doThreshold : u8
+        doThreshold : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_get_pointer_control")
@@ -6635,7 +6635,7 @@ foreign x11_xcb {
     get_pointer_control_reply :: proc(
         c : ^Connection,
         cookie : GetPointerControlCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetPointerControlReply ---;
 
     @(link_name="xcb_set_screen_saver_checked")
@@ -6644,7 +6644,7 @@ foreign x11_xcb {
         timeout : i16,
         interval : i16,
         preferBlanking : u8,
-        allowExposures : u8
+        allowExposures : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_screen_saver")
@@ -6653,7 +6653,7 @@ foreign x11_xcb {
         timeout : i16,
         interval : i16,
         preferBlanking : u8,
-        allowExposures : u8
+        allowExposures : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_get_screen_saver")
@@ -6666,7 +6666,7 @@ foreign x11_xcb {
     get_screen_saver_reply :: proc(
         c : ^Connection,
         cookie : GetScreenSaverCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetScreenSaverReply ---;
 
     @(link_name="xcb_change_hosts_sizeof")
@@ -6678,7 +6678,7 @@ foreign x11_xcb {
         mode : u8,
         family : u8,
         addressLen : u16,
-        address : ^u8
+        address : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_hosts")
@@ -6687,7 +6687,7 @@ foreign x11_xcb {
         mode : u8,
         family : u8,
         addressLen : u16,
-        address : ^u8
+        address : ^u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_change_hosts_address")
@@ -6736,43 +6736,43 @@ foreign x11_xcb {
     list_hosts_reply :: proc(
         c : ^Connection,
         cookie : ListHostsCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^ListHostsReply ---;
 
     @(link_name="xcb_set_access_control_checked")
     set_access_control_checked :: proc(
         c : ^Connection,
-        mode : u8
+        mode : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_access_control")
     set_access_control :: proc(
         c : ^Connection,
-        mode : u8
+        mode : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_close_down_mode_checked")
     set_close_down_mode_checked :: proc(
         c : ^Connection,
-        mode : u8
+        mode : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_close_down_mode")
     set_close_down_mode :: proc(
         c : ^Connection,
-        mode : u8
+        mode : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_kill_client_checked")
     kill_client_checked :: proc(
         c : ^Connection,
-        resource : u32
+        resource : u32,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_kill_client")
     kill_client :: proc(
         c : ^Connection,
-        resource : u32
+        resource : u32,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_rotate_properties_sizeof")
@@ -6784,7 +6784,7 @@ foreign x11_xcb {
         window : Window,
         atomsLen : u16,
         delta : i16,
-        atoms : ^Atom
+        atoms : ^Atom,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_rotate_properties")
@@ -6793,7 +6793,7 @@ foreign x11_xcb {
         window : Window,
         atomsLen : u16,
         delta : i16,
-        atoms : ^Atom
+        atoms : ^Atom,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_rotate_properties_atoms")
@@ -6808,13 +6808,13 @@ foreign x11_xcb {
     @(link_name="xcb_force_screen_saver_checked")
     force_screen_saver_checked :: proc(
         c : ^Connection,
-        mode : u8
+        mode : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_force_screen_saver")
     force_screen_saver :: proc(
         c : ^Connection,
-        mode : u8
+        mode : u8,
     ) -> VoidCookie ---;
 
     @(link_name="xcb_set_pointer_mapping_sizeof")
@@ -6824,21 +6824,21 @@ foreign x11_xcb {
     set_pointer_mapping :: proc(
         c : ^Connection,
         mapLen : u8,
-        _map : ^u8
+        _map : ^u8,
     ) -> SetPointerMappingCookie ---;
 
     @(link_name="xcb_set_pointer_mapping_unchecked")
     set_pointer_mapping_unchecked :: proc(
         c : ^Connection,
         mapLen : u8,
-        _map : ^u8
+        _map : ^u8,
     ) -> SetPointerMappingCookie ---;
 
     @(link_name="xcb_set_pointer_mapping_reply")
     set_pointer_mapping_reply :: proc(
         c : ^Connection,
         cookie : SetPointerMappingCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^SetPointerMappingReply ---;
 
     @(link_name="xcb_get_pointer_mapping_sizeof")
@@ -6863,7 +6863,7 @@ foreign x11_xcb {
     get_pointer_mapping_reply :: proc(
         c : ^Connection,
         cookie : GetPointerMappingCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetPointerMappingReply ---;
 
     @(link_name="xcb_set_modifier_mapping_sizeof")
@@ -6873,21 +6873,21 @@ foreign x11_xcb {
     set_modifier_mapping :: proc(
         c : ^Connection,
         keycodesPerModifier : u8,
-        keycodes : ^Keycode
+        keycodes : ^Keycode,
     ) -> SetModifierMappingCookie ---;
 
     @(link_name="xcb_set_modifier_mapping_unchecked")
     set_modifier_mapping_unchecked :: proc(
         c : ^Connection,
         keycodesPerModifier : u8,
-        keycodes : ^Keycode
+        keycodes : ^Keycode,
     ) -> SetModifierMappingCookie ---;
 
     @(link_name="xcb_set_modifier_mapping_reply")
     set_modifier_mapping_reply :: proc(
         c : ^Connection,
         cookie : SetModifierMappingCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^SetModifierMappingReply ---;
 
     @(link_name="xcb_get_modifier_mapping_sizeof")
@@ -6912,7 +6912,7 @@ foreign x11_xcb {
     get_modifier_mapping_reply :: proc(
         c : ^Connection,
         cookie : GetModifierMappingCookie,
-        e : ^^GenericError
+        e : ^^GenericError,
     ) -> ^GetModifierMappingReply ---;
 
     @(link_name="xcb_no_operation_checked")

@@ -237,7 +237,7 @@ image_transition_image_layout :: proc(image: ^Image,
     0,
     0, nil,
     0, nil,
-    1, &barrier
+    1, &barrier,
   );
 
   vk_end_single_time_commands(image.device,
