@@ -63,7 +63,7 @@ wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator :=
   use_found:
   for !wavefront_object_scanner_finished(scanner) {
     v := wavefront_object_scanner_byte_at_pos(scanner);
-    log.debugf("v: %v", rune(v));
+    // log.debugf("v: %v", rune(v));
     switch {
     case strings.index_byte(VALID_STARTS, v) > -1:
       switch v {
@@ -137,13 +137,13 @@ wavefront_object_parser :: proc(scanner: ^Wavefront_Object_Scanner, allocator :=
     x, y, z, w: f32;
     xok, yok, zok, wok:bool;
     x, xok = wavefront_object_scanner_consume_f32(scanner);
-    log.infof("x: %v, xok: %v", x, xok);
+    // log.infof("x: %v, xok: %v", x, xok);
     y, yok = wavefront_object_scanner_consume_f32(scanner);
-    log.infof("y: %v, yok: %v", y, yok);
+    // log.infof("y: %v, yok: %v", y, yok);
     z, zok = wavefront_object_scanner_consume_f32(scanner);
-    log.infof("z: %v, zok: %v", z, zok);
+    // log.infof("z: %v, zok: %v", z, zok);
     w, wok = wavefront_object_scanner_consume_f32(scanner);
-    log.infof("w: %v, wok: %v", w, wok);
+    // log.infof("w: %v, wok: %v", w, wok);
     if xok && yok && zok {
       v := lin.Vector4f32{x, y, z, 1.0};
       if wok {

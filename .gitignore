@@ -2,5 +2,6 @@ tic-tac-toe
 tic-tac-toe.sublime-*
 tic-tac-toe.code-*
 .vscode/
+.idea/
 *.spv
 test_obj_loader

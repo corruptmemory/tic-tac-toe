@@ -187,10 +187,10 @@ wavefront_object_scanner_consume_number :: proc(scanner: ^Wavefront_Object_Scann
 wavefront_object_scanner_consume_f32 :: proc(scanner: ^Wavefront_Object_Scanner) -> (r: f32, ok: bool) {
   bs := wavefront_object_scanner_consume_number(scanner);
   bss := string(bs);
-  log.infof("bs: '%s'", bss);
+  // log.infof("bs: '%s'", bss);
   if len(bs) > 0 {
     r, ok = strconv.parse_f32(bss);
-    log.infof("r: %v, ok: %v", r, ok);
+    // log.infof("r: %v, ok: %v", r, ok);
     return;
   }
   return 0.0, false;

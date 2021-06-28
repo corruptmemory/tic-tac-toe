@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 # set -x
-/home/jim/projects/Odin/odin "$1" "$2" -collection:shared=/home/jim/projects/tic-tac-toe/external '-define:TOOLKIT="sdl2"' -define:VULKAN_VALIDATION=true
+/home/jim/projects/Odin/odin "$1" "$2" -debug -collection:shared=/home/jim/projects/tic-tac-toe/external '-define:TOOLKIT="sdl2"' -define:VULKAN_VALIDATION=true

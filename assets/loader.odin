@@ -12,7 +12,6 @@ load_3d_models :: proc(assets: ^Asset_Catalog, file: string, allocator := contex
     log.errorf("ERROR: failed to load: %s", file);
     return false;
   }
-  fmt.printf("wff: %v\n", &wff);
   for obj in wff.objects {
     vertices := make([dynamic]Vertex, 0, len(obj.faces) * 3, allocator);
     indices := make([dynamic]u32, 0, len(obj.faces) * 3, allocator);
@@ -20,7 +19,7 @@ load_3d_models :: proc(assets: ^Asset_Catalog, file: string, allocator := contex
 
     for f, _ in obj.faces {
       for i, iidx in f.vertices {
-        fmt.printf("i: %d, iidx: %d, obj.vertices: %v\n", i, iidx, obj.vertices);
+        // fmt.printf("i: %d, iidx: %d, obj.vertices: %v\n", i, iidx, obj.vertices);
         v := obj.vertices[i];
         tv := obj.texture_coords[f.texture_vertices[iidx]];
         vn := obj.vertex_normals[f.normals[iidx]];
