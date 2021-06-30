@@ -1745,6 +1745,7 @@ graphics_create_descriptor_layout :: proc(ctx: ^Graphics_Context) -> bool {
 
 
 graphics_destroy :: proc(ctx: ^Graphics_Context) {
+  log.debug("in graphics_destroy");
   vk.device_wait_idle(ctx.device);
   if ctx.depthImageView != nil do vk.destroy_image_view(ctx.device, ctx.depthImageView, nil);
   if ctx.depthImage != nil do vk.destroy_image(ctx.device, ctx.depthImage, nil);
@@ -1760,8 +1761,8 @@ graphics_destroy :: proc(ctx: ^Graphics_Context) {
   if ctx.board.index_buffer_memory != nil do vk.free_memory(ctx.device, ctx.board.index_buffer_memory, nil);
   if ctx.piece.vertices != nil do delete(ctx.piece.vertices);
   if ctx.piece.indices != nil do delete(ctx.piece.indices);
-  if ctx.board.vertices != nil do delete(ctx.piece.vertices);
-  if ctx.board.indices != nil do delete(ctx.piece.indices);
+  if ctx.board.vertices != nil do delete(ctx.board.vertices);
+  if ctx.board.indices != nil do delete(ctx.board.indices);
   if ctx.piece.vertex_buffer != nil do vk.destroy_buffer(ctx.device, ctx.piece.vertex_buffer,nil);
   if ctx.board.vertex_buffer != nil do vk.destroy_buffer(ctx.device, ctx.board.vertex_buffer,nil);
   if ctx.piece.vertex_buffer_memory != nil do vk.free_memory(ctx.device, ctx.piece.vertex_buffer_memory, nil);
