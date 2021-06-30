@@ -1181,116 +1181,100 @@ graphics_create_shader_module :: proc(device: vk.Device, code: []byte) -> (vk.Sh
 }
 
 
-get_piece_binding_description :: proc() -> []vk.VertexInputBindingDescription {
-  bindingDescription := []vk.VertexInputBindingDescription{
-    {
+get_piece_binding_description :: proc(inp: ^[dynamic]vk.VertexInputBindingDescription) {
+  append(inp, vk.VertexInputBindingDescription{
       binding = 0,
       stride = size_of(Vertex),
       inputRate = vk.VertexInputRate.Vertex,
-    },
-    {
+    });
+  append(inp, vk.VertexInputBindingDescription{
       binding = 1,
       stride = size_of(Instance_Data),
       inputRate = vk.VertexInputRate.Instance,
-    },
-  };
-
-  return bindingDescription;
+    });
 }
 
 
-get_piece_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
-  attributeDescriptions := []vk.VertexInputAttributeDescription{
-    {
-      binding = 0,
-      location = 0,
-      format = vk.Format.R32G32B32Sfloat,
-      offset = u32(offset_of(Vertex, pos)),
-    },
-    {
-      binding = 0,
-      location = 1,
-      format = vk.Format.R32G32B32Sfloat,
-      offset = u32(offset_of(Vertex, normal)),
-    },
-    {
-      binding = 0,
-      location = 2,
-      format = vk.Format.R32G32Sfloat,
-      offset = u32(offset_of(Vertex, uv)),
-    },
-    {
-      binding = 0,
-      location = 3,
-      format = vk.Format.R32G32B32Sfloat,
-      offset = u32(offset_of(Vertex, color)),
-    },
-    {
-      binding = 1,
-      location = 4,
-      format = vk.Format.R32G32B32Sfloat,
-      offset = u32(offset_of(Instance_Data, pos)),
-    },
-    {
-      binding = 1,
-      location = 5,
-      format = vk.Format.R32G32B32Sfloat,
-      offset = u32(offset_of(Instance_Data, rot)),
-    },
-    {
-      binding = 1,
-      location = 6,
-      format = vk.Format.R32Sfloat,
-      offset = u32(offset_of(Instance_Data, scale)),
-    },
-    {
-      binding = 1,
-      location = 7,
-      format = vk.Format.R32Sint,
-      offset = u32(offset_of(Instance_Data, tex_index)),
-    },
-  };
-
-  return attributeDescriptions;
+get_piece_attribute_descriptions :: proc(inp: ^[dynamic]vk.VertexInputAttributeDescription) {
+  append(inp, vk.VertexInputAttributeDescription {
+    binding = 0,
+    location = 0,
+    format = vk.Format.R32G32B32Sfloat,
+    offset = u32(offset_of(Vertex, pos)),
+  });
+  append(inp, vk.VertexInputAttributeDescription {
+    binding = 0,
+    location = 1,
+    format = vk.Format.R32G32B32Sfloat,
+    offset = u32(offset_of(Vertex, normal)),
+  });
+  append(inp, vk.VertexInputAttributeDescription {
+    binding = 0,
+    location = 2,
+    format = vk.Format.R32G32Sfloat,
+    offset = u32(offset_of(Vertex, uv)),
+  });
+  append(inp, vk.VertexInputAttributeDescription {
+    binding = 0,
+    location = 3,
+    format = vk.Format.R32G32B32Sfloat,
+    offset = u32(offset_of(Vertex, color)),
+  });
+  append(inp, vk.VertexInputAttributeDescription {
+    binding = 1,
+    location = 4,
+    format = vk.Format.R32G32B32Sfloat,
+    offset = u32(offset_of(Instance_Data, pos)),
+  });
+  append(inp, vk.VertexInputAttributeDescription {
+    binding = 1,
+    location = 5,
+    format = vk.Format.R32G32B32Sfloat,
+    offset = u32(offset_of(Instance_Data, rot)),
+  });
+  append(inp, vk.VertexInputAttributeDescription {
+    binding = 1,
+    location = 6,
+    format = vk.Format.R32Sfloat,
+    offset = u32(offset_of(Instance_Data, scale)),
+  });
+  append(inp, vk.VertexInputAttributeDescription {
+    binding = 1,
+    location = 7,
+    format = vk.Format.R32Sint,
+    offset = u32(offset_of(Instance_Data, tex_index)),
+  });
 }
 
 
-get_board_binding_description :: proc() -> []vk.VertexInputBindingDescription {
-  bindingDescription := []vk.VertexInputBindingDescription{
-    {
-      binding = 0,
-      stride = size_of(Vertex),
-      inputRate = vk.VertexInputRate.Vertex,
-    },
-  };
-
-  return bindingDescription;
+get_board_binding_description :: proc(inp: ^[dynamic]vk.VertexInputBindingDescription) {
+  append(inp, vk.VertexInputBindingDescription{
+    binding = 0,
+    stride = size_of(Vertex),
+    inputRate = vk.VertexInputRate.Vertex,
+  });
 }
 
 
-get_board_attribute_descriptions :: proc() -> []vk.VertexInputAttributeDescription {
-  attributeDescriptions := []vk.VertexInputAttributeDescription{
-    {
-      binding = 0,
-      location = 0,
-      format = vk.Format.R32G32B32Sfloat,
-      offset = u32(offset_of(Vertex, pos)),
-    },
-    {
-      binding = 0,
-      location = 1,
-      format = vk.Format.R32G32B32Sfloat,
-      offset = u32(offset_of(Vertex, normal)),
-    },
-    {
-      binding = 0,
-      location = 2,
-      format = vk.Format.R32G32Sfloat,
-      offset = u32(offset_of(Vertex, uv)),
-    },
-  };
-
-  return attributeDescriptions;
+get_board_attribute_descriptions :: proc(inp: ^[dynamic]vk.VertexInputAttributeDescription) {
+  append(inp, vk.VertexInputAttributeDescription{
+    binding = 0,
+    location = 0,
+    format = vk.Format.R32G32B32Sfloat,
+    offset = u32(offset_of(Vertex, pos)),
+  });
+  append(inp, vk.VertexInputAttributeDescription{
+    binding = 0,
+    location = 1,
+    format = vk.Format.R32G32B32Sfloat,
+    offset = u32(offset_of(Vertex, normal)),
+  });
+  append(inp, vk.VertexInputAttributeDescription{
+    binding = 0,
+    location = 2,
+    format = vk.Format.R32G32Sfloat,
+    offset = u32(offset_of(Vertex, uv)),
+  });
 }
 
 
@@ -1325,6 +1309,13 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
   board_info: Shader_Info;
   piece_info: Shader_Info;
 
+  log.info("I'm in the graphics_create_graphics_pipeline function");
+
+  bindings: [dynamic]vk.VertexInputBindingDescription;
+  attributes: [dynamic]vk.VertexInputAttributeDescription;
+  defer delete(bindings);
+  defer delete(attributes);
+
   ok = init_shader_info(&background_info,
                        ctx.device,
                        "shaders/background-vert.spv",
@@ -1333,32 +1324,33 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
                        nil);
   if !ok do return false;
   defer delete_shader_info(ctx.device, &background_info);
+  get_board_binding_description(&bindings);
+  get_board_attribute_descriptions(&attributes);
   ok = init_shader_info(&board_info,
                        ctx.device,
                        "shaders/board-vert.spv",
                        "shaders/board-frag.spv",
-                       get_board_binding_description(),
-                       get_board_attribute_descriptions());
+                       bindings[:],
+                       attributes[:]);
   if !ok do return false;
   defer delete_shader_info(ctx.device, &board_info);
+  clear_dynamic_array(&bindings);
+  clear_dynamic_array(&attributes);
+  get_piece_binding_description(&bindings);
+  get_piece_attribute_descriptions(&attributes);
   ok = init_shader_info(&piece_info,
                        ctx.device,
                        "shaders/piece-vert.spv",
                        "shaders/piece-frag.spv",
-                       get_piece_binding_description(),
-                       get_piece_attribute_descriptions());
+                       bindings[:],
+                       attributes[:]);
   if !ok do return false;
   defer delete_shader_info(ctx.device, &piece_info);
 
   shader_stages: [2]vk.PipelineShaderStageCreateInfo;
 
-  binding_description := get_piece_binding_description();
-  attribute_descriptions := get_piece_attribute_descriptions();
-
   vertex_input_info := vk.PipelineVertexInputStateCreateInfo{
     sType = vk.StructureType.PipelineVertexInputStateCreateInfo,
-    pVertexBindingDescriptions = mem.raw_slice_data(binding_description),
-    pVertexAttributeDescriptions = mem.raw_slice_data(attribute_descriptions),
   };
 
   input_assembly := vk.PipelineInputAssemblyStateCreateInfo{
@@ -1460,7 +1452,9 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
   shader_stages[0] = piece_info.vertex_info;
   shader_stages[1] = piece_info.fragment_info;
   vertex_input_info.vertexBindingDescriptionCount = u32(len(piece_info.bindings));
+  vertex_input_info.pVertexBindingDescriptions = mem.raw_slice_data(piece_info.bindings);
   vertex_input_info.vertexAttributeDescriptionCount = u32(len(piece_info.attributes));
+  vertex_input_info.pVertexAttributeDescriptions = mem.raw_slice_data(piece_info.attributes);
   if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.piece.pipeline) != vk.Result.Success {
     log.error("Error: failed to create graphics pipleine for piece");
     return false;
@@ -1469,7 +1463,9 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
   shader_stages[0] = board_info.vertex_info;
   shader_stages[1] = board_info.fragment_info;
   vertex_input_info.vertexBindingDescriptionCount = u32(len(board_info.bindings));
+  vertex_input_info.pVertexBindingDescriptions = mem.raw_slice_data(board_info.bindings);
   vertex_input_info.vertexAttributeDescriptionCount = u32(len(board_info.attributes));
+  vertex_input_info.pVertexAttributeDescriptions = mem.raw_slice_data(board_info.attributes);
   if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.board.pipeline) != vk.Result.Success {
     vk.destroy_pipeline(ctx.device, ctx.piece.pipeline, nil);
     ctx.piece.pipeline = nil;
@@ -1480,7 +1476,9 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
   shader_stages[0] = background_info.vertex_info;
   shader_stages[1] = background_info.fragment_info;
   vertex_input_info.vertexBindingDescriptionCount = 0;
+  vertex_input_info.pVertexBindingDescriptions = nil;
   vertex_input_info.vertexAttributeDescriptionCount = 0;
+  vertex_input_info.pVertexAttributeDescriptions = nil;
   if vk.create_graphics_pipelines(ctx.device, nil, 1, &pipeline_info, nil, &ctx.background_pipeline) != vk.Result.Success {
     vk.destroy_pipeline(ctx.device, ctx.piece.pipeline, nil);
     vk.destroy_pipeline(ctx.device, ctx.board.pipeline, nil);
@@ -1490,6 +1488,7 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
     return false;
   }
 
+  log.info("END OF the graphics_create_graphics_pipeline function");
 
   return true;
 }
