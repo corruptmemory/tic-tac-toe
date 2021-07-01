@@ -20,7 +20,7 @@ layout (location = 4) out vec3 outLightVec;
 
 void main()
 {
-  outColor = vec3(1.0f);
+  outColor = vec3(1.0f, 0.5f, 0.5f);
   outUV = inUV * vec2(10.0, 6.0);
   gl_Position = ubo.projection * ubo.modelview * vec4(inPos.xyz, 1.0);
 

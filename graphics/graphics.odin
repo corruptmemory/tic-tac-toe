@@ -245,7 +245,7 @@ graphics_check_device_extension_support :: proc(ctx: ^Graphics_Context) -> bool 
 
 graphics_update_uniform_buffer :: proc(ctx: ^Graphics_Context, current_image: u32) {
   ubo := Uniform_Buffer_Object {
-    view = lin.matrix4_look_at(lin.Vector3f32{2,2,2},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
+    view = lin.matrix4_look_at(lin.Vector3f32{0,8,0},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
     proj = lin.matrix4_perspective_f32(lin.radians(f32(45)),f32(ctx.swapChainExtent.width)/f32(ctx.swapChainExtent.height),0.1,10),
     light_pos  = lin.Vector4f32{0.0, -5.0, 0.0, 1.0},
   };
@@ -314,8 +314,6 @@ graphics_init_post_window :: proc(ctx: ^Graphics_Context,
   if !graphics_create_render_pass(ctx) do return false;
   if !graphics_create_descriptor_layout(ctx) do return false;
   if !graphics_create_graphics_pipeline(ctx) do return false;
-  if !graphics_create_command_pool(ctx) do return false;
-  if !graphics_create_command_buffers(ctx) do return false;
   if !graphics_create_depth_resources(ctx) do return false;
   if !graphics_create_framebuffers(ctx) do return false;
   // if !graphics_create_texture_image(ctx) do return false;
@@ -331,6 +329,8 @@ graphics_init_post_window :: proc(ctx: ^Graphics_Context,
   if !graphics_create_uniform_buffers(ctx) do return false;
   if !graphics_create_descriptor_pool(ctx) do return false;
   if !graphics_create_descriptor_sets(ctx) do return false;
+  if !graphics_create_command_pool(ctx) do return false;
+  if !graphics_create_command_buffers(ctx) do return false;
   if !graphics_create_sync_objects(ctx) do return false;
 
   return true;
@@ -425,17 +425,21 @@ graphics_create_sync_objects :: proc(ctx: ^Graphics_Context) -> bool {
   return true;
 }
 
+descriptor_set_allocate_info ::proc(descriptor_pool: vk.DescriptorPool, set_layouts: []vk.DescriptorSetLayout) -> vk.DescriptorSetAllocateInfo {
+  return vk.DescriptorSetAllocateInfo{
+      sType = vk.StructureType.DescriptorSetAllocateInfo,
+      descriptorPool = descriptor_pool,
+      descriptorSetCount = u32(len(set_layouts)),
+      pSetLayouts = mem.raw_slice_data(set_layouts),
+  };
+}
+
 graphics_create_descriptor_sets :: proc(ctx: ^Graphics_Context) -> bool {
   layouts := make([]vk.DescriptorSetLayout,len(ctx.swapChainImages));
   for _, i in layouts {
       layouts[i] = ctx.descriptor_set_layout;
   }
-  allocInfo := vk.DescriptorSetAllocateInfo{
-      sType = vk.StructureType.DescriptorSetAllocateInfo,
-      descriptorPool = ctx.descriptorPool,
-      descriptorSetCount = u32(len(ctx.swapChainImages)),
-      pSetLayouts = mem.raw_slice_data(layouts),
-  };
+  allocInfo := descriptor_set_allocate_info(ctx.descriptorPool, layouts);
 
   ctx.piece.descriptor_sets = make([]vk.DescriptorSet,len(ctx.swapChainImages));
   ctx.board.descriptor_sets = make([]vk.DescriptorSet,len(ctx.swapChainImages));
@@ -1002,15 +1006,30 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context) -> bool {
 
     vk.cmd_begin_render_pass(cb, &renderPassInfo, vk.SubpassContents.Inline);
 
+    viewport := vk.Viewport {
+      width    = f32(ctx.swapChainExtent.width),
+      height   = f32(ctx.swapChainExtent.height),
+      minDepth = 0,
+      maxDepth = 1,
+    };
+    vk.cmd_set_viewport(ctx.commandBuffers[i], 0, 1, &viewport);
+
+    scissor := vk.Rect2D {
+      extent = vk.Extent2D{ctx.swapChainExtent.width, ctx.swapChainExtent.height},
+    };
+    vk.cmd_set_scissor(ctx.commandBuffers[i], 0, 1, &scissor);
+
     // background
-    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.board.descriptor_sets[i], 0, nil);
+    log.debug("binding background");
+    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, mem.raw_slice_data(ctx.board.descriptor_sets), 0, nil);
     vk.cmd_bind_pipeline(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.background_pipeline);
     vk.cmd_draw(ctx.commandBuffers[i], 4, 1, 0, 0);
 
     offsets := []vk.DeviceSize{0};
     vertex_buffers: []vk.Buffer;
     // board
-    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, &ctx.board.descriptor_sets[i], 0, nil);
+    log.debug("binding board");
+    vk.cmd_bind_descriptor_sets(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.pipeline_layout, 0, 1, mem.raw_slice_data(ctx.board.descriptor_sets), 0, nil);
     vk.cmd_bind_pipeline(ctx.commandBuffers[i], vk.PipelineBindPoint.Graphics, ctx.board.pipeline);
     vertex_buffers = []vk.Buffer{ctx.board.vertex_buffer};
     vk.cmd_bind_vertex_buffers(ctx.commandBuffers[i], 0, 1, mem.raw_slice_data(vertex_buffers), mem.raw_slice_data(offsets));
