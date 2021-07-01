@@ -1309,8 +1309,6 @@ graphics_create_graphics_pipeline :: proc(ctx: ^Graphics_Context) -> bool {
   board_info: Shader_Info;
   piece_info: Shader_Info;
 
-  log.info("I'm in the graphics_create_graphics_pipeline function");
-
   bindings: [dynamic]vk.VertexInputBindingDescription;
   attributes: [dynamic]vk.VertexInputAttributeDescription;
   defer delete(bindings);
@@ -1767,6 +1765,8 @@ graphics_destroy :: proc(ctx: ^Graphics_Context) {
   if ctx.board.vertex_buffer != nil do vk.destroy_buffer(ctx.device, ctx.board.vertex_buffer,nil);
   if ctx.piece.vertex_buffer_memory != nil do vk.free_memory(ctx.device, ctx.piece.vertex_buffer_memory, nil);
   if ctx.board.vertex_buffer_memory != nil do vk.free_memory(ctx.device, ctx.board.vertex_buffer_memory, nil);
+  if ctx.instance_buffer.buffer != nil do vk.destroy_buffer(ctx.device, ctx.instance_buffer.buffer, nil);
+  if ctx.instance_buffer.memory != nil do vk.free_memory(ctx.device, ctx.instance_buffer.memory, nil);
 
   if len(ctx.renderFinishedSemaphores) > 0 {
     for i := 0; i < max_frames_in_flight; i += 1 {
