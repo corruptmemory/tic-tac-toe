@@ -245,17 +245,17 @@ graphics_check_device_extension_support :: proc(ctx: ^Graphics_Context) -> bool 
 
 graphics_update_uniform_buffer :: proc(ctx: ^Graphics_Context, current_image: u32) {
   ubo := Uniform_Buffer_Object {
-    view = lin.matrix4_look_at(lin.Vector3f32{0,8,0},lin.Vector3f32{0,0,0},lin.VECTOR3F32_Z_AXIS),
-    proj = lin.matrix4_perspective_f32(lin.radians(f32(45)),f32(ctx.swapChainExtent.width)/f32(ctx.swapChainExtent.height),0.1,10),
-    light_pos  = lin.Vector4f32{0.0, -5.0, 0.0, 1.0},
+    view = lin.matrix4_look_at(lin.Vector3f32{1,8,-1}, lin.Vector3f32{0,0,0}, lin.VECTOR3F32_Z_AXIS),
+    proj = lin.matrix4_perspective_f32(lin.radians(f32(45)), f32(ctx.swapChainExtent.width)/f32(ctx.swapChainExtent.height), 0.1, 10),
+    light_pos = lin.Vector4f32{0.0, -50.0, 0.0, 1.0},
   };
 
   ubo.proj[1][1] *= -1;
 
   data: rawptr;
-  vk.map_memory(ctx.device,ctx.uniform_buffers_memory[current_image],0,size_of(ubo),0,&data);
-  rt.mem_copy_non_overlapping(data,&ubo,size_of(ubo));
-  vk.unmap_memory(ctx.device,ctx.uniform_buffers_memory[current_image]);
+  vk.map_memory(ctx.device, ctx.uniform_buffers_memory[current_image], 0, size_of(ubo), 0, &data);
+  rt.mem_copy_non_overlapping(data, &ubo, size_of(ubo));
+  vk.unmap_memory(ctx.device, ctx.uniform_buffers_memory[current_image]);
 }
 
 
@@ -1006,18 +1006,18 @@ graphics_create_command_buffers :: proc(ctx: ^Graphics_Context) -> bool {
 
     vk.cmd_begin_render_pass(cb, &renderPassInfo, vk.SubpassContents.Inline);
 
-    viewport := vk.Viewport {
-      width    = f32(ctx.swapChainExtent.width),
-      height   = f32(ctx.swapChainExtent.height),
-      minDepth = 0,
-      maxDepth = 1,
-    };
-    vk.cmd_set_viewport(ctx.commandBuffers[i], 0, 1, &viewport);
+    // viewport := vk.Viewport {
+    //   width    = f32(ctx.swapChainExtent.width),
+    //   height   = f32(ctx.swapChainExtent.height),
+    //   minDepth = 0,
+    //   maxDepth = 1,
+    // };
+    // vk.cmd_set_viewport(ctx.commandBuffers[i], 0, 1, &viewport);
 
-    scissor := vk.Rect2D {
-      extent = vk.Extent2D{ctx.swapChainExtent.width, ctx.swapChainExtent.height},
-    };
-    vk.cmd_set_scissor(ctx.commandBuffers[i], 0, 1, &scissor);
+    // scissor := vk.Rect2D {
+    //   extent = vk.Extent2D{ctx.swapChainExtent.width, ctx.swapChainExtent.height},
+    // };
+    // vk.cmd_set_scissor(ctx.commandBuffers[i], 0, 1, &scissor);
 
     // background
     log.debug("binding background");
